@@ -1,6 +1,6 @@
-# Task API (Laravel + Sanctum + Spatie Media Library)
+# Task/Event/Resource API (Laravel + Sanctum + Spatie Media Library)
 
-Простое API для задач с токен-аутентификацией, вложениями и уведомлением по email.
+Простое API с токен-аутентификацией, задачами с вложениями и CRUD для событий и ресурсов.
 
 ## Запуск
 - Скопировать `.env` и выдать ключи: `cp .env.example .env && php artisan key:generate`
@@ -24,6 +24,26 @@
 - `GET /api/tasks/{id}` — получить задачу.
 - `PUT /api/tasks/{id}` — обновить; при передаче новых `attachments[]` коллекция заменяется.
 - `DELETE /api/tasks/{id}` — удалить.
+
+## События (Event)
+Поля: `name` (unique), `description`, `active` (bool), `resource_id` (uuid, опц.), `room_id` (uuid, опц.), `start_at`, `end_at` (>= start_at, опц.).
+
+Маршруты (`auth:sanctum`):
+- `GET /api/events` — фильтры `active`, `resource_id`, `room_id`, `date_from`, `date_to`.
+- `POST /api/events` — создать.
+- `GET /api/events/{id}` — получить.
+- `PUT /api/events/{id}` — обновить (unique name c игнором текущего).
+- `DELETE /api/events/{id}` — удалить (soft delete).
+
+## Ресурсы (Resource)
+Поля: `name` (unique), `description`, `active` (bool), `type_id` (int, обяз.), `start_at` (date), `end_at` (date, >= start_at).
+
+Маршруты (`auth:sanctum`):
+- `GET /api/resources` — фильтры `active`, `type_id`, `date_from`, `date_to`.
+- `POST /api/resources` — создать.
+- `GET /api/resources/{id}` — получить.
+- `PUT /api/resources/{id}` — обновить (unique name c игнором текущего).
+- `DELETE /api/resources/{id}` — удалить (soft delete).
 
 Ответы (`ApiService`):
 ```json
