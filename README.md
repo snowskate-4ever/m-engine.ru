@@ -1,30 +1,46 @@
-# Laravel + Livewire Starter Kit
+# Task API (Laravel + Sanctum + Spatie Media Library)
 
-## Introduction
+Простое API для задач с токен-аутентификацией, вложениями и уведомлением по email.
 
-Our Laravel + [Livewire](https://livewire.laravel.com) starter kit provides a robust, modern starting point for building Laravel applications with a Livewire frontend.
+## Запуск
+- Скопировать `.env` и выдать ключи: `cp .env.example .env && php artisan key:generate`
+- Установить зависимости: `composer install && npm install`
+- Применить миграции: `php artisan migrate`  
+  (для `Schema::change()` может понадобиться `composer require doctrine/dbal`)
+- Создать symlink для файлов: `php artisan storage:link`
+- Настроить почту в `.env` (`MAIL_...`), иначе отправка уведомлений упадёт.
 
-Livewire is a powerful way of building dynamic, reactive, frontend UIs using just PHP. It's a great fit for teams that primarily use Blade templates and are looking for a simpler alternative to JavaScript-driven SPA frameworks like React and Vue.
+## Аутентификация
+- Токены Laravel Sanctum.
+- Получить токен: `POST /api/login` с `email`, `password`.
+- Использовать заголовок: `Authorization: Bearer <token>`.
 
-This Livewire starter kit utilizes Livewire 3, Laravel Volt (optionally), TypeScript, Tailwind, and the [Flux UI](https://fluxui.dev) component library.
+## Задачи (Task)
+Поля: `title`, `description`, `status` (`planned|in_progress|done`), `done_at` (опц.), `user_id` (исполнитель), `attachments[]` (опц., файлы до 10 МБ каждый).
 
-If you are looking for the alternate configurations of this starter kit, they can be found in the following branches:
+Маршруты (`auth:sanctum`):
+- `GET /api/tasks` — список с фильтрами `status`, `user_id`, `done_at`.
+- `POST /api/tasks` — создать; multipart с `attachments[]`.
+- `GET /api/tasks/{id}` — получить задачу.
+- `PUT /api/tasks/{id}` — обновить; при передаче новых `attachments[]` коллекция заменяется.
+- `DELETE /api/tasks/{id}` — удалить.
 
-- [components](https://github.com/laravel/livewire-starter-kit/tree/components) - if Volt is not selected
-- [workos](https://github.com/laravel/livewire-starter-kit/tree/workos) - if WorkOS is selected for authentication
+Ответы (`ApiService`):
+```json
+// Успех
+{ "success": true, "errors": {}, "data": {...}, "codError": 0, "message": "..." }
+// Ошибка
+{ "success": false, "errors": {...}, "data": {}, "codError": <int>, "message": "..." }
+```
 
-## Official Documentation
+Вложенные файлы: Spatie Media Library, коллекция `attachments`, хранение локально, в ответе — массив объектов `{ id, file_name, url, mime_type, size }`.
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+Email: при создании задачи отправляется письмо исполнителю (`TaskCreatedMail`) с ссылкой на вложение (если есть). Почта должна быть настроена.
 
-## Contributing
+## Скрипты
+- `npm run dev` — Vite dev сервер
+- `npm run build` — сборка фронтенда
+- `php artisan test` — тесты
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## License
-
-The Laravel + Livewire starter kit is open-sourced software licensed under the MIT license.
+## Лицензия
+MIT.
