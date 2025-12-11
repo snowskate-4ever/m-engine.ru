@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\ApiTaskController;
+use App\Http\Controllers\ApiEventController;
+use App\Http\Controllers\ApiResourceController;
 
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
 
@@ -13,4 +15,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tasks/{id}', [ApiTaskController::class, 'get_task'])->name('task');
     Route::put('/tasks/{id}', [ApiTaskController::class, 'edit_task'])->name('edit_task');
     Route::delete('/tasks/{id}', [ApiTaskController::class, 'delete_task'])->name('delete_task');
+
+    Route::get('/events', [ApiEventController::class, 'get_events'])->name('events');
+    Route::post('/events', [ApiEventController::class, 'create_event'])->name('create_event');
+    Route::get('/events/{id}', [ApiEventController::class, 'get_event'])->name('event');
+    Route::put('/events/{id}', [ApiEventController::class, 'edit_event'])->name('edit_event_event');
+    Route::delete('/events/{id}', [ApiEventController::class, 'delete_event'])->name('delete_event');
+
+    Route::get('/resources', [ApiResourceController::class, 'get_resources'])->name('resources');
+    Route::post('/resources', [ApiResourceController::class, 'create_resource'])->name('create_resource');
+    Route::get('/resources/{id}', [ApiResourceController::class, 'get_resource'])->name('resource');
+    Route::put('/resources/{id}', [ApiResourceController::class, 'edit_resource'])->name('edit_resource');
+    Route::delete('/resources/{id}', [ApiResourceController::class, 'delete_resource'])->name('delete_resource');
 });

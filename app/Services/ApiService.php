@@ -12,6 +12,16 @@ class ApiService
      *  Задача не найдена
      */
     public const TASK_NOT_FOUND = 1100;
+
+    /**
+     *  Событие не найдено
+     */
+    public const EVENT_NOT_FOUND = 1101;
+
+    /**
+     *  Ресурс не найден
+     */
+    public const RESOURCE_NOT_FOUND = 1102;
     
     public static function errorResponse(string $message, int $codError, $errors = [], int $code = 403)
     {
