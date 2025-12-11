@@ -22,6 +22,11 @@ class ApiService
      *  Ресурс не найден
      */
     public const RESOURCE_NOT_FOUND = 1102;
+
+    /**
+     *  Тип не найден
+     */
+    public const TYPE_NOT_FOUND = 1103;
     
     public static function errorResponse(string $message, int $codError, $errors = [], int $code = 403)
     {

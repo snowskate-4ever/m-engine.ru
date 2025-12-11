@@ -1,6 +1,6 @@
-# Task/Event/Resource API (Laravel + Sanctum + Spatie Media Library)
+# Task/Event/Resource/Type API (Laravel + Sanctum + Spatie Media Library)
 
-Простое API с токен-аутентификацией, задачами с вложениями и CRUD для событий и ресурсов.
+Простое API с токен-аутентификацией, задачами с вложениями и CRUD для событий, ресурсов и типов.
 
 ## Запуск
 - Скопировать `.env` и выдать ключи: `cp .env.example .env && php artisan key:generate`
@@ -44,6 +44,16 @@
 - `GET /api/resources/{id}` — получить.
 - `PUT /api/resources/{id}` — обновить (unique name c игнором текущего).
 - `DELETE /api/resources/{id}` — удалить (soft delete).
+
+## Типы (Type)
+Поля: `name` (unique), `resource_type` (string, опц.), `description` (required).
+
+Маршруты (`auth:sanctum`):
+- `GET /api/types` — фильтр `resource_type`.
+- `POST /api/types` — создать.
+- `GET /api/types/{id}` — получить.
+- `PUT /api/types/{id}` — обновить (unique name c игнором текущего).
+- `DELETE /api/types/{id}` — удалить.
 
 Ответы (`ApiService`):
 ```json

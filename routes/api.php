@@ -6,6 +6,7 @@ use App\Http\Controllers\ApiAuthController;
 use App\Http\Controllers\ApiTaskController;
 use App\Http\Controllers\ApiEventController;
 use App\Http\Controllers\ApiResourceController;
+use App\Http\Controllers\ApiTypeController;
 
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
 
@@ -27,4 +28,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/resources/{id}', [ApiResourceController::class, 'get_resource'])->name('resource');
     Route::put('/resources/{id}', [ApiResourceController::class, 'edit_resource'])->name('edit_resource');
     Route::delete('/resources/{id}', [ApiResourceController::class, 'delete_resource'])->name('delete_resource');
+
+    Route::get('/types', [ApiTypeController::class, 'get_types'])->name('types');
+    Route::post('/types', [ApiTypeController::class, 'create_type'])->name('create_type');
+    Route::get('/types/{id}', [ApiTypeController::class, 'get_type'])->name('type');
+    Route::put('/types/{id}', [ApiTypeController::class, 'edit_type'])->name('edit_type');
+    Route::delete('/types/{id}', [ApiTypeController::class, 'delete_type'])->name('delete_type');
 });
