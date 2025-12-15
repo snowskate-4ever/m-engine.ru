@@ -43,10 +43,12 @@ return [
     'sections' => [
         'account' => 'Account',
         'resources' => 'Resources',
+        'events' => 'Events',
     ],
     'leftside' => [
         'profiles' => 'Profiles',
         'resources' => 'Resources',
+        'events' => 'Events',
     ],
     'moonshine' => [
         'types' => [

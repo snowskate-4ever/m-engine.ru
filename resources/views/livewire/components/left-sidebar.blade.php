@@ -19,6 +19,9 @@
             <flux:navlist.group :heading="__('ui.sections.resources')" class="grid">
                 <flux:navlist.item icon="home" :href="route('resources')" :current="request()->routeIs('resources')" wire:navigate>{{ __('ui.leftside.resources') }}</flux:navlist.item>
             </flux:navlist.group>
+            <flux:navlist.group :heading="__('ui.sections.events')" class="grid">
+                <flux:navlist.item icon="home" :href="route('events')" :current="request()->routeIs('events')" wire:navigate>{{ __('ui.leftside.events') }}</flux:navlist.item>
+            </flux:navlist.group>
         </flux:navlist>
 
         <flux:spacer />

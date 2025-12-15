@@ -20,6 +20,9 @@ Route::middleware(['auth'])->group(function () {
     Route::group(['prefix' => '/resources'], function () {
         Route::get('/', function () {return view('resources');})->name('resources');
     });
+    Route::group(['prefix' => '/events'], function () {
+        Route::get('/', function () {return view('events');})->name('events');
+    });
     // ==========
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
