@@ -2,11 +2,11 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ApiAuthController;
-use App\Http\Controllers\ApiTaskController;
-use App\Http\Controllers\ApiEventController;
-use App\Http\Controllers\ApiResourceController;
-use App\Http\Controllers\ApiTypeController;
+use App\Http\Controllers\api\ApiAuthController;
+use App\Http\Controllers\api\ApiTaskController;
+use App\Http\Controllers\api\ApiEventController;
+use App\Http\Controllers\api\ApiResourceController;
+use App\Http\Controllers\api\ApiTypeController;
 
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
 

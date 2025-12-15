@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\api;
 
 use App\Models\Event;
 use Carbon\Carbon;

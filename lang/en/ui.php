@@ -35,6 +35,11 @@ return [
     'collapse_menu' => 'Collapse menu',
     '404' => 'Houston! We have a problem - page not found',
     'copied' => 'Copied!',
+    'events' => 'Events',
+    'name' => 'Name',
+    'description' => 'Description',
+    'resources' => 'Resources',
+    'profiles' => 'Profiles',
     'notifications' => [
         'title' => 'Notifications',
         'mark_as_read_all' => 'Mark all as read',

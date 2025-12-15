@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\api;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
-use App\Services\ApiService;
+use App\Services\api\ApiService;
 use Illuminate\Support\Facades\Auth;
 
 class ApiAuthController extends Controller

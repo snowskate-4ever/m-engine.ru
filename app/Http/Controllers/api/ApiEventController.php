@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\api;
 
 use Illuminate\Http\Request;
-use App\Services\ApiEventService;
+use App\Http\Controllers\Controller;
+use App\Services\api\ApiEventService;
 
 class ApiEventController extends Controller
 {

@@ -16,12 +16,21 @@ Route::view('dashboard', 'dashboard')
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
-    Route::get('/account/profiles', function () {return view('account.profiles');})->name('account.profiles');
+    Route::group(['prefix' => '/account'], function () {
+        Route::group(['prefix' => '/profiles'], function () {
+            Route::get('/', [App\Http\Controllers\ProfileController::class, 'get_profiles'])->name('account.profiles');
+        });
+    });
+
     Route::group(['prefix' => '/resources'], function () {
-        Route::get('/', function () {return view('resources');})->name('resources');
+        Route::get('/', [App\Http\Controllers\ResourceController::class, 'get_resources'])->name('resources');
     });
     Route::group(['prefix' => '/events'], function () {
-        Route::get('/', function () {return view('events');})->name('events');
+        Route::get('/', [App\Http\Controllers\EventController::class, 'get_events'])->name('events');
+        Route::post('/', [App\Http\Controllers\EventController::class, 'create_events'])->name('create_events');
+        Route::get('/{id}', [App\Http\Controllers\EventController::class, 'get_event'])->name('get_event');
+        Route::put('/{id}', [App\Http\Controllers\EventController::class, 'edit_event'])->name('edit_event');
+        Route::delete('/{id}', [App\Http\Controllers\EventController::class, 'delete_event'])->name('delete_event');
     });
     // ==========
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');

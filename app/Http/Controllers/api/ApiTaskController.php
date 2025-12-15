@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\api;
 
 use Illuminate\Http\Request;
-use App\Services\ApiTaskService;
+use App\Http\Controllers\Controller;
+use App\Services\api\ApiTaskService;
 
 class ApiTaskController extends Controller
 {  
