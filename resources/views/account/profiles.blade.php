@@ -21,9 +21,7 @@
                             @foreach($profiles as $profile)
                                 <tr class="border-t border-zinc-200 dark:border-zinc-700">
                                     <td class="px-2 py-1">{{ $profile['id'] }}</td>
-                                    <td class="px-2 py-1">
-                                        {{ $u?->name ?? '—' }} ({{ $u?->email ?? '—' }})
-                                    </td>
+                                    <td class="px-2 py-1">{{ $profile['user_name'] }}</td>
                                     <td class="px-2 py-1">{{ $profile['type'] }}</td>
                                     <td class="px-2 py-1">{{ $profile['created_at'] }}</td>
                                 </tr>

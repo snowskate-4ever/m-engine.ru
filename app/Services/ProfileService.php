@@ -14,11 +14,8 @@ class ProfileService
     public static function get_profiles(Request $request)
     {
         $validator = Validator::make($request->query(), [
-            'active' => 'sometimes|boolean',
-            'resource_id' => 'sometimes|uuid',
-            'room_id' => 'sometimes|uuid',
-            'date_from' => 'sometimes|date',
-            'date_to' => 'sometimes|date',
+            'user_id' => 'sometimes|uuid',
+            'type' => 'sometimes|uuid',
         ]);
 
         if ($validator->fails()) {
@@ -32,26 +29,12 @@ class ProfileService
 
         $filters = $validator->validated();
 
-        $query = UserProfile::query()->orderByDesc('start_at')->orderByDesc('created_at');
+        $query = UserProfile::query()->orderByDesc('created_at');
 
-        if (array_key_exists('active', $filters)) {
-            $query->where('active', $filters['active']);
-        }
-        if (isset($filters['resource_id'])) {
-            $query->where('resource_id', $filters['resource_id']);
-        }
-        if (isset($filters['room_id'])) {
-            $query->where('room_id', $filters['room_id']);
-        }
-        if (isset($filters['date_from'])) {
-            $query->whereDate('start_at', '>=', Carbon::parse($filters['date_from'])->toDateString());
-        }
-        if (isset($filters['date_to'])) {
-            $query->whereDate('end_at', '<=', Carbon::parse($filters['date_to'])->toDateString());
-        }
+        // $profiles = $query->with('user')->get()->map(fn (UserProfile $user_profile) => self::formatProfile($user_profile));
+        $profiles = $query->with('user')->get()->map(fn (UserProfile $user_profile) => self::formatProfile($user_profile));
 
-        $profiles = $query->get()->map(fn (UserProfile $user_profile) => self::formatEvent($user_profile));
-        
+        // dd($profiles);
         return view('account.profiles', ['profiles' => $profiles ]);
     }
 
@@ -200,21 +183,16 @@ class ProfileService
         return ApiService::successResponse('Событие удалено');
     }
 
-    protected static function formatEvent(UserProfile $event): array
+    protected static function formatProfile(UserProfile $user_profile): array
     {
         return [
-            'id' => $event->id,
-            'name' => $event->name,
-            'description' => $event->description,
-            'active' => $event->active,
-            'resource_id' => $event->resource_id,
-            'room_id' => $event->room_id,
-            'start_at' => $event->start_at?->toISOString(),
-            'end_at' => $event->end_at?->toISOString(),
-            'created_at' => $event->created_at?->toISOString(),
-            'updated_at' => $event->updated_at?->toISOString(),
-            'user_id' => $event->user_id,
-            'type' => $event->type,
+            'id' => $user_profile->id,
+            'user_id' => $user_profile->user_id,
+            'user_name' => $user_profile->user->name,
+            'type' => $user_profile->type,
+            'name' => $user_profile->name,
+            'created_at' => $user_profile->created_at?->toISOString(),
+            'updated_at' => $user_profile->updated_at?->toISOString(),
         ];
     }
 }
