@@ -1,8 +1,3 @@
-@php
-    use App\Models\Resource;
-    $resources = Resource::orderByDesc('created_at')->get();
-@endphp
-
 <x-layouts.second_level_layout :title="__('ui.resources')">
     <livewire:components.left-sidebar />
 
@@ -23,18 +18,22 @@
                                 <th class="px-2 py-1">Type</th>
                                 <th class="px-2 py-1">Start</th>
                                 <th class="px-2 py-1">End</th>
+                                <th class="px-2 py-1">Create</th>
+                                <th class="px-2 py-1">Update</th>
                             </tr>
                         </thead>
                         <tbody class="text-zinc-900 dark:text-zinc-100">
                             @foreach($resources as $resource)
                                 <tr class="border-t border-zinc-200 dark:border-zinc-700">
-                                    <td class="px-2 py-1">{{ $resource->id }}</td>
-                                    <td class="px-2 py-1">{{ $resource->name }}</td>
-                                    <td class="px-2 py-1">{{ $resource->description }}</td>
-                                    <td class="px-2 py-1">{{ $resource->active ? 'Yes' : 'No' }}</td>
-                                    <td class="px-2 py-1">{{ $resource->type_id }}</td>
-                                    <td class="px-2 py-1">{{ optional($resource->start_at)->format('Y-m-d') }}</td>
-                                    <td class="px-2 py-1">{{ optional($resource->end_at)->format('Y-m-d') }}</td>
+                                    <td class="px-2 py-1">{{ $resource['id'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['name'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['description'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['active'] ? 'Yes' : 'No' }}</td>
+                                    <td class="px-2 py-1">{{ $resource['type_name'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['start_at'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['end_at'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['created_at'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['updated_at'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

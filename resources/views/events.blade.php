@@ -14,9 +14,11 @@
                                 <th class="px-2 py-1">ID</th>
                                 <th class="px-2 py-1">{{ __('ui.name') ?? 'Name' }}</th>
                                 <th class="px-2 py-1">{{ __('ui.description') ?? 'Description' }}</th>
+                                <th class="px-2 py-1">Active</th>
                                 <th class="px-2 py-1">Start</th>
                                 <th class="px-2 py-1">End</th>
-                                <th class="px-2 py-1">Active</th>
+                                <th class="px-2 py-1">Updated</th>
+                                <th class="px-2 py-1">Created</th>
                             </tr>
                         </thead>
                         <tbody class="text-zinc-900 dark:text-zinc-100">
@@ -25,9 +27,11 @@
                                     <td class="px-2 py-1">{{ $event['id'] }}</td>
                                     <td class="px-2 py-1">{{ $event['name'] }}</td>
                                     <td class="px-2 py-1">{{ $event['description'] }}</td>
+                                    <td class="px-2 py-1">{{ $event['active'] ? 'Yes' : 'No' }}</td>
                                     <td class="px-2 py-1">{{ $event['start_at'] }}</td>
                                     <td class="px-2 py-1">{{ $event['end_at'] }}</td>
-                                    <td class="px-2 py-1">{{ $event['active'] ? 'Yes' : 'No' }}</td>
+                                    <td class="px-2 py-1">{{ $event['updated_at'] }}</td>
+                                    <td class="px-2 py-1">{{ $event['created_at'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

@@ -49,9 +49,9 @@ class ResourceService
             $query->whereDate('end_at', '<=', Carbon::parse($filters['date_to'])->toDateString());
         }
 
-        $resources = $query->get()->map(fn (Resource $event) => self::formatEvent($event));
+        $resources = $query->with('type')->get()->map(fn (Resource $resource) => self::formatEvent($resource));
 
-        return view('resources', ['resources']);
+        return view('resources', ['resources' => $resources ]);
     }
 
     public static function create_resources(Request $request)
@@ -199,19 +199,19 @@ class ResourceService
         return ApiService::successResponse('Событие удалено');
     }
 
-    protected static function formatEvent(Resource $event): array
+    protected static function formatEvent(Resource $resource): array
     {
         return [
-            'id' => $event->id,
-            'name' => $event->name,
-            'description' => $event->description,
-            'active' => $event->active,
-            'resource_id' => $event->resource_id,
-            'room_id' => $event->room_id,
-            'start_at' => $event->start_at?->toISOString(),
-            'end_at' => $event->end_at?->toISOString(),
-            'created_at' => $event->created_at?->toISOString(),
-            'updated_at' => $event->updated_at?->toISOString(),
+            'id' => $resource->id,
+            'name' => $resource->name,
+            'description' => $resource->description,
+            'active' => $resource->active,
+            'type_id' => $resource->type_id,
+            'type_name' => $resource->type->name,
+            'start_at' => Carbon::parse($resource->start_at)->format('H:i d-m-Y'),
+            'end_at' => Carbon::parse($resource->end_at)->format('H:i d-m-Y'),
+            'created_at' => Carbon::parse($resource->created_at)->format('H:i d-m-Y'),
+            'updated_at' => Carbon::parse($resource->updated_at)->format('H:i d-m-Y'),
         ];
     }
 }

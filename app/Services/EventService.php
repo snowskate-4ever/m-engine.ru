@@ -208,10 +208,10 @@ class EventService
             'active' => $event->active,
             'resource_id' => $event->resource_id,
             'room_id' => $event->room_id,
-            'start_at' => $event->start_at?->toISOString(),
-            'end_at' => $event->end_at?->toISOString(),
-            'created_at' => $event->created_at?->toISOString(),
-            'updated_at' => $event->updated_at?->toISOString(),
+            'start_at' => Carbon::parse($event->start_at)->format('H:i d-m-Y'),
+            'end_at' => Carbon::parse($event->end_at)->format('H:i d-m-Y'),
+            'created_at' => Carbon::parse($event->created_at)->format('H:i d-m-Y'),
+            'updated_at' => Carbon::parse($event->updated_at)->format('H:i d-m-Y'),
         ];
     }
 }

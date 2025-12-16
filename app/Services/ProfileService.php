@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+// use Illuminate\Support\Carbon;
 
 class ProfileService
 {
@@ -191,8 +192,8 @@ class ProfileService
             'user_name' => $user_profile->user->name,
             'type' => $user_profile->type,
             'name' => $user_profile->name,
-            'created_at' => $user_profile->created_at?->toISOString(),
-            'updated_at' => $user_profile->updated_at?->toISOString(),
+            'created_at' => Carbon::parse($user_profile->created_at)->format('H:i d-m-Y'),
+            'updated_at' => Carbon::parse($user_profile->updated_at)->format('H:i d-m-Y'),
         ];
     }
 }
