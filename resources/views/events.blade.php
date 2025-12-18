@@ -1,9 +1,6 @@
 <x-layouts.second_level_layout :title="__('ui.events')">
-    <livewire:components.left-sidebar />
-
-    <div class="p-4">
+    
         <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            <h2 class="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{{ __('ui.events') }}</h2>
             @if($events->isEmpty())
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.notfound') }}</p>
             @else
@@ -39,6 +36,5 @@
                 </div>
             @endif
         </div>
-    </div>
 </x-layouts.second_level_layout>
 

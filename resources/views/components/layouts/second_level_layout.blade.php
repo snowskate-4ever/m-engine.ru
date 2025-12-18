@@ -4,9 +4,11 @@
         @include('partials.head')
     </head>
     <body class="flex min-h-screen bg-white dark:bg-zinc-800">
-
-        {{  $slot }}
-
+        @livewire('components.left-sidebar')
+        <div class="p-4 w-full">
+            @include('partials.settings-heading', ['title' => $title])
+            {{  $slot }}
+        </div>
         @fluxScripts
     </body>
 </html>
