@@ -2,58 +2,29 @@
 
 namespace App\Services;
 
+use App\Classes\StatClass;
 use App\Models\Event;
+use App\Models\Resource;
+use App\Models\UserProfile;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
-class EventService
+class DashboardService
 {
-    public static function get_events(Request $request)
+    public static function dashboard(Request $request)
     {
-        $validator = Validator::make($request->query(), [
-            'active' => 'sometimes|boolean',
-            'resource_id' => 'sometimes|uuid',
-            'room_id' => 'sometimes|uuid',
-            'date_from' => 'sometimes|date',
-            'date_to' => 'sometimes|date',
-        ]);
-
-        if ($validator->fails()) {
-            return ApiService::errorResponse(
-                'Проверьте параметры фильтрации.',
-                ApiService::UNPROCESSABLE_CONTENT,
-                $validator->errors()->messages(),
-                422
-            );
-        }
-
-        $filters = $validator->validated();
-
-        $query = Event::query()->orderByDesc('start_at')->orderByDesc('created_at');
-
-        if (array_key_exists('active', $filters)) {
-            $query->where('active', $filters['active']);
-        }
-        if (isset($filters['resource_id'])) {
-            $query->where('resource_id', $filters['resource_id']);
-        }
-        if (isset($filters['room_id'])) {
-            $query->where('room_id', $filters['room_id']);
-        }
-        if (isset($filters['date_from'])) {
-            $query->whereDate('start_at', '>=', Carbon::parse($filters['date_from'])->toDateString());
-        }
-        if (isset($filters['date_to'])) {
-            $query->whereDate('end_at', '<=', Carbon::parse($filters['date_to'])->toDateString());
-        }
-
-        $events = $query->get()->map(fn (Event $event) => self::formatEvent($event));
-
-        return view('events', [
-            'data' => $events,
-            'buttons' => ['add']
+        return view('dashboard', [
+            'data' => [
+                'stat_cards' => [
+                    'events' => StatClass::get_stats(Auth::user(), 'events'),
+                    'profiles' => StatClass::get_stats(Auth::user(), 'resources'),
+                    'resources' => StatClass::get_stats(Auth::user(), 'profiles'),
+                ]
+            ],
+            'buttons' => []
         ]);
     }
 

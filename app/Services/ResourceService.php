@@ -51,7 +51,10 @@ class ResourceService
 
         $resources = $query->with('type')->get()->map(fn (Resource $resource) => self::formatEvent($resource));
 
-        return view('resources', ['resources' => $resources ]);
+        return view('resources', [
+            'data' => $resources,
+            'buttons' => ['add']
+        ]);
     }
 
     public static function create_resources(Request $request)

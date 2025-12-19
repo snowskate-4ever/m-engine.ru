@@ -33,10 +33,12 @@ class ProfileService
         $query = UserProfile::query()->orderByDesc('created_at');
 
         // $profiles = $query->with('user')->get()->map(fn (UserProfile $user_profile) => self::formatProfile($user_profile));
-        $profiles = $query->with('user')->get()->map(fn (UserProfile $user_profile) => self::formatProfile($user_profile));
+        $profiles = $query->with('user')->with('type')->get()->map(fn (UserProfile $user_profile) => self::formatProfile($user_profile));
 
-        // dd($profiles);
-        return view('account.profiles', ['profiles' => $profiles ]);
+        return view('account.profiles', [
+            'data' => $profiles,
+            'buttons' => ['add']
+        ]);
     }
 
     public static function create_profiles(Request $request)
@@ -191,7 +193,7 @@ class ProfileService
             'user_id' => $user_profile->user_id,
             'user_name' => $user_profile->user->name,
             'type' => $user_profile->type,
-            'name' => $user_profile->name,
+            'type_name' => $user_profile->type->name,
             'created_at' => Carbon::parse($user_profile->created_at)->format('H:i d-m-Y'),
             'updated_at' => Carbon::parse($user_profile->updated_at)->format('H:i d-m-Y'),
         ];

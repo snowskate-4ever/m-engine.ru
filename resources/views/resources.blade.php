@@ -1,6 +1,6 @@
-<x-layouts.second_level_layout :title="__('ui.resources')">
+<x-layouts.second_level_layout :title="__('ui.resources')" :buttons="$buttons">
     <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-        @if($resources->isEmpty())
+        @if($data->isEmpty())
             <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.notfound') }}</p>
         @else
             <div class="overflow-x-auto">
@@ -19,7 +19,7 @@
                         </tr>
                     </thead>
                     <tbody class="text-zinc-900 dark:text-zinc-100">
-                        @foreach($resources as $resource)
+                        @foreach($data as $resource)
                             <tr class="border-t border-zinc-200 dark:border-zinc-700">
                                 <td class="px-2 py-1">{{ $resource['id'] }}</td>
                                 <td class="px-2 py-1">{{ $resource['name'] }}</td>

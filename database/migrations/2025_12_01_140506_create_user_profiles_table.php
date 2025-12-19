@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('user_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id');
-            $table->integer('type');
+            $table->foreignId('type_id');
             $table->softDeletes('deleted_at');
             $table->timestamps();
         });

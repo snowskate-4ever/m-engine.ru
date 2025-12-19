@@ -1,7 +1,7 @@
-<x-layouts.second_level_layout :title="__('ui.events')">
+<x-layouts.second_level_layout :title="__('ui.events')" :buttons="$buttons">
     
         <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            @if($events->isEmpty())
+            @if($data->isEmpty())
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.notfound') }}</p>
             @else
                 <div class="overflow-x-auto">
@@ -19,7 +19,7 @@
                             </tr>
                         </thead>
                         <tbody class="text-zinc-900 dark:text-zinc-100">
-                            @foreach($events as $event)
+                            @foreach($data as $event)
                                 <tr class="border-t border-zinc-200 dark:border-zinc-700">
                                     <td class="px-2 py-1">{{ $event['id'] }}</td>
                                     <td class="px-2 py-1">{{ $event['name'] }}</td>
