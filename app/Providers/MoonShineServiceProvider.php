@@ -22,6 +22,9 @@ use App\MoonShine\Resources\Hardware\HardwareResource;
 use App\MoonShine\Resources\Good\GoodResource;
 use App\MoonShine\Resources\Category\CategoryResource;
 use App\MoonShine\Resources\GoodCategory\GoodCategoryResource;
+use App\MoonShine\Resources\Country\CountryResource;
+use App\MoonShine\Resources\Region\RegionResource;
+use App\MoonShine\Resources\City\CityResource;
 
 class MoonShineServiceProvider extends ServiceProvider
 {
@@ -46,6 +49,9 @@ class MoonShineServiceProvider extends ServiceProvider
                 GoodResource::class,
                 CategoryResource::class,
                 GoodCategoryResource::class,
+                CountryResource::class,
+                RegionResource::class,
+                CityResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),

@@ -27,6 +27,9 @@ use App\MoonShine\Resources\Hardware\HardwareResource;
 use App\MoonShine\Resources\Good\GoodResource;
 use App\MoonShine\Resources\Category\CategoryResource;
 use App\MoonShine\Resources\GoodCategory\GoodCategoryResource;
+use App\MoonShine\Resources\Country\CountryResource;
+use App\MoonShine\Resources\Region\RegionResource;
+use App\MoonShine\Resources\City\CityResource;
 
 final class MoonShineLayout extends AppLayout
 {
@@ -52,6 +55,11 @@ final class MoonShineLayout extends AppLayout
                 MenuItem::make(UserResource::class),
                 MenuItem::make(SocialResource::class),
             ]),
+            MenuGroup::make('Географические данные', [
+                MenuItem::make(CountryResource::class)->icon('adjustments-horizontal'),
+                MenuItem::make(RegionResource::class)->icon('adjustments-horizontal'),
+                MenuItem::make(CityResource::class)->icon('adjustments-horizontal'),
+            ])->icon('adjustments-horizontal'),
             MenuGroup::make(static fn () => __('moonshine.system.catalog'), [
                 MenuItem::make(GoodResource::class),
                 MenuItem::make(ManufacturerResource::class),
@@ -65,6 +73,52 @@ final class MoonShineLayout extends AppLayout
             ]),
             MenuItem::make(ResourceResource::class),
             MenuItem::make(CommunicationResource::class),
+        ];
+    }
+    
+    public static function dashboard(): array
+    {
+        return [
+            DashboardScreen::make()
+                ->title('Панель управления')
+                ->blocks([
+                    DashboardBlock::make([
+                        ValueMetric::make('Всего стран')
+                            ->value(fn() => \App\Models\Country::count())
+                            ->progress(fn() => \App\Models\Country::where('is_active', true)->count())
+                            ->columnSpan(6),
+                        
+                        ValueMetric::make('Всего регионов')
+                            ->value(fn() => \App\Models\Region::count())
+                            ->progress(fn() => \App\Models\Region::where('is_active', true)->count())
+                            ->columnSpan(6),
+                        
+                        ValueMetric::make('Всего городов')
+                            ->value(fn() => \App\Models\City::count())
+                            ->progress(fn() => \App\Models\City::where('is_active', true)->count())
+                            ->columnSpan(6),
+                        
+                        ValueMetric::make('Столицы')
+                            ->value(fn() => \App\Models\City::where('is_capital', true)->count())
+                            ->columnSpan(6),
+                    ]),
+                    
+                    DashboardBlock::make([
+                        ResourcePreview::make(
+                            new CountryResource(),
+                            'Последние добавленные страны',
+                            \App\Models\Country::latest()->limit(5)
+                        )->columnSpan(12),
+                    ]),
+                    
+                    DashboardBlock::make([
+                        ResourcePreview::make(
+                            new CityResource(),
+                            'Крупнейшие города по населению',
+                            \App\Models\City::whereNotNull('population')->orderBy('population', 'desc')->limit(10)
+                        )->columnSpan(12),
+                    ]),
+                ]),
         ];
     }
 
