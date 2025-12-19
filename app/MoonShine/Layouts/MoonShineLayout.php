@@ -30,6 +30,7 @@ use App\MoonShine\Resources\GoodCategory\GoodCategoryResource;
 use App\MoonShine\Resources\Country\CountryResource;
 use App\MoonShine\Resources\Region\RegionResource;
 use App\MoonShine\Resources\City\CityResource;
+use App\MoonShine\Resources\Address\AddressResource;
 
 final class MoonShineLayout extends AppLayout
 {
@@ -59,6 +60,7 @@ final class MoonShineLayout extends AppLayout
                 MenuItem::make(CountryResource::class)->icon('adjustments-horizontal'),
                 MenuItem::make(RegionResource::class)->icon('adjustments-horizontal'),
                 MenuItem::make(CityResource::class)->icon('adjustments-horizontal'),
+                MenuItem::make(AddressResource::class)->icon('adjustments-horizontal')
             ])->icon('adjustments-horizontal'),
             MenuGroup::make(static fn () => __('moonshine.system.catalog'), [
                 MenuItem::make(GoodResource::class),
@@ -73,6 +75,7 @@ final class MoonShineLayout extends AppLayout
             ]),
             MenuItem::make(ResourceResource::class),
             MenuItem::make(CommunicationResource::class),
+            MenuItem::make(AddressResource::class, 'Addresses'),
         ];
     }
     
