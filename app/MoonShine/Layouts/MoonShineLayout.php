@@ -75,7 +75,6 @@ final class MoonShineLayout extends AppLayout
             ]),
             MenuItem::make(ResourceResource::class),
             MenuItem::make(CommunicationResource::class),
-            MenuItem::make(AddressResource::class, 'Addresses'),
         ];
     }
     
