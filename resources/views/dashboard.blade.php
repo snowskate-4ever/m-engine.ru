@@ -36,16 +36,5 @@
             </button>
         </div>
         @endif
-        
-
     </div>
-    
-    <!--JAVASCRIPT CODE-->
-    <script>
-        const carouselElement = document.getElementById('stat_cards');
-        console.log(carouselElement)
-        
-    </script>
-
-
 </x-layouts.second_level_layout>

@@ -178,8 +178,6 @@ new class extends Component {
 } ?>
 
 <section class="w-full">
-    @include('partials.settings-heading')
-
     <x-settings.layout
         :heading="__('Two Factor Authentication')"
         :subheading="__('Manage your two-factor authentication settings')"

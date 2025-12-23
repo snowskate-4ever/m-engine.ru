@@ -41,6 +41,10 @@ return [
     'resources' => 'Ресурсы',
     'profiles' => 'Профили',
     'options' => 'Опции',
+    'settings' => 'Настройки',
+    'password' => 'Пароль',
+    'two-factor-auth' => 'Двухфакторная авторизация',
+    'appearance' => 'Тема',
     'notifications' => [
         'title' => 'Уведомления',
         'mark_as_read_all' => 'Все прочитано',

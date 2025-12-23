@@ -28,10 +28,10 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', [App\Http\Controllers\EventController::class, 'delete_event'])->name('delete_event');
     });
     // ==========
-    Route::get('/settings/profile', UpdateProfileInformation::class)->middleware(['auth'])->name('profile.edit');
-    // Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
-    Volt::route('settings/password', 'settings.password')->name('user-password.edit');
-    Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
+    Route::get('/settings/profile', [App\Http\Controllers\SettingsController::class, 'settings_profile'])->name('settings.profile.edit');
+    Volt::route('settings/profile1', 'settings.profile')->name('settings.profile1.edit');
+    Volt::route('settings/password', 'settings.password')->name('settings.password.edit');
+    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance.edit');
 
     Volt::route('settings/two-factor', 'settings.two-factor')
         ->middleware(
@@ -42,5 +42,5 @@ Route::middleware(['auth'])->group(function () {
                 [],
             ),
         )
-        ->name('two-factor.show');
+        ->name('settings.two-factor.show');
 });
