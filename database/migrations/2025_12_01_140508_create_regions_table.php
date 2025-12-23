@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('regions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('country_id')->constrained('countries')->onDelete('cascade');
-            $table->foreignId('type_id')->constrained('countries')->nullable(); // oblast, krai, republic, state
+            $table->foreignId('type_id')->constrained('types')->nullable(); // oblast, krai, republic, state
             $table->string('name', 100);
             $table->string('code', 10)->nullable(); // Код региона (например, 77 для Москвы)
             $table->string('federal_district', 100)->nullable(); // для России
@@ -29,7 +29,6 @@ return new class extends Migration
             $table->index('name');
             $table->index('code');
             $table->index(['country_id', 'name']);
-            $table->index('type');
             $table->index('is_active');
             $table->unique(['country_id', 'code']);
         });

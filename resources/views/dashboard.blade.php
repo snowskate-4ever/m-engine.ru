@@ -6,7 +6,7 @@
             <div class="flex h-56 overflow-hidden rounded-base md:h-96">
                 @foreach($data['stat_cards'] as $key => $card)
                     <!-- {{ $key }} -->
-                    <div class="w-120 mx-4 border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 ease-in-out" id="{{ $key }}" data-carousel-item>
+                    <div class="w-80 mx-4 border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 ease-in-out" id="{{ $key }}" data-carousel-item>
                         Статистика по {{ $key }}<br>
                         Всего: {{ $key }} - {{ $card['count_all'] }}<br>
                         Мои: {{ $key }} - {{ $card['my_items'] }}

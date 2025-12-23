@@ -9,16 +9,20 @@ use App\Models\City;
 use App\MoonShine\Resources\City\Pages\CityIndexPage;
 use App\MoonShine\Resources\City\Pages\CityFormPage;
 use App\MoonShine\Resources\City\Pages\CityDetailPage;
-
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
 use Illuminate\Validation\Rule;
-use MoonShine\Fields\ID;
-use MoonShine\Fields\Text;
-use MoonShine\Fields\Number;
-use MoonShine\Fields\Switcher;
-use MoonShine\Resources\Resource;
-use MoonShine\Fields\Relationships\BelongsTo;
+use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\Text;
+use MoonShine\UI\Fields\Field;
+use MoonShine\UI\Fields\Number;
+use MoonShine\UI\Fields\Select;
+use MoonShine\UI\Fields\Switcher;
+use App\MoonShine\Resources\Country\CountryResource;
+use App\MoonShine\Resources\Region\RegionResource;
+use MoonShine\Laravel\Fields\Relationships\BelongsTo;
+use MoonShine\Laravel\Fields\Relationships\HasMany;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Actions\FiltersAction;
 
 /**
@@ -28,74 +32,9 @@ class CityResource extends ModelResource
 {
     protected string $model = City::class;
 
-    public string $title = 'Города';
-    public static string $subTitle = 'Управление городами';
-
-    public function fields(): array
+    public function getTitle(): string
     {
-        return [
-            ID::make()->sortable()->showOnExport(),
-            
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: new CountryResource())
-                ->required()
-                ->searchable()
-                ->valuesQuery(fn($query) => $query->orderBy('name'))
-                ->showOnExport(),
-            
-            BelongsTo::make('Регион', 'region', fn($item) => $item->name . ' (' . $item->country->code . ')', resource: new RegionResource())
-                ->nullable()
-                ->searchable()
-                ->valuesQuery(fn($query) => $query->with('country')->orderBy('name'))
-                ->showOnExport()
-                ->hideOnIndex(),
-            
-            Text::make('Название', 'name')
-                ->required()
-                ->sortable()
-                ->showOnExport(),
-            
-            Text::make('Английское название', 'name_eng')
-                ->nullable()
-                ->showOnExport(),
-            
-            Text::make('Slug', 'slug')
-                ->required()
-                ->showOnExport()
-                ->hideOnIndex(),
-            
-            Text::make('Часовой пояс', 'timezone')
-                ->nullable()
-                ->showOnExport()
-                ->hint('Europe/Moscow, America/New_York'),
-            
-            Number::make('Широта', 'latitude')
-                ->nullable()
-                ->step(0.000001)
-                ->showOnExport(),
-            
-            Number::make('Долгота', 'longitude')
-                ->nullable()
-                ->step(0.000001)
-                ->showOnExport(),
-            
-            Number::make('Население', 'population')
-                ->nullable()
-                ->min(0)
-                ->showOnExport(),
-            
-            Number::make('Порядок сортировки', 'sort_order')
-                ->default(0)
-                ->sortable()
-                ->showOnExport(),
-            
-            Switcher::make('Столица', 'is_capital')
-                ->default(false)
-                ->showOnExport(),
-            
-            Switcher::make('Активен', 'is_active')
-                ->default(true)
-                ->showOnExport(),
-        ];
+        return __('moonshine.cities.Tablename');
     }
 
     public function rules($item): array
@@ -123,27 +62,13 @@ class CityResource extends ModelResource
 
     public function filters(): array
     {
-        return [
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: new CountryResource())
-                ->nullable()
-                ->searchable(),
-            
-            BelongsTo::make('Регион', 'region', fn($item) => $item->name, resource: new RegionResource())
-                ->nullable()
-                ->searchable(),
-            
-            Text::make('Название', 'name'),
-            
-            Switcher::make('Столица', 'is_capital'),
-            
-            Switcher::make('Активен', 'is_active'),
-        ];
+        return [];
     }
 
     public function actions(): array
     {
         return [
-            FiltersAction::make(trans('moonshine::ui.filters')),
+            FiltersAction::make(),
         ];
     }
 
@@ -166,16 +91,6 @@ class CityResource extends ModelResource
     //         }
     //     }
     // }
-
-    public static function getModelLabel(): string
-    {
-        return 'Город';
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return 'Города';
-    }
     
     /**
      * @return list<class-string<PageContract>>

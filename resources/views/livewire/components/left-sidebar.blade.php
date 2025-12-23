@@ -13,9 +13,6 @@
         </flux:navlist>
 
         <flux:navlist variant="outline">
-            <flux:navlist.group :heading="__('ui.sections.account')" class="grid">
-                <flux:navlist.item icon="home" :href="route('account.profiles')" :current="request()->routeIs('account.profiles')" wire:navigate>{{ __('ui.leftside.profiles') }}</flux:navlist.item>
-            </flux:navlist.group>
             <flux:navlist.group :heading="__('ui.sections.resources')" class="grid">
                 <flux:navlist.item icon="home" :href="route('resources')" :current="request()->routeIs('resources')" wire:navigate>{{ __('ui.leftside.resources') }}</flux:navlist.item>
             </flux:navlist.group>

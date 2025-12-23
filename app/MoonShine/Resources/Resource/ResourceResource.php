@@ -15,14 +15,14 @@ use MoonShine\Contracts\Core\PageContract;
 /**
  * @extends ModelResource<Models, ResourceIndexPage, ResourceFormPage, ResourceDetailPage>
  */
-#[Icon('users')]
-#[Group('moonshine::ui.resource.system', 'users', translatable: true)]
-#[Order(0)]
 class ResourceResource extends ModelResource
 {
     protected string $model = Resource::class;
 
-    protected string $title = 'Ресурсы';
+    public function getTitle(): string
+    {
+        return __('moonshine.resources.Tablename');
+    }
     
     /**
      * @return list<class-string<PageContract>>

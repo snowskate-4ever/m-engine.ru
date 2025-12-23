@@ -41,12 +41,13 @@ class ResourceDetailPage extends DetailPage
             Textarea::make(__('moonshine.resources.description'), 'description'),
             Checkbox::make(__('moonshine.resources.active'), 'active'),
             BelongsTo::make(
-                __('moonshine.resources.resource_type'),
-                'type',
-                formatted: static fn (Type $model) => __('moonshine.types.values.'.$model->name),
+                    __('moonshine.resources.resource_type'),
+                    'type',
+                    formatted: static fn (Type $model) => __('moonshine.types.values.'.$model->name),
+                    
                 )
                     ->creatable()
-                    ->valuesQuery(fn(Builder $query, Field $field) => $query->where('resource_type', 'resource')),
+                    ->valuesQuery(fn(Builder $query) => $query->where('resource_type', 'resources')),
             Date::make(__('moonshine.resources.start_at'), 'start_at'),
             Date::make(__('moonshine.resources.end_at'), 'end_at'),
         ];

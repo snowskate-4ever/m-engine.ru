@@ -4,22 +4,22 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Resources\Region;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Region;
+use App\Models\Country;
+use App\MoonShine\Resources\City\CityResource;
 use App\MoonShine\Resources\Region\Pages\RegionIndexPage;
 use App\MoonShine\Resources\Region\Pages\RegionFormPage;
 use App\MoonShine\Resources\Region\Pages\RegionDetailPage;
 
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
-use MoonShine\Fields\ID;
-use MoonShine\Fields\Text;
-use MoonShine\Fields\Number;
-use MoonShine\Fields\Select;
-use MoonShine\Fields\Switcher;
-use MoonShine\Resources\Resource;
-use MoonShine\Fields\Relationships\BelongsTo;
-use MoonShine\Fields\Relationships\HasMany;
+use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\Text;
+use MoonShine\UI\Fields\Number;
+use MoonShine\UI\Fields\Select;
+use MoonShine\UI\Fields\Switcher;
+use MoonShine\Laravel\Fields\Relationships\BelongsTo;
+use MoonShine\Laravel\Fields\Relationships\HasMany;
 use MoonShine\Actions\FiltersAction;
 
 /**
@@ -29,29 +29,36 @@ class RegionResource extends ModelResource
 {
     protected string $model = Region::class;
 
-    public string $title = 'Регионы';
     public static string $subTitle = 'Управление регионами';
+
+    public function getTitle(): string
+    {
+        return __('moonshine.regions.Tablename');
+    }
 
     public function fields(): array
     {
         return [
             ID::make()->sortable()->showOnExport(),
             
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: new CountryResource())
+            BelongsTo::make(
+                    'Страна', 
+                    'country', 
+                    // fn($item) => $item->name, 
+                    // resource: new CountryResource()
+                    formatted: static fn (Country $model) => __('moonshine.types.values.'.$model->name),
+                )
                 ->required()
                 ->searchable()
-                ->valuesQuery(fn($query) => $query->orderBy('name'))
-                ->showOnExport(),
-            
+                ->valuesQuery(fn($query) => $query->orderBy('name')),
+
             Text::make('Название', 'name')
                 ->required()
-                ->sortable()
-                ->showOnExport(),
+                ->sortable(),
             
             Text::make('Код региона', 'code')
                 ->nullable()
-                ->sortable()
-                ->showOnExport(),
+                ->sortable(),
             
             Select::make('Тип', 'type')
                 ->options([
@@ -63,31 +70,25 @@ class RegionResource extends ModelResource
                     'city' => 'Город федерального значения',
                     'other' => 'Другое',
                 ])
-                ->nullable()
-                ->showOnExport(),
+                ->nullable(),
             
             Text::make('Федеральный округ', 'federal_district')
-                ->nullable()
-                ->showOnExport(),
+                ->nullable(),
             
             Number::make('Широта', 'latitude')
                 ->nullable()
-                ->step(0.000001)
-                ->showOnExport(),
+                ->step(0.000001),
             
             Number::make('Долгота', 'longitude')
                 ->nullable()
-                ->step(0.000001)
-                ->showOnExport(),
+                ->step(0.000001),
             
             Number::make('Порядок сортировки', 'sort_order')
                 ->default(0)
-                ->sortable()
-                ->showOnExport(),
+                ->sortable(),
             
             Switcher::make('Активен', 'is_active')
-                ->default(true)
-                ->showOnExport(),
+                ->default(true),
             
             HasMany::make('Города', 'cities', resource: new CityResource())
                 ->creatable()
@@ -118,9 +119,14 @@ class RegionResource extends ModelResource
     public function filters(): array
     {
         return [
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: new CountryResource())
-                ->nullable()
-                ->searchable(),
+            BelongsTo::make(
+                    'Страна', 
+                    'country', 
+                    formatted: static fn (Country $model) => __('moonshine.types.values.'.$model->name),
+                )
+                ->required()
+                ->searchable()
+                ->valuesQuery(fn($query) => $query->orderBy('name')),
             
             Text::make('Название', 'name'),
             
@@ -138,23 +144,6 @@ class RegionResource extends ModelResource
             
             Switcher::make('Активен', 'is_active'),
         ];
-    }
-
-    public function actions(): array
-    {
-        return [
-            FiltersAction::make(trans('moonshine::ui.filters')),
-        ];
-    }
-
-    public static function getModelLabel(): string
-    {
-        return 'Регион';
-    }
-
-    public static function getPluralModelLabel(): string
-    {
-        return 'Регионы';
     }
     
     /**

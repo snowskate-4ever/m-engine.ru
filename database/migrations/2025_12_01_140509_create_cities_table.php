@@ -18,13 +18,16 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('name_eng', 100)->nullable(); // Английское название
             $table->string('slug', 120)->unique(); // URL-friendly имя
+            $table->string('phone_code', 120)->nullable(); // URL-friendly имя
+            $table->string('currency_code', 120)->nullable(); // URL-friendly имя
+            $table->string('currency_symbol', 120)->nullable(); // URL-friendly имя
+            $table->string('code', 50)->nullable(); 
             $table->string('timezone', 50)->nullable(); // Europe/Moscow
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->integer('population')->nullable();
-            $table->integer('sort_order')->default(0);
-            $table->boolean('is_capital')->default(false); // Столица региона/страны
             $table->boolean('is_active')->default(true);
+            $table->integer('sort_order')->default(0);
             $table->timestamps();
             $table->softDeletes();
             

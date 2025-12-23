@@ -1,5 +1,4 @@
-<x-layouts.second_level_layout :title="__('ui.events')" :buttons="$buttons">
-    
+<x-layouts.second_level_layout :title="__('ui.events')" :buttons="$buttons"> 
         <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
             @if($data->isEmpty())
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.notfound') }}</p>

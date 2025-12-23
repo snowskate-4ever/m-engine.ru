@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Region extends Model
 {
@@ -38,15 +40,8 @@ class Region extends Model
         return $this->hasMany(City::class);
     }
 
-    // Scope для регионов определенной страны
-    public function scopeForCountry($query, $countryId)
+    public function type(): BelongsTo
     {
-        return $query->where('country_id', $countryId);
-    }
-
-    // Scope для активных регионов
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
+        return $this->BelongsTo(Type::class);
     }
 }

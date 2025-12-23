@@ -14,6 +14,7 @@ use MoonShine\UI\Fields\ID;
 use App\MoonShine\Resources\Type\TypeResource;
 use MoonShine\Support\ListOf;
 use MoonShine\UI\Fields\Text;
+use Illuminate\Database\Eloquent\Builder;
 use Throwable;
 
 
@@ -30,7 +31,7 @@ class TypeIndexPage extends IndexPage
     protected function fields(): iterable
     {
         return [
-            ID::make(),
+            ID::make()->sortable('asc'),
             Text::make(__('ui.moonshine.types.name'), 'name'),
             Text::make(__('ui.moonshine.types.type'), 'resource_type'),
             Text::make(__('ui.moonshine.types.description'), 'description'),

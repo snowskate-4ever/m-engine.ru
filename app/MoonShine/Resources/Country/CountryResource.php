@@ -9,6 +9,8 @@ use App\Models\Country;
 use App\MoonShine\Resources\Country\Pages\CountryIndexPage;
 use App\MoonShine\Resources\Country\Pages\CountryFormPage;
 use App\MoonShine\Resources\Country\Pages\CountryDetailPage;
+use App\MoonShine\Resources\Region\RegionResource;
+use App\MoonShine\Resources\City\CityResource;
 
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
@@ -17,7 +19,7 @@ use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Switcher;
 use MoonShine\Resources\Resource;
-use MoonShine\Fields\Relationships\HasMany;
+use MoonShine\Laravel\Fields\Relationships\HasMany;
 use MoonShine\Actions\FiltersAction;
 
 /**
@@ -27,82 +29,18 @@ class CountryResource extends ModelResource
 {
     protected string $model = Country::class;
 
-    public string $title = 'Страны';
     public static string $subTitle = 'Управление странами';
 
-    public function fields(): array
+    public function getTitle(): string
     {
-        return [
-            ID::make()->sortable()->showOnExport(),
-            
-            Text::make('Название', 'name')
-                ->required()
-                ->sortable()
-                ->showOnExport(),
-            
-            Text::make('Код', 'code')
-                ->required()
-                ->sortable()
-                ->showOnExport()
-                ->hint('ISO 3166-1 alpha-2 (например: RU, US)'),
-            
-            Text::make('Телефонный код', 'phone_code')
-                ->nullable()
-                ->showOnExport(),
-            
-            Text::make('Код валюты', 'currency_code')
-                ->nullable()
-                ->showOnExport()
-                ->hint('USD, EUR, RUB'),
-            
-            Text::make('Символ валюты', 'currency_symbol')
-                ->nullable()
-                ->showOnExport(),
-            
-            Number::make('Порядок сортировки', 'sort_order')
-                ->default(0)
-                ->sortable()
-                ->showOnExport(),
-            
-            Switcher::make('Активна', 'is_active')
-                ->default(true)
-                ->showOnExport(),
-            
-            HasMany::make('Регионы', 'regions', resource: new RegionResource())
-                ->creatable()
-                ->hideOnIndex(),
-            
-            HasMany::make('Города', 'cities', resource: new CityResource())
-                ->creatable()
-                ->hideOnIndex(),
-        ];
+        return __('moonshine.countries.Tablename');
     }
 
-    public function rules($item): array
-    {
-        return [
-            'name' => ['required', 'string', 'max:100'],
-            'code' => ['required', 'string', 'max:2', 'unique:countries,code,' . $item?->id],
-            'phone_code' => ['nullable', 'string', 'max:10'],
-            'currency_code' => ['nullable', 'string', 'max:3'],
-            'currency_symbol' => ['nullable', 'string', 'max:10'],
-            'sort_order' => ['integer', 'min:0'],
-            'is_active' => ['boolean'],
-        ];
-    }
+    
 
     public function search(): array
     {
         return ['id', 'name', 'code'];
-    }
-
-    public function filters(): array
-    {
-        return [
-            Text::make('Название', 'name'),
-            Text::make('Код', 'code'),
-            Switcher::make('Активна', 'is_active'),
-        ];
     }
 
     public function actions(): array

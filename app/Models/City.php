@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class City extends Model
 {
@@ -32,18 +33,6 @@ class City extends Model
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
-
-    // Автоматическая генерация slug
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($city) {
-            if (empty($city->slug)) {
-                $city->slug = \Str::slug($city->name);
-            }
-        });
-    }
 
     public function region(): BelongsTo
     {

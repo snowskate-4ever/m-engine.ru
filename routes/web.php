@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 use App\Livewire\Account\Profiles;
+use App\Livewire\Settings\UpdateProfileInformation;
+;
 
 Route::get('/', function () {
     return view('welcome');
@@ -14,12 +16,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'dashboard'])
     ->name('dashboard');
-
-    Route::group(['prefix' => '/account'], function () {
-        Route::group(['prefix' => '/profiles'], function () {
-            Route::get('/', [App\Http\Controllers\ProfileController::class, 'get_profiles'])->name('account.profiles');
-        });
-    });
 
     Route::group(['prefix' => '/resources'], function () {
         Route::get('/', [App\Http\Controllers\ResourceController::class, 'get_resources'])->name('resources');
@@ -32,7 +28,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', [App\Http\Controllers\EventController::class, 'delete_event'])->name('delete_event');
     });
     // ==========
-    Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
+    Route::get('/settings/profile', UpdateProfileInformation::class)->middleware(['auth'])->name('profile.edit');
+    // Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
     Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');
 

@@ -40,6 +40,7 @@ return [
     'description' => 'Описание',
     'resources' => 'Ресурсы',
     'profiles' => 'Профили',
+    'options' => 'Опции',
     'notifications' => [
         'title' => 'Уведомления',
         'mark_as_read_all' => 'Все прочитано',

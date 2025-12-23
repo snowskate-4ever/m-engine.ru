@@ -11,13 +11,11 @@ use App\MoonShine\Resources\Type\Pages\TypeFormPage;
 use App\MoonShine\Resources\Type\Pages\TypeDetailPage;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 
 /**
  * @extends ModelResource<Type, TypeIndexPage, TypeFormPage, TypeDetailPage>
  */
-#[Icon('adjustments-horizontal')]
-#[Group('ui.moonshine.types.Tablename', 'users', translatable: true)]
-#[Order(0)]
 class TypeResource extends ModelResource
 {
     protected string $model = Type::class;

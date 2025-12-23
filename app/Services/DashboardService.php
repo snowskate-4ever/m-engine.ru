@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Classes\StatClass;
 use App\Models\Event;
 use App\Models\Resource;
-use App\Models\UserProfile;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,9 +18,8 @@ class DashboardService
         return view('dashboard', [
             'data' => [
                 'stat_cards' => [
-                    'events' => StatClass::get_stats(Auth::user(), 'events'),
-                    'profiles' => StatClass::get_stats(Auth::user(), 'resources'),
-                    'resources' => StatClass::get_stats(Auth::user(), 'profiles'),
+                    'events' => StatClass::get_stats(Auth::user(), 'Event'),
+                    'resources' => StatClass::get_stats(Auth::user(), 'Resource'),
                 ]
             ],
             'buttons' => []
