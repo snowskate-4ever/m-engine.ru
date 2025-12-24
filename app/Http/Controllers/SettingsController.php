@@ -1,81 +1,66 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Validation\Rule;
-use Livewire\Component;
+use Illuminate\Http\Request;
+use App\Services\DashboardService;
+use App\Livewire\Profile;
 
-class SettingsController extends Component
+class SettingsController extends Controller
 {
-    // public string $name = '';
-    // public string $email = '';
-
-    // /**
-    //  * Mount the component.
-    //  */
-    // public function mount(): void
-    // {
-    //     $this->name = Auth::user()->name;
-    //     $this->email = Auth::user()->email;
-    // }
-
-    // /**
-    //  * Update the profile information for the currently authenticated user.
-    //  */
-    // public function updateProfileInformation(): void
-    // {
-    //     $user = Auth::user();
-
-    //     $validated = $this->validate([
-    //         'name' => ['required', 'string', 'max:255'],
-    //         'email' => [
-    //             'required',
-    //             'string',
-    //             'lowercase',
-    //             'email',
-    //             'max:255',
-    //             Rule::unique(User::class)->ignore($user->id)
-    //         ],
-    //     ]);
-
-    //     $user->fill($validated);
-
-    //     if ($user->isDirty('email')) {
-    //         $user->email_verified_at = null;
-    //     }
-
-    //     $user->save();
-
-    //     $this->dispatch('profile-updated', name: $user->name);
-    // }
-
-    // /**
-    //  * Send an email verification notification to the current user.
-    //  */
-    // public function resendVerificationNotification(): void
-    // {
-    //     $user = Auth::user();
-
-    //     if ($user->hasVerifiedEmail()) {
-    //         $this->redirectIntended(default: route('dashboard', absolute: false));
-    //         return;
-    //     }
-
-    //     $user->sendEmailVerificationNotification();
-
-    //     Session::flash('status', 'verification-link-sent');
-    // }
-
-    /**
-     * Render the component.
-     */
-    public function settings_profile()
+    public function profile(Request $request)
     {
-        return view('settings-profile', [
-            'data' => [],
-            'buttons' => ['add']
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => __('ui.profile'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'profile',
+                'buttons' => [],
+            ]
+        ]);
+    }
+
+    public function password(Request $request)
+    {
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => __('ui.password_edit'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'password',
+                'buttons' => [],
+            ]
+        ]);
+    }
+
+    public function appearance(Request $request)
+    {
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' =>  __('ui.appearance_edit'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'appearance',
+                'buttons' => [],
+            ]
+        ]);
+    }
+
+    public function two_factor(Request $request)
+    {
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => __('ui.two_factor'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'appearance',
+                'buttons' => [],
+            ]
         ]);
     }
 }

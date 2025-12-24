@@ -45,6 +45,11 @@ return [
     'password' => 'Пароль',
     'two-factor-auth' => 'Двухфакторная авторизация',
     'appearance' => 'Тема',
+    'username' => 'Имя пользователя',
+    'email' => 'Почта',
+    'password_edit' => 'Редактирование пароля',
+    'appearance_edit' => 'Редактирование темы',
+    'two_factor' => 'Двухфакторная авторизация',
     'notifications' => [
         'title' => 'Уведомления',
         'mark_as_read_all' => 'Все прочитано',

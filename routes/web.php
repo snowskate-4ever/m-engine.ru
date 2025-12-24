@@ -27,13 +27,11 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [App\Http\Controllers\EventController::class, 'edit_event'])->name('edit_event');
         Route::delete('/{id}', [App\Http\Controllers\EventController::class, 'delete_event'])->name('delete_event');
     });
-    // ==========
-    Route::get('/settings/profile', [App\Http\Controllers\SettingsController::class, 'settings_profile'])->name('settings.profile.edit');
-    Volt::route('settings/profile1', 'settings.profile')->name('settings.profile1.edit');
-    Volt::route('settings/password', 'settings.password')->name('settings.password.edit');
-    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance.edit');
-
-    Volt::route('settings/two-factor', 'settings.two-factor')
+    
+    Route::get('/settings/profile', [App\Http\Controllers\SettingsController::class, 'profile'])->name('settings.profile.edit');
+    Route::get('/settings/password', [App\Http\Controllers\SettingsController::class, 'password'])->name('settings.password.edit');
+    Route::get('/settings/appearance', [App\Http\Controllers\SettingsController::class, 'appearance'])->name('settings.appearance.edit');
+    Route::get('/settings/two-factor', [App\Http\Controllers\SettingsController::class, 'two_factor'])
         ->middleware(
             when(
                 Features::canManageTwoFactorAuthentication()
@@ -43,4 +41,18 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('settings.two-factor.show');
+
+    // Volt::route('settings/password', 'settings.password')->name('settings.password.edit');
+    // Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance.edit');
+
+    // Volt::route('settings/two-factor', 'settings.two-factor')
+    //     ->middleware(
+    //         when(
+    //             Features::canManageTwoFactorAuthentication()
+    //                 && Features::optionEnabled(Features::twoFactorAuthentication(), 'confirmPassword'),
+    //             ['password.confirm'],
+    //             [],
+    //         ),
+    //     )
+    //     ->name('settings.two-factor.show');
 });
