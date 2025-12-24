@@ -50,6 +50,8 @@ return [
     'password_edit' => 'Редактирование пароля',
     'appearance_edit' => 'Редактирование темы',
     'two_factor' => 'Двухфакторная авторизация',
+    'create_event' => 'Создание события',
+    'active' => 'Активность',
     'notifications' => [
         'title' => 'Уведомления',
         'mark_as_read_all' => 'Все прочитано',

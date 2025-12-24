@@ -12,9 +12,9 @@ class EventController extends Controller
         return EventService::get_events($request);
     }
 
-    public function create_events(Request $request)
+    public function create_event(Request $request)
     {
-        return EventService::create_events($request);
+        return EventService::create_event($request);
     }
     
     public function get_event(int $id)

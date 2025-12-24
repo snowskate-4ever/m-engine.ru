@@ -59,44 +59,55 @@ class EventService
 
     public static function create_event(Request $request)
     {
-        dd('create_event');
-        $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255', 'unique:events,name'],
-            'description' => ['required', 'string'],
-            'active' => ['sometimes', 'boolean'],
-            'resource_id' => ['nullable', 'uuid'],
-            'room_id' => ['nullable', 'uuid'],
-            'start_at' => ['nullable', 'date'],
-            'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
-        ], [
-            'name.required' => 'Название обязательно.',
-            'name.unique' => 'Событие с таким названием уже существует.',
-            'description.required' => 'Описание обязательно.',
-            'end_at.after_or_equal' => 'Дата окончания не может быть раньше даты начала.',
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => __('ui.create_event'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'EventLivewire',
+                'buttons' => [],
+            ]
         ]);
 
-        if ($validator->fails()) {
-            return ApiService::errorResponse(
-                'Проверьте корректность введённых данных.',
-                ApiService::UNPROCESSABLE_CONTENT,
-                $validator->errors()->messages(),
-                422
-            );
-        }
+        // dd('create_event');
+        // $validator = Validator::make($request->all(), [
+        //     'name' => ['required', 'string', 'max:255', 'unique:events,name'],
+        //     'description' => ['required', 'string'],
+        //     'active' => ['sometimes', 'boolean'],
+        //     'resource_id' => ['nullable', 'uuid'],
+        //     'room_id' => ['nullable', 'uuid'],
+        //     'start_at' => ['nullable', 'date'],
+        //     'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
+        // ], [
+        //     'name.required' => 'Название обязательно.',
+        //     'name.unique' => 'Событие с таким названием уже существует.',
+        //     'description.required' => 'Описание обязательно.',
+        //     'end_at.after_or_equal' => 'Дата окончания не может быть раньше даты начала.',
+        // ]);
 
-        $data = $validator->validated();
+        // if ($validator->fails()) {
+        //     return ApiService::errorResponse(
+        //         'Проверьте корректность введённых данных.',
+        //         ApiService::UNPROCESSABLE_CONTENT,
+        //         $validator->errors()->messages(),
+        //         422
+        //     );
+        // }
 
-        $event = new Event();
-        $event->name = $data['name'];
-        $event->description = $data['description'];
-        $event->active = $data['active'] ?? true;
-        $event->resource_id = $data['resource_id'] ?? null;
-        $event->room_id = $data['room_id'] ?? null;
-        $event->start_at = $data['start_at'] ?? null;
-        $event->end_at = $data['end_at'] ?? null;
-        $event->save();
+        // $data = $validator->validated();
 
-        return ApiService::successResponse('Событие создано', self::formatEvent($event));
+        // $event = new Event();
+        // $event->name = $data['name'];
+        // $event->description = $data['description'];
+        // $event->active = $data['active'] ?? true;
+        // $event->resource_id = $data['resource_id'] ?? null;
+        // $event->room_id = $data['room_id'] ?? null;
+        // $event->start_at = $data['start_at'] ?? null;
+        // $event->end_at = $data['end_at'] ?? null;
+        // $event->save();
+
+        // return ApiService::successResponse('Событие создано', self::formatEvent($event));
     }
 
     public static function get_event(int $id)

@@ -22,7 +22,7 @@ Route::middleware(['auth'])->group(function () {
     });
     Route::group(['prefix' => '/events'], function () {
         Route::get('/', [App\Http\Controllers\EventController::class, 'get_events'])->name('events');
-        Route::post('/', [App\Http\Controllers\EventController::class, 'create_events'])->name('create_events');
+        Route::get('/create', [App\Http\Controllers\EventController::class, 'create_event'])->name('create_event');
         Route::get('/{id}', [App\Http\Controllers\EventController::class, 'get_event'])->name('get_event');
         Route::put('/{id}', [App\Http\Controllers\EventController::class, 'edit_event'])->name('edit_event');
         Route::delete('/{id}', [App\Http\Controllers\EventController::class, 'delete_event'])->name('delete_event');
