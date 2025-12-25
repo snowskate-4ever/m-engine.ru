@@ -4,31 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\ResourceService;
-
 class ResourceController extends Controller
 {
-    public function get_resources(Request $request)
+    public function get_resources(Request $request, ResourceService $resourceService)
     {
-        return ResourceService::get_resources($request);
+        return $resourceService->get_resources($request);
     }
 
-    public function create_resources(Request $request)
+    public function create_resources(Request $request, ResourceService $resourceService)
     {
-        return ResourceService::create_resources($request);
+        return $resourceService->create_resources($request);
     }
     
-    public function get__resource(int $id)
+    public function get__resource(integer $id, ResourceService $resourceService)
     {
-        return ResourceService::get_resource($id);
+        return $resourceService->get_resource($id);
     }
     
-    public function edit_resource(int $id, Request $request)
+    public function edit_resource(integer $id, Request $request, ResourceService $resourceService)
     {
-        return ResourceService::edit_resource($id, $request);
+        return $resourceService->edit_resource($id, $request);
     }
     
-    public function delete_resource(int $id)
+    public function delete_resource(integer $id, ResourceService $resourceService)
     {
-        return ResourceService::delete_resource($id);
+        return $resourceService->delete_resource($id);
     }
 }

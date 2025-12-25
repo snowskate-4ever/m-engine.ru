@@ -7,28 +7,29 @@ use App\Services\EventService;
 
 class EventController extends Controller
 {
-    public function get_events(Request $request)
+
+    public function get_events(Request $request, EventService $eventService)
     {
-        return EventService::get_events($request);
+        return $eventService->get_events($request);
     }
 
-    public function create_event(Request $request)
+    public function create_event(Request $request, EventService $eventService)
     {
-        return EventService::create_event($request);
+        return $eventService->create_event($request);
     }
     
-    public function get_event(int $id)
+    public function get_event(intenger $id, EventService $eventService)
     {
-        return EventService::get_event($id);
+        return $eventService->get_event($id);
     }
     
-    public function edit_event(int $id, Request $request)
+    public function edit_event(intenger $id, Request $request, EventService $eventService)
     {
-        return EventService::edit_event($id, $request);
+        return $eventService->edit_event($id, $request);
     }
     
-    public function delete_event(int $id)
+    public function delete_event(intenger $id, EventService $eventService)
     {
-        return EventService::delete_event($id);
+        return $eventService->delete_event($id);
     }
 }

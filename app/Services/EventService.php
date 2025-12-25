@@ -10,54 +10,82 @@ use Illuminate\Validation\Rule;
 
 class EventService
 {
-    public static function get_events(Request $request)
+    public array $buttons = [];
+
+    function __construct() 
     {
-        $validator = Validator::make($request->query(), [
-            'active' => 'sometimes|boolean',
-            'resource_id' => 'sometimes|uuid',
-            'room_id' => 'sometimes|uuid',
-            'date_from' => 'sometimes|date',
-            'date_to' => 'sometimes|date',
-        ]);
+        $this->buttons = [
+            'options' => [
+                'add' => 'events/create',
+            ]
+        ];
+    }
+    
+    public function get_events(Request $request)
+    {
+        // $validator = Validator::make($request->query(), [
+        //     'active' => 'sometimes|boolean',
+        //     'resource_id' => 'sometimes|uuid',
+        //     'room_id' => 'sometimes|uuid',
+        //     'date_from' => 'sometimes|date',
+        //     'date_to' => 'sometimes|date',
+        // ]);
 
-        if ($validator->fails()) {
-            return ApiService::errorResponse(
-                'Проверьте параметры фильтрации.',
-                ApiService::UNPROCESSABLE_CONTENT,
-                $validator->errors()->messages(),
-                422
-            );
-        }
+        // if ($validator->fails()) {
+        //     return ApiService::errorResponse(
+        //         'Проверьте параметры фильтрации.',
+        //         ApiService::UNPROCESSABLE_CONTENT,
+        //         $validator->errors()->messages(),
+        //         422
+        //     );
+        // }
 
-        $filters = $validator->validated();
+        // $filters = $validator->validated();
 
-        $query = Event::query()->orderByDesc('start_at')->orderByDesc('created_at');
+        // $query = Event::query()->orderByDesc('start_at')->orderByDesc('created_at');
 
-        if (array_key_exists('active', $filters)) {
-            $query->where('active', $filters['active']);
-        }
-        if (isset($filters['resource_id'])) {
-            $query->where('resource_id', $filters['resource_id']);
-        }
-        if (isset($filters['room_id'])) {
-            $query->where('room_id', $filters['room_id']);
-        }
-        if (isset($filters['date_from'])) {
-            $query->whereDate('start_at', '>=', Carbon::parse($filters['date_from'])->toDateString());
-        }
-        if (isset($filters['date_to'])) {
-            $query->whereDate('end_at', '<=', Carbon::parse($filters['date_to'])->toDateString());
-        }
+        // if (array_key_exists('active', $filters)) {
+        //     $query->where('active', $filters['active']);
+        // }
+        // if (isset($filters['resource_id'])) {
+        //     $query->where('resource_id', $filters['resource_id']);
+        // }
+        // if (isset($filters['room_id'])) {
+        //     $query->where('room_id', $filters['room_id']);
+        // }
+        // if (isset($filters['date_from'])) {
+        //     $query->whereDate('start_at', '>=', Carbon::parse($filters['date_from'])->toDateString());
+        // }
+        // if (isset($filters['date_to'])) {
+        //     $query->whereDate('end_at', '<=', Carbon::parse($filters['date_to'])->toDateString());
+        // }
 
-        $events = $query->get()->map(fn (Event $event) => self::formatEvent($event));
+        // $events = $query->get()->map(fn (Event $event) => self::formatEvent($event));
 
-        return view('events', [
-            'data' => $events,
-            'buttons' => ['add']
+        
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => __('ui.events'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'event-list',
+                'buttons' => $this->buttons,
+            ]
         ]);
     }
+        // return view('components.layouts.sec_level_layout', [
+        //     'data' => [
+        //         'title' => __('ui.events'),
+        //         'seo_title' => '',
+        //         'seo_description' => '',
+        //         'seo_keywords' => '',
+        //         'component' => 'events-list',
+        //         'buttons' => ['add' => 'events/create'],
+        //     ]
+        // ]);
 
-    public static function create_event(Request $request)
+    public function create_event(Request $request)
     {
         return view('components.layouts.sec_level_layout', [
             'data' => [
@@ -110,7 +138,7 @@ class EventService
         // return ApiService::successResponse('Событие создано', self::formatEvent($event));
     }
 
-    public static function get_event(int $id)
+    public function get_event(int $id)
     {
         dd('get_event');
         $event = Event::find($id);
@@ -127,7 +155,7 @@ class EventService
         return ApiService::successResponse('Событие получено', self::formatEvent($event));
     }
 
-    public static function edit_event(int $id, Request $request)
+    public function edit_event(int $id, Request $request)
     {
         dd('edit_event');
         $event = Event::find($id);
@@ -194,7 +222,7 @@ class EventService
         return ApiService::successResponse('Событие обновлено', self::formatEvent($event));
     }
 
-    public static function delete_event(int $id)
+    public function delete_event(int $id)
     {
         dd('delete_event');
         $event = Event::find($id);
@@ -213,7 +241,7 @@ class EventService
         return ApiService::successResponse('Событие удалено');
     }
 
-    protected static function formatEvent(Event $event): array
+    protected function formatEvent(Event $event): array
     {
         return [
             'id' => $event->id,

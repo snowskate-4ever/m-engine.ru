@@ -3,64 +3,28 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Services\DashboardService;
+use \App\Services\SettingsService;
 use App\Livewire\Profile;
 
 class SettingsController extends Controller
 {
-    public function profile(Request $request)
+    public function profile(Request $request, SettingsService $settingsService)
     {
-        return view('components.layouts.sec_level_layout', [
-            'data' => [
-                'title' => __('ui.profile'),
-                'seo_title' => '',
-                'seo_description' => '',
-                'seo_keywords' => '',
-                'component' => 'profile',
-                'buttons' => [],
-            ]
-        ]);
+        return $settingsService->profile($request);
     }
 
-    public function password(Request $request)
+    public function password(Request $request, SettingsService $settingsService)
     {
-        return view('components.layouts.sec_level_layout', [
-            'data' => [
-                'title' => __('ui.password_edit'),
-                'seo_title' => '',
-                'seo_description' => '',
-                'seo_keywords' => '',
-                'component' => 'password',
-                'buttons' => [],
-            ]
-        ]);
+        return $settingsService->password($request);
     }
 
-    public function appearance(Request $request)
+    public function appearance(Request $request, SettingsService $settingsService)
     {
-        return view('components.layouts.sec_level_layout', [
-            'data' => [
-                'title' =>  __('ui.appearance_edit'),
-                'seo_title' => '',
-                'seo_description' => '',
-                'seo_keywords' => '',
-                'component' => 'appearance',
-                'buttons' => [],
-            ]
-        ]);
+        return $settingsService->appearance($request);
     }
 
-    public function two_factor(Request $request)
+    public function two_factor(Request $request, SettingsService $settingsService)
     {
-        return view('components.layouts.sec_level_layout', [
-            'data' => [
-                'title' => __('ui.two_factor'),
-                'seo_title' => '',
-                'seo_description' => '',
-                'seo_keywords' => '',
-                'component' => 'appearance',
-                'buttons' => [],
-            ]
-        ]);
+        return $settingsService->two_factor($request);
     }
 }

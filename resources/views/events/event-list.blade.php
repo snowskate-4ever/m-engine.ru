@@ -1,6 +1,16 @@
-<x-layouts.second_level_layout :title="__('ui.events')" :buttons="$buttons"> 
-        <div class="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
-            @if($data->isEmpty())
+<div>
+    <div class="card">
+        <div class="card-body">
+            <!-- Сообщение об успехе -->
+            @if (session()->has('success'))
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+            
+            @if(empty($events))
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.notfound') }}</p>
             @else
                 <div class="overflow-x-auto">
@@ -18,7 +28,7 @@
                             </tr>
                         </thead>
                         <tbody class="text-zinc-900 dark:text-zinc-100">
-                            @foreach($data as $event)
+                            @foreach($events as $event)
                                 <tr class="border-t border-zinc-200 dark:border-zinc-700">
                                     <td class="px-2 py-1">{{ $event['id'] }}</td>
                                     <td class="px-2 py-1">{{ $event['name'] }}</td>
@@ -35,5 +45,5 @@
                 </div>
             @endif
         </div>
-</x-layouts.second_level_layout>
-
+    </div>
+</div>
