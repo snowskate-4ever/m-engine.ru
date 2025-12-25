@@ -1,34 +1,44 @@
 <x-layouts.second_level_layout :title="__('ui.dashboard')" :buttons="$buttons">
     <div class="w-full">
         @if(!empty($data['stat_cards']))
-        <div id="stat_cards" class="relative w-full" data-carousel="slide">
+        <div id="stat_cards" class="relative w-full overflow-hidden rounded-xl" data-carousel="slide">
             <!-- Carousel wrapper -->
-            <div class="flex h-56 overflow-hidden rounded-base md:h-96">
-                @foreach($data['stat_cards'] as $key => $card)
-                    <!-- {{ $key }} -->
-                    <div class="w-80 mx-4 border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 ease-in-out" id="{{ $key }}" data-carousel-item>
-                        Статистика по {{ $key }}<br>
-                        Всего: {{ $key }} - {{ $card['count_all'] }}<br>
-                        Мои: {{ $key }} - {{ $card['my_items'] }}
+            <div class="flex h-56 md:h-96 overflow-hidden transition-transform duration-300 ease-in-out">
+                <!-- Group items into sets of 3 -->
+                @php
+                    $items = array_values($data['stat_cards']);
+                    $chunkSize = 3;
+                    $chunks = array_chunk($items, $chunkSize);
+                @endphp
+                
+                @foreach($chunks as $chunkIndex => $chunk)
+                    <div class="flex w-full">
+                        @foreach($chunk as $key => $card)
+                            <div class="w-1/3 border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 ease-in-out" id="{{ $key }}">
+                                Статистика по {{ $key }}<br>
+                                Всего: {{ $key }} - {{ $card['count_all'] }}<br>
+                                Мои: {{ $key }} - {{ $card['my_items'] }}
+                            </div>
+                        @endforeach
                     </div>
                 @endforeach
             </div>
             <!-- Slider indicators -->
             <div class="absolute z-30 flex -translate-x-1/2 bottom-5 left-1/2 space-x-3 rtl:space-x-reverse">
-                @foreach($data['stat_cards'] as $key => $cards)
-                    <button type="button" class="w-3 h-3 rounded-base" aria-current="true" aria-label="{{ $key }}" data-carousel-slide-to="0"></button>
+                @foreach($chunks as $chunkIndex => $chunk)
+                    <button type="button" class="w-3 h-3 rounded-full bg-gray-300" aria-current="true" aria-label="Slide {{ $chunkIndex }}" data-carousel-slide-to="{{ $chunkIndex }}"></button>
                 @endforeach
             </div>
             <!-- Slider controls -->
             <button type="button" class="absolute top-0 start-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-prev>
-                <span class="inline-flex items-center justify-center w-10 h-10 rounded-base bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
                     <svg class="w-5 h-5 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m15 19-7-7 7-7"/></svg>
                     <span class="sr-only">Previous</span>
                 </span>
             </button>
             <button type="button" class="absolute top-0 end-0 z-30 flex items-center justify-center h-full px-4 cursor-pointer group focus:outline-none" data-carousel-next>
-                <span class="inline-flex items-center justify-center w-10 h-10 rounded-base bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
+                <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/30 dark:bg-gray-800/30 group-hover:bg-white/50 dark:group-hover:bg-gray-800/60 group-focus:ring-4 group-focus:ring-white dark:group-focus:ring-gray-800/70 group-focus:outline-none">
                     <svg class="w-5 h-5 text-white rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 5 7 7-7 7"/></svg>
                     <span class="sr-only">Next</span>

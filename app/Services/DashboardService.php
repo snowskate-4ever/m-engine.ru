@@ -20,6 +20,10 @@ class DashboardService
                 'stat_cards' => [
                     'events' => StatClass::get_stats(Auth::user(), 'Event'),
                     'resources' => StatClass::get_stats(Auth::user(), 'Resource'),
+                    'events1' => StatClass::get_stats(Auth::user(), 'Event'),
+                    'resources2' => StatClass::get_stats(Auth::user(), 'Resource'),
+                    'events3' => StatClass::get_stats(Auth::user(), 'Event'),
+                    'resources4' => StatClass::get_stats(Auth::user(), 'Resource'),
                 ]
             ],
             'buttons' => []
