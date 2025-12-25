@@ -1,5 +1,5 @@
 <div>
-    <div class="card shadow-sm">
+    <div class="card">
         <div class="card-body">
             <!-- Сообщение об успехе -->
             @if (session()->has('success'))
@@ -46,11 +46,13 @@
                     @enderror
                 </div>
 
+                    <button type="submit" class="bg-teal-400"> Сохранить </button>
+
                 <!-- Кнопки -->
                 <div class="d-flex justify-content-between">
                     <button type="submit" 
                             wire:loading.attr="disabled"
-                            class="btn btn-primary p-2 border rounded-lg disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5  hover:bg-zinc-800/5 hover:text-zinc-800 dark:hover:bg-white/[7%] dark:hover:text-white">
+                            class="btn btn-primary p-2 border rounded-lg appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] bg-teal text-zinc-700 placeholder-zinc-400  dark:text-zinc-300 shadow-xs border-zinc-200 border-b-zinc-300/80 hover:bg-zinc-800/5 hover:text-zinc-800 dark:hover:bg-white/[7%] dark:hover:text-white">
                         <span wire:loading.remove wire:target="save">
                             <i class="fas fa-save me-1"></i> Сохранить
                         </span>

@@ -11,27 +11,46 @@
             @endif
             <form wire:submit.prevent="save" 
                 class="w-100">
-                <flux:input
-                    wire:model="current_password"
-                    :label="__('Current password')"
-                    type="password"
-                    required
-                    autocomplete="current-password"
-                />
-                <flux:input
+                <!-- Текущий пароль -->
+                <div class="mb-3">
+                    <label for="current_password" class="form-label">{{ __('ui.current_password') }} <span class="text-danger">*</span></label>
+                    <input type="text" 
+                           id="current_password"
+                           wire:model.lazy="current_password"
+                           class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
+                    @error('current_password')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <!-- Новый пароль -->
+                <div class="mb-3">
+                    <label for="password" class="form-label">{{ __('ui.password') }} <span class="text-danger">*</span></label>
+                    <input type="text" 
+                           id="password"
+                           wire:model.lazy="password"
+                           class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
+                    @error('password')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <!-- <flux:input
                     wire:model="password"
                     :label="__('New password')"
                     type="password"
                     required
                     autocomplete="new-password"
-                />
-                <flux:input
-                    wire:model="password_confirmation"
-                    :label="__('Confirm Password')"
-                    type="password"
-                    required
-                    autocomplete="new-password"
-                />
+                /> -->
+                <!-- Подтверждение нового пароля -->
+                <div class="mb-3">
+                    <label for="password_confirmation" class="form-label">{{ __('ui.password_confirmation') }} <span class="text-danger">*</span></label>
+                    <input type="text" 
+                           id="password_confirmation"
+                           wire:model.lazy="password_confirmation"
+                           class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
+                    @error('password_confirmation')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
 
                 <div class="flex items-center gap-4">
                     <div class="flex items-center justify-end">

@@ -6,6 +6,13 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Livewire\Attributes\Validate; 
+use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+use Laravel\Fortify\Features;
+use Laravel\Fortify\Fortify;
+use Livewire\Attributes\Locked;
+use Symfony\Component\HttpFoundation\Response;
 
 class TwoFactor extends Component
 {

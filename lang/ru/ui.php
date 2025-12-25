@@ -52,6 +52,7 @@ return [
     'two_factor' => 'Двухфакторная авторизация',
     'create_event' => 'Создание события',
     'active' => 'Активность',
+    'phone' => 'Номер телефона',
     'notifications' => [
         'title' => 'Уведомления',
         'mark_as_read_all' => 'Все прочитано',
