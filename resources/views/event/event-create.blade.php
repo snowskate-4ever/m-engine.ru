@@ -22,6 +22,18 @@
                     @enderror
                 </div>
 
+                <!-- Resource -->
+                <div class="mb-3">
+                    <input wire:model.live="search" class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
+                    
+                    @foreach ($resources as $resource)
+                        <div>{{ $resource->name }}</div>
+                    @endforeach
+                    @error('resource')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <!-- Description -->
                 <div class="mb-3">
                     <label for="description" class="form-label">{{ __('ui.description') }} <span class="text-danger">*</span></label>
@@ -35,12 +47,32 @@
                 </div>
 
                 <!-- Active -->
-                <div class="mb-3">
-                    <input id="checkbox" type="checkbox" value="" class="mx-2 w-5 h-5 appearance-none border cursor-pointer border-gray-300  rounded-md mr-2 hover:border-indigo-500 hover:bg-indigo-100 checked:bg-no-repeat checked:bg-center checked:border-indigo-500 checked:bg-indigo-100">
-                    <label for="active" class="text-sm mx-2 font-norma cursor-pointer text-gray-600">{{ __('ui.active') }}</label>
-
+                <div class="mb-3 flex items-center" x-data="{ 
+                        active: true,
+                        activeText: '',
+                        notActiveText: '',
+                        init() {
+                            // Получаем переводы через data-атрибуты
+                            this.activeText = this.$el.dataset.active || __('ui.active');
+                            this.notActiveText = this.$el.dataset.notactive || __('ui.notactive');
+                        }
+                    }"
+                    data-active="{{ __('ui.active') }}" 
+                    data-notactive="{{ __('ui.notactive') }}">
+                    <input 
+                        type="checkbox" 
+                        class="checkboxx ml-2 w-5 h-5 appearance-none border cursor-pointer border-gray-300  rounded-md mr-2 hover:border-indigo-500 hover:bg-indigo-100 checked:bg-no-repeat checked:bg-center checked:border-indigo-500 checked:bg-indigo-100"
+                        x-model="active"
+                        id="active"
+                    >
+                    <label for="active" 
+                        class="text-sm ml-2 font-norma cursor-pointer"
+                        :class="active ? 'dark:text-white text-black' : 'text-gray-600'">
+                        <span x-text="active ? activeText : notActiveText"></span>
+                    </label>
+                    
                     @error('active')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback mt-1">{{ $message }}</div>
                     @enderror
                 </div>
 
@@ -85,7 +117,5 @@
             // Пример: new Inputmask("+7 (999) 999-99-99").mask(phoneInput);
         }
     });
-
-    document.querySelector('.alert-success')
 </script>
 @endpush

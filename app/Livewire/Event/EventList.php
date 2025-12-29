@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Event;
 
 use Livewire\Component;
 use App\Models\Event;
@@ -17,6 +17,6 @@ class EventList extends Component
 
     public function render()
     {
-        return view('events.event-list');
+        return view('event.event-list');
     }
 }

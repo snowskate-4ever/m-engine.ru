@@ -69,7 +69,7 @@ class EventService
                 'seo_title' => '',
                 'seo_description' => '',
                 'seo_keywords' => '',
-                'component' => 'event-list',
+                'component' => 'event.event-list',
                 'buttons' => $this->buttons,
             ]
         ]);
@@ -93,7 +93,7 @@ class EventService
                 'seo_title' => '',
                 'seo_description' => '',
                 'seo_keywords' => '',
-                'component' => 'EventLivewire',
+                'component' => 'event.event-create',
                 'buttons' => [],
             ]
         ]);

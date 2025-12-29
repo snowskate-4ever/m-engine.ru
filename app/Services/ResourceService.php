@@ -29,7 +29,7 @@ class ResourceService
                 'seo_title' => '',
                 'seo_description' => '',
                 'seo_keywords' => '',
-                'component' => 'resource-list',
+                'component' => 'resource.resource-list',
                 'buttons' => $this->buttons,
             ]
         ]);
@@ -37,8 +37,16 @@ class ResourceService
 
     public function create_resources(Request $request)
     {
-        dd('create_resources');
-        return ApiService::successResponse('Событие создано', self::formatEvent($event));
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => __('ui.resource_create'),
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'resource.resource-create',
+                'buttons' => $this->buttons,
+            ]
+        ]);
     }
 
     public function get_resource(int $id)

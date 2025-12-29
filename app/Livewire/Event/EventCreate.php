@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Event;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
@@ -8,9 +8,13 @@ use Illuminate\Http\Request;
 use Livewire\Attributes\Validate; 
 use App\Models\Event;
 
-class EventLivewire extends Component
+class EventCreate extends Component
 {
-    public $user;
+    public $event;
+
+    // public $resources = [];
+    
+    public $search = '';
     
     // #[Validate('required|string|max:255')] 
     // public string $name = '';
@@ -26,8 +30,9 @@ class EventLivewire extends Component
     public function mount()
     {
         $this->event = new Event();
-        //$this->name = $this->user->name;
-        
+        // $this->resources = \App\Models\Resource::all();
+
+        // $this->name = $this->user->name;
         // $table->string('name')->unique();
         // $table->text('description');
         // $table->boolean('active');
@@ -63,7 +68,9 @@ class EventLivewire extends Component
 
     public function render()
     {
-        return view('events.create-events', [
+        return view('event.event-create', [
+            'resources' => \App\Models\Resource::search($this->search)->get(),
+            // 'resources' => dd( $this->search, \App\Models\Resource::search($this->search)->get()),
         ]);
     }
 }
