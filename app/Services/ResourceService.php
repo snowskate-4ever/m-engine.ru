@@ -35,6 +35,25 @@ class ResourceService
         ]);
     }
 
+    public function get_resources_by_type(int $type_id, Request $request)
+    {
+        $type = \App\Models\Type::find($type_id);
+        $typeName = $type ? (__('moonshine.types.values.' . $type->name) ?: $type->name) : '';
+        $title = $typeName ? __('ui.resources') . ' - ' . $typeName : __('ui.resources');
+        
+        return view('components.layouts.sec_level_layout', [
+            'data' => [
+                'title' => $title,
+                'seo_title' => '',
+                'seo_description' => '',
+                'seo_keywords' => '',
+                'component' => 'resource.resource-list',
+                'buttons' => $this->buttons,
+                'type_id' => $type_id,
+            ]
+        ]);
+    }
+
     public function create_resources(Request $request)
     {
         return view('components.layouts.sec_level_layout', [

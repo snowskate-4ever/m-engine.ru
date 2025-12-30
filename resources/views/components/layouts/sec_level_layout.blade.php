@@ -7,7 +7,7 @@
         @livewire('components.left-sidebar')
         <div class="p-4 w-full">
             @include('partials.settings-heading', $data)
-            @livewire($data['component'])
+            @livewire($data['component'], isset($data['type_id']) ? ['type_id' => $data['type_id']] : [])
         </div>
         @fluxScripts
     </body>

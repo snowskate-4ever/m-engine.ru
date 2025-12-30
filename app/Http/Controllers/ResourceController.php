@@ -11,6 +11,11 @@ class ResourceController extends Controller
         return $resourceService->get_resources($request);
     }
 
+    public function get_resources_by_type(int $type_id, Request $request, ResourceService $resourceService)
+    {
+        return $resourceService->get_resources_by_type($type_id, $request);
+    }
+
     public function create_resources(Request $request, ResourceService $resourceService)
     {
         return $resourceService->create_resources($request);
