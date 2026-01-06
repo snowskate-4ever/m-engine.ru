@@ -10,6 +10,8 @@ use Carbon\Carbon;
 class ResourceList extends Component
 {
     public $resources = [];
+    public $search = '';
+    public $type_id = null;
 
     public function mount(Request $request, $type_id = null)
     {
@@ -18,11 +20,28 @@ class ResourceList extends Component
             $type_id = $request->route('type_id');
         }
         
+        $this->type_id = $type_id;
+        $this->loadResources();
+    }
+
+    public function updatedSearch()
+    {
+        $this->loadResources();
+    }
+
+    protected function loadResources()
+    {
         $query = Resource::with('type');
         
         // Фильтруем по типу, если передан type_id
-        if ($type_id) {
-            $query->where('type_id', $type_id);
+        if ($this->type_id) {
+            $query->where('type_id', $this->type_id);
+        }
+        
+        // Применяем поиск, если есть поисковый запрос
+        $searchTerm = trim($this->search ?? '');
+        if (!empty($searchTerm)) {
+            $query->search($searchTerm);
         }
         
         $resources = $query->get();

@@ -10,6 +10,29 @@
                 </div>
             @endif
             
+            @auth
+            <!-- Поле поиска -->
+            <div class="mb-4">
+                <label for="search" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    {{ __('ui.search') }}
+                </label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="search"
+                        wire:model.live.debounce.300ms="search"
+                        placeholder="{{ __('ui.search') }}..."
+                        class="w-full border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-10 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:text-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-accent-foreground"
+                    >
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            @endauth
+            
             @if(empty($resources))
                 <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.notfound') }}</p>
             @else
