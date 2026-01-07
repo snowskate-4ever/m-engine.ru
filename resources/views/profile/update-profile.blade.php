@@ -52,7 +52,7 @@
                 <div class="d-flex justify-content-between">
                     <button type="submit" 
                             wire:loading.attr="disabled"
-                            class="btn btn-primary p-2 border rounded-lg appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] bg-teal text-zinc-700 placeholder-zinc-400  dark:text-zinc-300 shadow-xs border-zinc-200 border-b-zinc-300/80 hover:bg-zinc-800/5 hover:text-zinc-800 dark:hover:bg-white/[7%] dark:hover:text-white">
+                            class="btn btn-primary p-2 border rounded-lg appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] bg-teal-500 text-zinc-600 placeholder-zinc-400  dark:text-zinc-300 shadow-xs border-zinc-200 border-b-teal-500/80 hover:bg-teal-800/5 hover:text-zinc-800 dark:hover:bg-white/[7%] dark:hover:text-white">
                         <span wire:loading.remove wire:target="save">
                             <i class="fas fa-save me-1"></i> Сохранить
                         </span>

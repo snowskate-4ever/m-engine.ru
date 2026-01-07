@@ -72,5 +72,20 @@ select:focus[data-flux-control] {
 
 /* Custom dashboard styling */
 #stat_cards {
-    @apply w-full;
+    width: 100%;
+    position: relative;
+    overflow: hidden !important;
+}
+
+#carousel-wrapper {
+    display: flex;
+    width: 100%;
+    will-change: transform;
+}
+
+#carousel-wrapper > [data-slide] {
+    min-width: 100%;
+    width: 100%;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
 }
