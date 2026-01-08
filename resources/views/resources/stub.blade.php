@@ -44,7 +44,7 @@
                                 href="{{ route('register') }}"
                                 class="inline-block px-6 py-2.5 border border-[#19140035] dark:border-[#3E3E3A] text-[#1b1b18] dark:text-[#EDEDEC] rounded-sm text-sm font-medium hover:bg-zinc-800/5 dark:hover:bg-white/[7%] transition-colors"
                             >
-                                {{ __('ui.auth.register') ?? 'Регистрация' }}
+                                {{ __('ui.auth.register.button') }}
                             </a>
                         @endif
                     </div>
@@ -60,4 +60,7 @@
         </div>
     </body>
 </html>
+
+
+
 

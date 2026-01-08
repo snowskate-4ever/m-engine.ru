@@ -87,13 +87,23 @@ class MenuService
             try {
                 return route($href, $params);
             } catch (\Exception $e) {
-                // If route doesn't exist, try as URL
-                return url($href, $params);
+                // If route doesn't exist, return fallback
+                // Since we can't build a proper URL from a non-existent route name, return '#'
+                return '#';
             }
         }
         
-        // It's a direct URL
-        return url($href, $params);
+        // It's a direct URL path
+        $path = '/' . ltrim($href, '/');
+        if (!empty($params)) {
+            // Handle associative array: convert to path segments
+            $segments = [];
+            foreach ($params as $key => $value) {
+                $segments[] = $value;
+            }
+            $path .= '/' . implode('/', $segments);
+        }
+        return url($path);
     }
     
     /**
@@ -111,4 +121,7 @@ class MenuService
         return $item['name'] ?? '';
     }
 }
+
+
+
 
