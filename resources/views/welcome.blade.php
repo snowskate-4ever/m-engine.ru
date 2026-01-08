@@ -1,3 +1,6 @@
+@php
+    use App\Helpers\LogoHelper;
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -110,17 +113,24 @@
             .sector-group[data-has-children="true"] .children-indicator {
                 display: block;
             }
-            .logo-center {
-                filter: brightness(0);
+            @php
+                $logoClass = LogoHelper::getClass('center');
+                $lightFilter = config('logo.filters.light', 'brightness(0)');
+                $darkFilter = config('logo.filters.dark', 'brightness(0) invert(1)');
+                $themeSelectors = config('logo.theme_selectors', []);
+                $mediaQuery = config('logo.media_query', '(prefers-color-scheme: dark)');
+            @endphp
+            .{{ $logoClass }} {
+                filter: {{ $lightFilter }};
             }
-            html.dark .logo-center,
-            .dark .logo-center,
-            [data-theme="dark"] .logo-center {
-                filter: brightness(0) invert(1);
+            @foreach($themeSelectors as $selector)
+            {{ $selector }} .{{ $logoClass }} {
+                filter: {{ $darkFilter }};
             }
-            @media (prefers-color-scheme: dark) {
-                .logo-center:not(.light-theme) {
-                    filter: brightness(0) invert(1);
+            @endforeach
+            @media {{ $mediaQuery }} {
+                .{{ $logoClass }}:not(.light-theme) {
+                    filter: {{ $darkFilter }};
                 }
             }
             .sector-text {
@@ -181,13 +191,17 @@
                                 $isAuthenticated = auth()->check();
                             @endphp
                             <!-- Логотип в центре круга -->
+                            @php
+                                $logoPath = LogoHelper::getPath();
+                                $logoCenterClass = LogoHelper::getClass('center');
+                            @endphp
                             <image 
-                                href="{{ asset('img/music-engine.svg') }}"
+                                href="{{ $logoPath }}"
                                 x="{{ $logoX }}"
                                 y="{{ $logoY }}"
                                 width="{{ $logoSize }}"
                                 height="{{ $logoSize }}"
-                                class="logo-center"
+                                class="{{ $logoCenterClass }}"
                                 style="pointer-events: none;"
                             />
                             @foreach($menuItems as $index => $item)
@@ -314,12 +328,17 @@
                     });
                     
                     // Обновление цвета логотипа
-                    const logo = document.querySelector('.logo-center');
+                    @php
+                        $lightFilterJs = config('logo.filters.light', 'brightness(0)');
+                        $darkFilterJs = config('logo.filters.dark', 'brightness(0) invert(1)');
+                        $logoClassJs = LogoHelper::getClass('center');
+                    @endphp
+                    const logo = document.querySelector('.{{ $logoClassJs }}');
                     if (logo) {
                         if (isDark) {
-                            logo.style.filter = 'brightness(0) invert(1)'; // Белый
+                            logo.style.filter = '{{ $darkFilterJs }}';
                         } else {
-                            logo.style.filter = 'brightness(0)'; // Черный
+                            logo.style.filter = '{{ $lightFilterJs }}';
                         }
                     }
                     
