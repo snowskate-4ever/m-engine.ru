@@ -26,8 +26,7 @@ return [
                 [
                     'id' => 'sub_item_1',
                     'name' => 'Sub Item 1',
-                    'href' => 'route.name',
-                    // ... same structure
+                    'href' => 'route.name1',
                 ],
             ],
         ],
@@ -42,10 +41,9 @@ return [
             'guest_href_params' => ['type_id' => 1], // Optional: parameters for guest route
             'children' => [ // Optional: sublevels
                 [
-                    'id' => 'sub_item_1',
-                    'name' => 'Sub Item 1',
-                    'href' => 'route.name',
-                    // ... same structure
+                    'id' => 'sub_item_2',
+                    'name' => 'Sub Item 2',
+                    'href' => 'route.name2',
                 ],
             ],
         ],
@@ -60,10 +58,9 @@ return [
             'guest_href_params' => ['type_id' => 1], // Optional: parameters for guest route
             'children' => [ // Optional: sublevels
                 [
-                    'id' => 'sub_item_1',
-                    'name' => 'Sub Item 1',
-                    'href' => 'route.name',
-                    // ... same structure
+                    'id' => 'sub_item_3',
+                    'name' => 'Sub Item 3',
+                    'href' => 'route.name3',
                 ],
             ],
         ],

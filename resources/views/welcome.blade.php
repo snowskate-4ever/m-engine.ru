@@ -1,6 +1,3 @@
-@php
-    use App\Helpers\LogoHelper;
-@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -34,21 +31,77 @@
                 align-items: center;
                 justify-content: center;
                 width: 100%;
+                flex: 1;
             }
             /* Убеждаемся, что контейнер центрирован */
             #circular-menu-container {
-                margin-left: auto;
-                margin-right: auto;
+                position: relative;
+                width: 540px;
+                height: 540px;
+                margin: 0 auto;
+                overflow: visible;
+            }
+            /* Внешнее кольцо для дочерних элементов */
+            #children-ring-svg {
+                transition: opacity 0.4s ease-in-out;
+                overflow: visible;
+                z-index: 1;
+            }
+            #children-ring-svg.children-menu-hidden {
+                display: none !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+            }
+            #children-ring-svg.show {
+                display: block !important;
+                pointer-events: all !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            /* Основное кольцо должно быть под внешним при отображении дочерних элементов */
+            #ring-svg {
+                position: relative;
+                z-index: 1;
+            }
+            .children-sector-path {
+                fill: white;
+                stroke: #e3e3e0;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            .dark .children-sector-path {
+                fill: #161615;
+                stroke: #3E3E3A;
+            }
+            .children-sector-path:hover {
+                opacity: 0.9;
+                filter: brightness(0.95);
+            }
+            .dark .children-sector-path:hover {
+                filter: brightness(1.1);
+            }
+            .children-sector-text {
+                fill: #1b1b18;
+                pointer-events: none;
+            }
+            .dark .children-sector-text {
+                fill: #EDEDEC;
             }
             @keyframes slowRotate {
                 from {
-                    transform: translate(-50%, -50%) rotate(0deg);
+                    transform: rotate(0deg);
                 }
                 to {
-                    transform: translate(-50%, -50%) rotate(360deg);
+                    transform: rotate(360deg);
                 }
             }
             #ring-svg {
+                animation: slowRotate 180s linear infinite;
+                transform-origin: 270px 270px;
+                display: block;
+            }
+            /* SVG индикаторов синхронизируется с основным SVG */
+            #indicators-svg {
                 animation: slowRotate 180s linear infinite;
                 transform-origin: 270px 270px;
             }
@@ -108,12 +161,15 @@
                 filter: brightness(1.2);
             }
             .children-indicator {
-                display: none;
-            }
-            .sector-group[data-has-children="true"] .children-indicator {
                 display: block;
+                pointer-events: all;
+                cursor: pointer;
+            }
+            #indicators-group {
+                pointer-events: all;
             }
             @php
+                use App\Helpers\LogoHelper;
                 $logoClass = LogoHelper::getClass('center');
                 $lightFilter = config('logo.filters.light', 'brightness(0)');
                 $darkFilter = config('logo.filters.dark', 'brightness(0) invert(1)');
@@ -141,10 +197,10 @@
             }
         </style>
     </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-        <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
+    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex flex-col min-h-screen p-6 lg:p-8">
+        <header class="w-full lg:max-w-4xl max-w-[335px] mx-auto text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
-                <nav class="flex items-center justify-end gap-4">
+                <nav class="flex items-center justify-center gap-4">
                     @auth
                         <a
                             href="{{ url('/dashboard') }}"
@@ -171,24 +227,31 @@
                 </nav>
             @endif
         </header>
-        <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
-            <main class="flex items-center justify-center w-full min-h-[60vh]">
-                @if(isset($menuItems) && count($menuItems) > 0)
-                    <div id="circular-menu-container" class="circular-menu-container relative">
-                        <svg id="ring-svg" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" width="540" height="540" viewBox="0 0 540 540" style="transform-origin: 270px 270px; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), width 0.6s cubic-bezier(0.4, 0, 0.2, 1), height 0.6s cubic-bezier(0.4, 0, 0.2, 1);">
+        <main class="flex-1 flex items-center justify-center w-full transition-opacity opacity-100 duration-750 starting:opacity-0">
+            @if(isset($menuItems) && count($menuItems) > 0)
+                <div id="circular-menu-container" class="circular-menu-container relative">
+                    @php
+                        // Общие переменные для основного и внешнего колец
+                        $innerRadius = 200;
+                        $outerRadius = 250;
+                        $centerX = 270; // Центр основного SVG (540/2)
+                        $centerY = 270;
+                        $totalItems = count($menuItems);
+                        $angleStep = 360 / $totalItems;
+                        $isAuthenticated = auth()->check();
+                    @endphp
+                    <!-- Внешнее кольцо для дочерних элементов (скрыто по умолчанию) -->
+                    <svg id="children-ring-svg" width="800" height="800" viewBox="0 0 800 800" class="absolute children-menu-hidden" style="top: -130px; left: -130px; transform-origin: 400px 400px; pointer-events: none; z-index: 2;">
+                        <g id="children-sectors-group" style="pointer-events: all;"></g>
+                    </svg>
+                    <!-- Основное кольцо меню -->
+                    <svg id="ring-svg" width="540" height="540" viewBox="0 0 540 540" style="transform-origin: 270px 270px; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), width 0.6s cubic-bezier(0.4, 0, 0.2, 1), height 0.6s cubic-bezier(0.4, 0, 0.2, 1); position: relative; z-index: 1;">
                             @php
-                                $innerRadius = 200;
-                                $outerRadius = 250;
-                                $centerX = 270; // Центр с учетом увеличенного размера (540/2)
-                                $centerY = 270;
                                 // Радиус лого = радиус внутреннего кольца - 5px
                                 $logoRadius = $innerRadius - 5; // 200 - 5 = 195
                                 $logoSize = $logoRadius * 2; // 195 * 2 = 390
                                 $logoX = $centerX - ($logoSize / 2);
                                 $logoY = $centerY - ($logoSize / 2);
-                                $totalItems = count($menuItems);
-                                $angleStep = 360 / $totalItems;
-                                $isAuthenticated = auth()->check();
                             @endphp
                             <!-- Логотип в центре круга -->
                             @php
@@ -250,6 +313,25 @@
                                     $itemUrl = \App\Services\MenuService::buildUrl($item, $isAuthenticated);
                                     $itemName = \App\Services\MenuService::getTranslatedName($item);
                                     $hasChildren = isset($item['children']) && is_array($item['children']) && count($item['children']) > 0;
+                                    
+                                    // Подготавливаем дочерние элементы с готовыми URL и переведенными названиями
+                                    $childrenData = [];
+                                    if ($hasChildren) {
+                                        foreach ($item['children'] as $child) {
+                                            $childUrl = \App\Services\MenuService::buildUrl($child, $isAuthenticated);
+                                            $childName = \App\Services\MenuService::getTranslatedName($child);
+                                            $childrenData[] = [
+                                                'id' => $child['id'] ?? null,
+                                                'name' => $child['name'] ?? '',
+                                                'translated_name' => $childName,
+                                                'url' => $childUrl,
+                                                'href' => $child['href'] ?? '#',
+                                                'href_params' => $child['href_params'] ?? [],
+                                                'guest_href' => $child['guest_href'] ?? null,
+                                                'guest_href_params' => $child['guest_href_params'] ?? [],
+                                            ];
+                                        }
+                                    }
                                 @endphp
                                 <g class="sector-group" data-index="{{ $index }}" data-angle="{{ $startAngle }}" data-center-angle="{{ ($startAngle + $endAngle) / 2 }}" data-has-children="{{ $hasChildren ? 'true' : 'false' }}" data-item-id="{{ $item['id'] ?? $index }}">
                                         <path
@@ -258,6 +340,7 @@
                                         stroke-width="2"
                                         data-href="{{ $itemUrl }}"
                                         data-item-id="{{ $item['id'] ?? $index }}"
+                                        style="pointer-events: all;"
                                     />
                                     <text 
                                         x="{{ $textX }}" 
@@ -269,27 +352,63 @@
                                     >
                                         {{ $itemName }}
                                     </text>
-                                    @if($hasChildren)
-                                        <!-- Индикатор подуровня на внешнем круге -->
-                                        <circle 
-                                            cx="{{ $indicatorX }}" 
-                                            cy="{{ $indicatorY }}" 
-                                            r="10" 
-                                            class="children-indicator fill-current text-[#1b1b18] dark:text-[#EDEDEC] pointer-events-none"
-                                            style="display: block;"
-                                        />
-                                    @endif
                                 </g>
                             @endforeach
                                     </svg>
+                    <!-- Отдельный SVG для индикаторов - синхронизируется с трансформациями основного SVG -->
+                    <svg id="indicators-svg" width="540" height="540" viewBox="0 0 540 540" class="absolute" style="top: 0; left: 0; pointer-events: none; z-index: 100; transform-origin: 270px 270px;">
+                        <g id="indicators-group" style="pointer-events: all;">
+                            @foreach($menuItems as $index => $item)
+                                @php
+                                    $hasChildren = isset($item['children']) && is_array($item['children']) && count($item['children']) > 0;
+                                    if (!$hasChildren) continue;
+                                    
+                                    $startAngle = ($index * $angleStep) - 90;
+                                    $endAngle = (($index + 1) * $angleStep) - 90;
+                                    $textAngle = ($startAngle + $endAngle) / 2;
+                                    $textAngleRad = deg2rad($textAngle);
+                                    
+                                    // Координаты для индикатора подуровня (на границе внешнего круга)
+                                    $indicatorRadius = $outerRadius;
+                                    $indicatorX = $centerX + $indicatorRadius * cos($textAngleRad);
+                                    $indicatorY = $centerY + $indicatorRadius * sin($textAngleRad);
+                                    
+                                    // Подготавливаем дочерние элементы с готовыми URL и переведенными названиями
+                                    $childrenData = [];
+                                    foreach ($item['children'] as $child) {
+                                        $childUrl = \App\Services\MenuService::buildUrl($child, $isAuthenticated);
+                                        $childName = \App\Services\MenuService::getTranslatedName($child);
+                                        $childrenData[] = [
+                                            'id' => $child['id'] ?? null,
+                                            'name' => $child['name'] ?? '',
+                                            'translated_name' => $childName,
+                                            'url' => $childUrl,
+                                            'href' => $child['href'] ?? '#',
+                                            'href_params' => $child['href_params'] ?? [],
+                                            'guest_href' => $child['guest_href'] ?? null,
+                                            'guest_href_params' => $child['guest_href_params'] ?? [],
+                                        ];
+                                    }
+                                @endphp
+                                <circle 
+                                    cx="{{ $indicatorX }}" 
+                                    cy="{{ $indicatorY }}" 
+                                    r="10" 
+                                    class="children-indicator fill-current text-[#1b1b18] dark:text-[#EDEDEC] cursor-pointer"
+                                    style="pointer-events: all; cursor: pointer;"
+                                    data-children='@json($childrenData)'
+                                    data-parent-id="{{ $item['id'] ?? $index }}"
+                                />
+                            @endforeach
+                        </g>
+                    </svg>
                 </div>
-                @else
-                    <div class="text-center">
-                        <p class="text-[#706f6c] dark:text-[#A1A09A]">Нет доступных типов ресурсов</p>
+            @else
+                <div class="text-center">
+                    <p class="text-[#706f6c] dark:text-[#A1A09A]">Нет доступных типов ресурсов</p>
                 </div>
-                @endif
+            @endif
             </main>
-        </div>
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -387,6 +506,12 @@
                 
                 sectors.forEach(sector => {
                     sector.addEventListener('click', function(e) {
+                        // Проверяем, не был ли клик на индикаторе
+                        const target = e.target;
+                        if (target && target.classList && target.classList.contains('children-indicator')) {
+                            return; // Клик на индикатор обрабатывается отдельно
+                        }
+                        
                         if (isAnimating) return;
                         
                         e.preventDefault();
@@ -398,11 +523,8 @@
                         const itemId = sectorGroup.getAttribute('data-item-id');
                         const href = this.getAttribute('data-href');
                         
-                        // Если есть подуровни, показываем их вместо перехода
+                        // Если есть подуровни, не обрабатываем клик на путь (индикатор обработает отдельно)
                         if (hasChildren) {
-                            // TODO: Реализовать отображение подуровней
-                            // Можно показать вложенное меню или другой круг
-                            console.log('Item has children:', itemId);
                             isAnimating = false;
                             return;
                         }
@@ -417,14 +539,18 @@
                         
                         // Останавливаем анимацию и поворачиваем к нужному углу
                         svg.style.animationPlayState = 'paused';
-                        // Сохраняем translate для центрирования и добавляем поворот
-                        const currentTransform = window.getComputedStyle(svg).transform;
-                        svg.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg)`;
+                        // Поворачиваем к нужному углу
+                        svg.style.transform = `rotate(${targetRotation}deg)`;
                         currentRotation = targetRotation;
                         
                         // После завершения анимации поворота, возобновляем медленное вращение
                         setTimeout(() => {
                             svg.style.animationPlayState = 'running';
+                            // Синхронизируем возобновление анимации с SVG индикаторов
+                            const indicatorsSvg = document.getElementById('indicators-svg');
+                            if (indicatorsSvg) {
+                                indicatorsSvg.style.animationPlayState = 'running';
+                            }
                         }, 800);
                         
                         // После поворота смещаем в левый верхний угол
@@ -434,7 +560,12 @@
                             
                             // Применяем масштабирование через requestAnimationFrame для плавности
                             requestAnimationFrame(() => {
-                                svg.style.transform = `translate(-50%, -50%) rotate(${targetRotation}deg) scale(0.4)`;
+                                svg.style.transform = `rotate(${targetRotation}deg) scale(0.4)`;
+                                // Синхронизируем масштабирование с SVG индикаторов
+                                const indicatorsSvg = document.getElementById('indicators-svg');
+                                if (indicatorsSvg) {
+                                    indicatorsSvg.style.transform = `rotate(${targetRotation}deg) scale(0.4)`;
+                                }
                             });
                             
                             // Переходим на страницу после завершения анимации
@@ -444,7 +575,594 @@
                         }, 800);
                     });
                 });
+                
+                // Обработка клика на индикатор дочерних элементов (toggle)
+                const indicators = document.querySelectorAll('.children-indicator');
+                indicators.forEach(indicator => {
+                    indicator.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        
+                        // Не обрабатываем, если идет анимация
+                        if (isAnimating) return;
+                        
+                        const childrenDataStr = this.getAttribute('data-children');
+                        if (!childrenDataStr) return;
+                        
+                        let childrenData;
+                        try {
+                            childrenData = JSON.parse(childrenDataStr);
+                        } catch (err) {
+                            console.error('Error parsing children data:', err);
+                            return;
+                        }
+                        
+                        if (!Array.isArray(childrenData) || childrenData.length === 0) return;
+                        
+                        const parentId = this.getAttribute('data-parent-id');
+                        if (!parentId) return;
+                        
+                        const childrenSvg = document.getElementById('children-ring-svg');
+                        if (!childrenSvg) return;
+                        
+                        // Проверяем, видно ли подменю для этого родителя
+                        const existingParentId = childrenSvg.getAttribute('data-parent-id');
+                        // Проверяем видимость более надежным способом
+                        const computedStyle = window.getComputedStyle(childrenSvg);
+                        const isVisible = childrenSvg.classList.contains('show') && 
+                                         computedStyle.display !== 'none' &&
+                                         computedStyle.visibility !== 'hidden' &&
+                                         computedStyle.opacity !== '0' &&
+                                         existingParentId === parentId;
+                        
+                        console.log('Toggle check:', {
+                            hasShowClass: childrenSvg.classList.contains('show'),
+                            display: computedStyle.display,
+                            visibility: computedStyle.visibility,
+                            opacity: computedStyle.opacity,
+                            existingParentId: existingParentId,
+                            currentParentId: parentId,
+                            isVisible: isVisible
+                        });
+                        
+                        if (isVisible) {
+                            // Если видно - скрываем
+                            console.log('Hiding children menu');
+                            hideChildrenMenu();
+                        } else {
+                            // Если скрыто или для другого родителя - показываем/обновляем
+                            console.log('Showing children menu');
+                            showChildrenMenu(childrenData, parentId);
+                        }
+                    }, true); // Используем capture phase для приоритета обработки
+                });
             });
+            
+            // Функция для отображения дочерних элементов на внешнем кольце
+            function showChildrenMenu(children, parentId) {
+                const mainSvg = document.getElementById('ring-svg');
+                const childrenSvg = document.getElementById('children-ring-svg');
+                const childrenGroup = document.getElementById('children-sectors-group');
+                
+                if (!childrenSvg || !childrenGroup) {
+                    console.error('Children menu elements not found:', {childrenSvg, childrenGroup});
+                    return;
+                }
+                
+                // Сохраняем ID родителя СРАЗУ для корректной проверки видимости
+                childrenSvg.setAttribute('data-parent-id', parentId);
+                
+                // Очищаем предыдущие элементы перед созданием новых
+                childrenGroup.innerHTML = '';
+                
+                console.log('Creating children menu for parent:', parentId, 'children count:', children.length);
+                
+                // Находим родительский сектор для получения его угла
+                const parentSectorGroup = document.querySelector(`.sector-group[data-item-id="${parentId}"]`);
+                if (!parentSectorGroup) {
+                    console.error('Parent sector not found for id:', parentId);
+                    return;
+                }
+                
+                // Получаем угол центра родительского сектора (в градусах относительно вертикали, как в SVG)
+                const parentCenterAngle = parseFloat(parentSectorGroup.getAttribute('data-center-angle'));
+                
+                // Получаем текущий поворот основного SVG
+                const mainSvgTransform = mainSvg.style.transform || window.getComputedStyle(mainSvg).transform;
+                let currentRotation = 0;
+                if (mainSvgTransform && mainSvgTransform !== 'none') {
+                    const match = mainSvgTransform.match(/rotate\(([-\d.]+)deg\)/);
+                    if (match) {
+                        currentRotation = parseFloat(match[1]);
+                    }
+                }
+                
+                // Угол индикатора с учетом поворота основного SVG
+                const indicatorAngle = parentCenterAngle + currentRotation;
+                
+                // Центр основного SVG относительно контейнера (270, 270)
+                const mainSvgCenterX = 270;
+                const mainSvgCenterY = 270;
+                
+                // Радиус внешнего кольца основного меню (где находятся индикаторы)
+                const outerRadius = 250;
+                
+                // Основное кольцо: innerRadius = 200, outerRadius = 250, ширина = 50px
+                // Внешнее кольцо должно иметь такую же ширину (50px)
+                // Внешнее кольцо начинается сразу после основного (без отступа)
+                const childrenInnerRadius = 250; // Внешний радиус основного кольца (без отступа)
+                const childrenOuterRadius = 300; // Внешний радиус: внутренний + 50px (такая же ширина как основное кольцо)
+                
+                // Вычисляем координаты индикатора относительно контейнера
+                // В SVG 0° = верх, поэтому используем (angle + 90) для преобразования в математические координаты
+                const indicatorAngleRad = Math.PI * (indicatorAngle + 90) / 180;
+                const indicatorX = mainSvgCenterX + outerRadius * Math.cos(indicatorAngleRad);
+                const indicatorY = mainSvgCenterY + outerRadius * Math.sin(indicatorAngleRad);
+                
+                // Индикатор должен быть по центру внутреннего радиуса внешнего кольца
+                // То есть: индикатор должен находиться на расстоянии childrenInnerRadius от центра внешнего кольца
+                // Направление: от центра основного SVG к индикатору (это направление, в котором должен быть центр внешнего кольца от индикатора)
+                
+                // Вектор от центра основного SVG к индикатору
+                const vectorToIndicatorX = indicatorX - mainSvgCenterX;
+                const vectorToIndicatorY = indicatorY - mainSvgCenterY;
+                
+                // Длина вектора (должна быть равна outerRadius = 250)
+                const vectorLength = Math.sqrt(vectorToIndicatorX * vectorToIndicatorX + vectorToIndicatorY * vectorToIndicatorY);
+                
+                // Нормализованный вектор (единичный вектор в направлении к индикатору)
+                const normalizedX = vectorToIndicatorX / vectorLength;
+                const normalizedY = vectorToIndicatorY / vectorLength;
+                
+                // Центр внутреннего круга внешнего кольца должен быть в центре индикатора
+                // Индикатор находится на радиусе outerRadius (250) от центра основного SVG
+                // Внутренний радиус внешнего кольца childrenInnerRadius = 250
+                // Чтобы центр внутреннего радиуса был в центре индикатора, нужно сместить центр внешнего SVG
+                // так, чтобы индикатор находился на внутреннем радиусе внешнего кольца
+                // То есть: расстояние от центра внешнего SVG до индикатора = childrenInnerRadius (250)
+                // Решаем: центр_внешнего_SVG = индикатор - normalized * childrenInnerRadius
+                const childrenSvgCenterX = indicatorX - normalizedX * childrenInnerRadius;
+                const childrenSvgCenterY = indicatorY - normalizedY * childrenInnerRadius;
+                
+                // Центр внешнего SVG в его собственных координатах (400, 400 для SVG 800x800)
+                // Контейнер имеет размер 540x540, внешний SVG 800x800
+                // Текущее смещение внешнего SVG: top: -130px, left: -130px (чтобы центрировать 800x800 относительно 540x540)
+                // Это означает, что центр внешнего SVG (400, 400) находится в позиции (270, 270) контейнера
+                // Нужно сместить так, чтобы центр был в позиции (childrenSvgCenterX, childrenSvgCenterY)
+                const offsetX = childrenSvgCenterX - 270; // Разница между нужной позицией центра и центром контейнера
+                const offsetY = childrenSvgCenterY - 270;
+                
+                // Обновляем позицию внешнего SVG
+                childrenSvg.style.top = (-130 + offsetY) + 'px';
+                childrenSvg.style.left = (-130 + offsetX) + 'px';
+                
+                // Логирование для отладки
+                console.log('Children menu positioning:', {
+                    parentCenterAngle: parentCenterAngle,
+                    currentRotation: currentRotation,
+                    indicatorAngle: indicatorAngle,
+                    indicatorX: indicatorX,
+                    indicatorY: indicatorY,
+                    childrenSvgCenterX: childrenSvgCenterX,
+                    childrenSvgCenterY: childrenSvgCenterY,
+                    childrenInnerRadius: childrenInnerRadius,
+                    childrenOuterRadius: childrenOuterRadius,
+                    normalizedX: normalizedX,
+                    normalizedY: normalizedY
+                });
+                
+                // Центр внешнего кольца для расчета секторов в координатах самого внешнего SVG
+                const centerX = 400; // Центр внешнего SVG в его собственных координатах
+                const centerY = 400;
+                const totalChildren = children.length;
+                // Для одного элемента используем полный круг, для нескольких - делим поровну
+                const childrenAngleStep = totalChildren === 1 ? 360 : 360 / totalChildren;
+                const isAuthenticated = @json(auth()->check());
+                
+                // Поворачиваем внешнее кольцо так, чтобы первый сектор был направлен к индикатору
+                // Индикатор находится на внутреннем радиусе внешнего кольца в направлении от центра внешнего SVG
+                // Угол от центра внешнего SVG к индикатору в математических координатах (внешнего SVG)
+                // В координатах внешнего SVG: индикатор находится на расстоянии childrenInnerRadius от центра
+                // в направлении normalized вектора
+                const indicatorAngleInSvg = Math.atan2(normalizedY, normalizedX) * 180 / Math.PI;
+                
+                // Первый сектор начинается с угла -90° в SVG координатах
+                // Центр первого сектора: -90° + childrenAngleStep/2 в SVG координатах
+                // Преобразуем в математические координаты: (-90° + childrenAngleStep/2) + 90° = childrenAngleStep/2
+                const firstSectorCenterAngleMath = childrenAngleStep / 2;
+                
+                // Поворачиваем внешнее кольцо так, чтобы центр первого сектора совпал с направлением к индикатору
+                // В SVG координатах: indicatorAngleInSvg - 90° - (firstSectorCenterAngleMath - 90°)
+                // = indicatorAngleInSvg - firstSectorCenterAngleMath
+                const rotationAngle = indicatorAngleInSvg - firstSectorCenterAngleMath;
+                
+                // Применяем поворот к внешнему SVG (с учетом текущего transform-origin)
+                childrenSvg.style.transformOrigin = '400px 400px'; // Центр внешнего SVG
+                // Применяем только rotate (не добавляем к существующему transform, так как он может мешать)
+                childrenSvg.style.transform = `rotate(${rotationAngle}deg)`;
+                
+                console.log('Children menu rotation:', {
+                    indicatorAngleInSvg: indicatorAngleInSvg,
+                    firstSectorCenterAngleMath: firstSectorCenterAngleMath,
+                    rotationAngle: rotationAngle,
+                    normalizedX: normalizedX,
+                    normalizedY: normalizedY
+                });
+                
+                // Создаем секторы для дочерних элементов
+                children.forEach((child, index) => {
+                    let path;
+                    let textAngle;
+                    
+                    if (totalChildren === 1) {
+                        // Для одного элемента делаем полный круг через две полудуги
+                        // Используем верхнюю точку (0° в SVG = 90° в математических) как начальную
+                        const topAngleSvg = 0;
+                        const topAngle = topAngleSvg + 90; // Преобразуем в математические координаты
+                        const topAngleRad = Math.PI * topAngle / 180;
+                        
+                        // Используем нижнюю точку (180° в SVG = 270° в математических) как промежуточную
+                        const bottomAngleSvg = 180;
+                        const bottomAngle = bottomAngleSvg + 90; // Преобразуем в математические координаты
+                        const bottomAngleRad = Math.PI * bottomAngle / 180;
+                        
+                        // Точки для верхней части (начало)
+                        const innerTopX = centerX + childrenInnerRadius * Math.cos(topAngleRad);
+                        const innerTopY = centerY + childrenInnerRadius * Math.sin(topAngleRad);
+                        const outerTopX = centerX + childrenOuterRadius * Math.cos(topAngleRad);
+                        const outerTopY = centerY + childrenOuterRadius * Math.sin(topAngleRad);
+                        
+                        // Точки для нижней части (промежуточная)
+                        const innerBottomX = centerX + childrenInnerRadius * Math.cos(bottomAngleRad);
+                        const innerBottomY = centerY + childrenInnerRadius * Math.sin(bottomAngleRad);
+                        const outerBottomX = centerX + childrenOuterRadius * Math.cos(bottomAngleRad);
+                        const outerBottomY = centerY + childrenOuterRadius * Math.sin(bottomAngleRad);
+                        
+                        // Создаем путь для полного круга: две полудуги по 180 градусов
+                        path = `M ${innerTopX} ${innerTopY} L ${outerTopX} ${outerTopY} ` +
+                               `A ${childrenOuterRadius} ${childrenOuterRadius} 0 1 1 ${outerBottomX} ${outerBottomY} ` +
+                               `L ${innerBottomX} ${innerBottomY} ` +
+                               `A ${childrenInnerRadius} ${childrenInnerRadius} 0 1 0 ${innerTopX} ${innerTopY} Z`;
+                        
+                        // Угол для текста - верхняя точка (0° в SVG = 90° в математических)
+                        textAngle = 90;
+                    } else {
+                        // Для нескольких элементов - обычный расчет
+                        // Углы в SVG координатах (0° = верх)
+                        const startAngleSvg = (index * childrenAngleStep) - 90;
+                        const endAngleSvg = ((index + 1) * childrenAngleStep) - 90;
+                        // Преобразуем в математические координаты (0° = право): добавляем 90°
+                        const startAngle = startAngleSvg + 90;
+                        const endAngle = endAngleSvg + 90;
+                        const startAngleRad = Math.PI * startAngle / 180;
+                        const endAngleRad = Math.PI * endAngle / 180;
+                        
+                        // Точки для внутреннего радиуса
+                        const innerStartX = centerX + childrenInnerRadius * Math.cos(startAngleRad);
+                        const innerStartY = centerY + childrenInnerRadius * Math.sin(startAngleRad);
+                        const innerEndX = centerX + childrenInnerRadius * Math.cos(endAngleRad);
+                        const innerEndY = centerY + childrenInnerRadius * Math.sin(endAngleRad);
+                        
+                        // Точки для внешнего радиуса
+                        const outerStartX = centerX + childrenOuterRadius * Math.cos(startAngleRad);
+                        const outerStartY = centerY + childrenOuterRadius * Math.sin(startAngleRad);
+                        const outerEndX = centerX + childrenOuterRadius * Math.cos(endAngleRad);
+                        const outerEndY = centerY + childrenOuterRadius * Math.sin(endAngleRad);
+                        
+                        const largeArcFlag = (childrenAngleStep > 180) ? 1 : 0;
+                        
+                        // Путь для сектора
+                        path = `M ${innerStartX} ${innerStartY} L ${outerStartX} ${outerStartY} A ${childrenOuterRadius} ${childrenOuterRadius} 0 ${largeArcFlag} 1 ${outerEndX} ${outerEndY} L ${innerEndX} ${innerEndY} A ${childrenInnerRadius} ${childrenInnerRadius} 0 ${largeArcFlag} 0 ${innerStartX} ${innerStartY} Z`;
+                        
+                        // Угол для текста (в математических координатах)
+                        textAngle = (startAngle + endAngle) / 2;
+                        // Преобразуем обратно в SVG координаты для rotate transform
+                        const textAngleSvg = textAngle - 90;
+                    }
+                    
+                    // Координаты для текста (используем математические координаты для вычисления позиции)
+                    const textAngleRad = Math.PI * textAngle / 180;
+                    const textRadius = (childrenInnerRadius + childrenOuterRadius) / 2;
+                    const textX = centerX + textRadius * Math.cos(textAngleRad);
+                    const textY = centerY + textRadius * Math.sin(textAngleRad);
+                    
+                    // Получаем URL и название
+                    const childUrl = buildChildUrl(child, isAuthenticated);
+                    const childName = getChildName(child);
+                    
+                    // Создаем группу для сектора
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    g.setAttribute('class', 'children-sector-group');
+                    g.setAttribute('data-child-index', index);
+                    g.setAttribute('data-href', childUrl);
+                    
+                    // Создаем путь сектора
+                    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    pathEl.setAttribute('d', path);
+                    pathEl.setAttribute('class', 'children-sector-path');
+                    pathEl.setAttribute('stroke-width', '2');
+                    // Устанавливаем начальные цвета сразу (будут обновлены в updateChildrenColors)
+                    const isDark = document.documentElement.classList.contains('dark') || 
+                                  (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    if (isDark) {
+                        pathEl.setAttribute('fill', '#161615');
+                        pathEl.setAttribute('stroke', '#3E3E3A');
+                    } else {
+                        pathEl.setAttribute('fill', 'white');
+                        pathEl.setAttribute('stroke', '#e3e3e0');
+                    }
+                    g.appendChild(pathEl);
+                    
+                    // Создаем текст
+                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textEl.setAttribute('x', textX);
+                    textEl.setAttribute('y', textY);
+                    textEl.setAttribute('text-anchor', 'middle');
+                    textEl.setAttribute('dominant-baseline', 'middle');
+                    textEl.setAttribute('class', 'children-sector-text text-xs font-medium');
+                    // Для rotate transform используем SVG координаты
+                    // textAngle в математических координатах (0° = право, 90° = верх)
+                    // Для SVG rotate: 0° = верх, нужно преобразовать: textAngle - 90°
+                    // Для вертикального текста добавляем 90°
+                    // Итого: textAngle - 90 + 90 = textAngle для вертикального текста
+                    // Но если textAngle уже в математических координатах, то для SVG rotate с вертикальным текстом:
+                    // textAngle (математических) -> textAngle - 90 (SVG) -> textAngle - 90 + 90 = textAngle (вертикальный)
+                    let textAngleForTransform;
+                    if (totalChildren === 1) {
+                        // Для одного элемента textAngle = 90 (верх в математических = 0° в SVG)
+                        textAngleForTransform = 90; // 90° в SVG = право, что нужно для вертикального текста от верха
+                    } else {
+                        // Для нескольких элементов: textAngle в математических, преобразуем в SVG и добавляем 90 для вертикального
+                        textAngleForTransform = textAngle - 90 + 90; // Упрощаем: textAngle
+                    }
+                    textEl.setAttribute('transform', `rotate(${textAngleForTransform}, ${textX}, ${textY})`);
+                    // Устанавливаем начальный цвет текста
+                    if (isDark) {
+                        textEl.setAttribute('fill', '#EDEDEC');
+                    } else {
+                        textEl.setAttribute('fill', '#1b1b18');
+                    }
+                    textEl.textContent = childName;
+                    g.appendChild(textEl);
+                    
+                    // Обработчик клика на сектор дочернего элемента
+                    pathEl.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        window.location.href = childUrl;
+                    });
+                    
+                    childrenGroup.appendChild(g);
+                });
+                
+                // Обновляем цвета для дочерних элементов
+                updateChildrenColors();
+                
+                console.log('Children menu elements created:', childrenGroup.children.length);
+                
+                // Проверяем созданные элементы
+                if (childrenGroup.children.length > 0) {
+                    const firstPath = childrenGroup.children[0].querySelector('path');
+                    if (firstPath) {
+                        console.log('First path attributes:', {
+                            d: firstPath.getAttribute('d'),
+                            fill: firstPath.getAttribute('fill'),
+                            stroke: firstPath.getAttribute('stroke'),
+                            class: firstPath.className.baseVal
+                        });
+                    }
+                }
+                
+                // Показываем внешнее кольцо - используем несколько способов для гарантии
+                childrenSvg.classList.remove('children-menu-hidden');
+                childrenSvg.classList.add('show');
+                // Удаляем inline style display: none, если он есть
+                childrenSvg.style.removeProperty('display');
+                childrenSvg.style.display = 'block';
+                childrenSvg.style.pointerEvents = 'all';
+                childrenSvg.style.opacity = '1';
+                childrenSvg.style.visibility = 'visible';
+                childrenSvg.style.zIndex = '10';
+                childrenSvg.style.zIndex = '10';
+                
+                // Принудительно обновляем стили через setTimeout для гарантии
+                setTimeout(() => {
+                    const computedStyle = window.getComputedStyle(childrenSvg);
+                    const rect = childrenSvg.getBoundingClientRect();
+                    console.log('Children menu visibility check:', {
+                        display: computedStyle.display,
+                        opacity: computedStyle.opacity,
+                        visibility: computedStyle.visibility,
+                        classList: childrenSvg.classList.toString(),
+                        childrenCount: childrenGroup.children.length,
+                        svgWidth: childrenSvg.offsetWidth,
+                        svgHeight: childrenSvg.offsetHeight,
+                        top: computedStyle.top,
+                        left: computedStyle.left,
+                        transform: computedStyle.transform,
+                        boundingRect: {
+                            top: rect.top,
+                            left: rect.left,
+                            width: rect.width,
+                            height: rect.height
+                        },
+                        containerRect: document.getElementById('circular-menu-container')?.getBoundingClientRect()
+                    });
+                    
+                    // Проверяем видимость элементов
+                    const paths = childrenGroup.querySelectorAll('path');
+                    if (paths.length > 0) {
+                        const firstPathRect = paths[0].getBoundingClientRect();
+                        console.log('First path bounding rect:', firstPathRect);
+                    }
+                }, 50);
+                
+                // Останавливаем вращение основного кольца при показе подменю
+                if (mainSvg) {
+                    mainSvg.style.animationPlayState = 'paused';
+                }
+                
+                // Останавливаем вращение SVG индикаторов
+                const indicatorsSvg = document.getElementById('indicators-svg');
+                if (indicatorsSvg) {
+                    indicatorsSvg.style.animationPlayState = 'paused';
+                }
+                
+                // Останавливаем вращение лого (counterRotate анимация)
+                @php
+                    $logoClassJs = LogoHelper::getClass('center');
+                @endphp
+                const logo = document.querySelector('.{{ $logoClassJs }}');
+                if (logo) {
+                    logo.style.animationPlayState = 'paused';
+                }
+            }
+            
+            // Функция для скрытия подменю
+            function hideChildrenMenu() {
+                const mainSvg = document.getElementById('ring-svg');
+                const childrenSvg = document.getElementById('children-ring-svg');
+                
+                if (!childrenSvg) return;
+                
+                console.log('Hiding children menu - before:', {
+                    hasShowClass: childrenSvg.classList.contains('show'),
+                    hasHiddenClass: childrenSvg.classList.contains('children-menu-hidden'),
+                    display: window.getComputedStyle(childrenSvg).display
+                });
+                
+                // Скрываем внешнее кольцо - используем несколько способов для гарантии
+                childrenSvg.classList.remove('show');
+                childrenSvg.classList.add('children-menu-hidden');
+                // Устанавливаем inline стили для гарантии скрытия
+                childrenSvg.style.display = 'none';
+                childrenSvg.style.pointerEvents = 'none';
+                childrenSvg.style.opacity = '0';
+                childrenSvg.style.visibility = 'hidden';
+                childrenSvg.removeAttribute('data-parent-id');
+                // Сбрасываем transform при скрытии
+                childrenSvg.style.transform = '';
+                
+                console.log('Hiding children menu - after:', {
+                    hasShowClass: childrenSvg.classList.contains('show'),
+                    hasHiddenClass: childrenSvg.classList.contains('children-menu-hidden'),
+                    display: window.getComputedStyle(childrenSvg).display,
+                    visibility: window.getComputedStyle(childrenSvg).visibility,
+                    opacity: window.getComputedStyle(childrenSvg).opacity
+                });
+                
+                // Возобновляем вращение основного кольца
+                if (mainSvg) {
+                    mainSvg.style.animationPlayState = 'running';
+                }
+                
+                // Возобновляем вращение SVG индикаторов
+                const indicatorsSvg = document.getElementById('indicators-svg');
+                if (indicatorsSvg) {
+                    indicatorsSvg.style.animationPlayState = 'running';
+                }
+                
+                // Возобновляем вращение лого (counterRotate анимация)
+                @php
+                    $logoClassJs = LogoHelper::getClass('center');
+                @endphp
+                const logo = document.querySelector('.{{ $logoClassJs }}');
+                if (logo) {
+                    logo.style.animationPlayState = 'running';
+                }
+            }
+            
+            // Функция для построения URL дочернего элемента
+            function buildChildUrl(child, isAuthenticated) {
+                if (typeof child === 'object' && child !== null) {
+                    // Если есть готовый URL, используем его
+                    if (child.url) {
+                        return child.url;
+                    }
+                    // Иначе строим URL из параметров
+                    if (!isAuthenticated && child.guest_href) {
+                        if (child.guest_href_params) {
+                            // Извлекаем ID из параметров
+                            const params = child.guest_href_params;
+                            const id = params.id || params.type_id || params[Object.keys(params)[0]];
+                            if (id) {
+                                return '/resources/type/' + id;
+                            }
+                        }
+                        return '#';
+                    } else if (child.href) {
+                        if (child.href_params) {
+                            // Извлекаем ID из параметров
+                            const params = child.href_params;
+                            const id = params.id || params.type_id || params[Object.keys(params)[0]];
+                            if (id) {
+                                return '/resources/type/' + id;
+                            }
+                        }
+                        return '#';
+                    }
+                }
+                return '#';
+            }
+            
+            // Функция для получения названия дочернего элемента
+            function getChildName(child) {
+                if (typeof child === 'object' && child !== null) {
+                    // Если есть переведенное название, используем его
+                    if (child.translated_name) {
+                        return child.translated_name;
+                    }
+                    // Иначе используем исходное название
+                    return child.name || '';
+                }
+                return '';
+            }
+            
+            // Функция для обновления цветов дочерних элементов
+            function updateChildrenColors() {
+                const hasDarkClass = document.documentElement.classList.contains('dark');
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const hasLightClass = document.documentElement.classList.contains('light');
+                const isDark = hasDarkClass || (prefersDark && !hasLightClass);
+                
+                const childrenPaths = document.querySelectorAll('.children-sector-path');
+                childrenPaths.forEach(path => {
+                    if (isDark) {
+                        path.setAttribute('fill', '#161615');
+                        path.setAttribute('stroke', '#3E3E3A');
+                    } else {
+                        path.setAttribute('fill', 'white');
+                        path.setAttribute('stroke', '#e3e3e0');
+                    }
+                });
+                
+                const childrenTexts = document.querySelectorAll('.children-sector-text');
+                childrenTexts.forEach(text => {
+                    if (isDark) {
+                        text.setAttribute('fill', '#EDEDEC');
+                    } else {
+                        text.setAttribute('fill', '#1b1b18');
+                    }
+                });
+            }
+            
+            // Добавляем обновление цветов дочерних элементов при изменении темы
+            const childrenColorObserver = new MutationObserver(function(mutations) {
+                updateChildrenColors();
+            });
+            childrenColorObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+            
+            // Слушатель изменения системной темы для дочерних элементов
+            if (window.matchMedia) {
+                const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+                if (mediaQuery.addEventListener) {
+                    mediaQuery.addEventListener('change', updateChildrenColors);
+                } else if (mediaQuery.addListener) {
+                    mediaQuery.addListener(updateChildrenColors);
+                }
+            }
         </script>
 
         @if (Route::has('login'))
