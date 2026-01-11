@@ -27,6 +27,21 @@ class ApiService
      *  Тип не найден
      */
     public const TYPE_NOT_FOUND = 1103;
+
+    /**
+     *  Ошибка валидации данных
+     */
+    public const UNPROCESSABLE_CONTENT = 1104;
+
+    /**
+     *  Ошибка VK API
+     */
+    public const VK_API_ERROR = 1105;
+
+    /**
+     *  VK API токен не настроен
+     */
+    public const VK_TOKEN_NOT_CONFIGURED = 1106;
     
     public static function errorResponse(string $message, int $codError, $errors = [], int $code = 403)
     {

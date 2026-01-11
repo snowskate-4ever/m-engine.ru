@@ -6,11 +6,19 @@ use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 use App\Livewire\Account\Profiles;
 use App\Livewire\Settings\UpdateProfileInformation;
+use MoonShine\Laravel\Http\Middleware\Authenticate as MoonShineAuthenticate;
 
 Route::get('/', function () {
     $menuItems = \App\Services\MenuService::getMenuItems();
     return view('welcome', ['menuItems' => $menuItems]);
 })->name('home');
+
+// Маршруты для тестов (только для авторизованных пользователей MoonShine)
+Route::middleware(MoonShineAuthenticate::class)->group(function () {
+    Route::get('/admin/test', [App\Http\Controllers\TestController::class, 'index'])->name('admin.test');
+    Route::post('/admin/test/vk-groups', [App\Http\Controllers\TestController::class, 'getVkGroups'])->name('admin.test.vk-groups');
+    Route::post('/admin/test/vk-token', [App\Http\Controllers\TestController::class, 'saveVkToken'])->name('admin.test.vk-token');
+});
 
 // Заглушки для неавторизованных пользователей
 Route::get('/resources/type/{type_id}', function ($type_id) {

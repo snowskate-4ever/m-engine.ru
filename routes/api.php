@@ -7,6 +7,7 @@ use App\Http\Controllers\api\ApiTaskController;
 use App\Http\Controllers\api\ApiEventController;
 use App\Http\Controllers\api\ApiResourceController;
 use App\Http\Controllers\api\ApiTypeController;
+use App\Http\Controllers\api\VkApiController;
 
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
 
@@ -34,4 +35,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/types/{id}', [ApiTypeController::class, 'get_type'])->name('api_type');
     Route::put('/types/{id}', [ApiTypeController::class, 'edit_type'])->name('api_edit_type');
     Route::delete('/types/{id}', [ApiTypeController::class, 'delete_type'])->name('api_delete_type');
+
+    // VK API routes
+    Route::prefix('vk')->group(function () {
+        Route::get('/test', [VkApiController::class, 'testConnection'])->name('api_vk_test');
+        Route::get('/users', [VkApiController::class, 'getUsers'])->name('api_vk_users');
+        Route::get('/groups', [VkApiController::class, 'getGroups'])->name('api_vk_groups');
+        Route::get('/user-groups', [VkApiController::class, 'getUserGroups'])->name('api_vk_user_groups');
+        Route::post('/wall/post', [VkApiController::class, 'wallPost'])->name('api_vk_wall_post');
+        Route::post('/execute', [VkApiController::class, 'executeMethod'])->name('api_vk_execute');
+    });
 });
