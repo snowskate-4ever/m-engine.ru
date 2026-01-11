@@ -304,6 +304,15 @@
                                     $textX = $centerX + $textRadius * cos($textAngleRad);
                                     $textY = $centerY + $textRadius * sin($textAngleRad);
                                     
+                                    // Создаем путь-дугу для текста
+                                    $textPathStartX = $centerX + $textRadius * cos($startAngleRad);
+                                    $textPathStartY = $centerY + $textRadius * sin($startAngleRad);
+                                    $textPathEndX = $centerX + $textRadius * cos($endAngleRad);
+                                    $textPathEndY = $centerY + $textRadius * sin($endAngleRad);
+                                    $textPathLargeArcFlag = ($angleStep > 180) ? 1 : 0;
+                                    $textPathId = "text-path-{$index}";
+                                    $textPath = "M {$textPathStartX} {$textPathStartY} A {$textRadius} {$textRadius} 0 {$textPathLargeArcFlag} 1 {$textPathEndX} {$textPathEndY}";
+                                    
                                     // Координаты для индикатора подуровня (на границе внешнего круга)
                                     $indicatorRadius = $outerRadius; // Центр индикатора на границе кольца
                                     $indicatorX = $centerX + $indicatorRadius * cos($textAngleRad);
@@ -334,6 +343,9 @@
                                     }
                                 @endphp
                                 <g class="sector-group" data-index="{{ $index }}" data-angle="{{ $startAngle }}" data-center-angle="{{ ($startAngle + $endAngle) / 2 }}" data-has-children="{{ $hasChildren ? 'true' : 'false' }}" data-item-id="{{ $item['id'] ?? $index }}">
+                                        <defs>
+                                            <path id="{{ $textPathId }}" d="{{ $textPath }}" />
+                                        </defs>
                                         <path
                                         d="{{ $path }}"
                                         class="sector-path cursor-pointer transition-all duration-300 {{ $hasChildren ? 'has-children' : '' }}"
@@ -343,14 +355,11 @@
                                         style="pointer-events: all;"
                                     />
                                     <text 
-                                        x="{{ $textX }}" 
-                                        y="{{ $textY }}" 
-                                        text-anchor="middle" 
-                                        dominant-baseline="middle"
                                         class="sector-text pointer-events-none text-xs font-medium"
-                                        transform="rotate({{ $textAngle + 90 }}, {{ $textX }}, {{ $textY }})"
                                     >
-                                        {{ $itemName }}
+                                        <textPath href="#{{ $textPathId }}" startOffset="50%" text-anchor="middle" dominant-baseline="middle">
+                                            {{ $itemName }}
+                                        </textPath>
                                     </text>
                                 </g>
                             @endforeach
@@ -792,12 +801,14 @@
                 // Создаем секторы для дочерних элементов
                 children.forEach((child, index) => {
                     let path;
-                    let textAngle;
+                    let startAngleSvg, endAngleSvg;
                     
                     if (totalChildren === 1) {
                         // Для одного элемента делаем полный круг через две полудуги
                         // Используем верхнюю точку (0° в SVG = 90° в математических) как начальную
                         const topAngleSvg = 0;
+                        startAngleSvg = topAngleSvg;
+                        endAngleSvg = 360; // Полный круг
                         const topAngle = topAngleSvg + 90; // Преобразуем в математические координаты
                         const topAngleRad = Math.PI * topAngle / 180;
                         
@@ -823,14 +834,11 @@
                                `A ${childrenOuterRadius} ${childrenOuterRadius} 0 1 1 ${outerBottomX} ${outerBottomY} ` +
                                `L ${innerBottomX} ${innerBottomY} ` +
                                `A ${childrenInnerRadius} ${childrenInnerRadius} 0 1 0 ${innerTopX} ${innerTopY} Z`;
-                        
-                        // Угол для текста - верхняя точка (0° в SVG = 90° в математических)
-                        textAngle = 90;
                     } else {
                         // Для нескольких элементов - обычный расчет
                         // Углы в SVG координатах (0° = верх)
-                        const startAngleSvg = (index * childrenAngleStep) - 90;
-                        const endAngleSvg = ((index + 1) * childrenAngleStep) - 90;
+                        startAngleSvg = (index * childrenAngleStep) - 90;
+                        endAngleSvg = ((index + 1) * childrenAngleStep) - 90;
                         // Преобразуем в математические координаты (0° = право): добавляем 90°
                         const startAngle = startAngleSvg + 90;
                         const endAngle = endAngleSvg + 90;
@@ -853,18 +861,7 @@
                         
                         // Путь для сектора
                         path = `M ${innerStartX} ${innerStartY} L ${outerStartX} ${outerStartY} A ${childrenOuterRadius} ${childrenOuterRadius} 0 ${largeArcFlag} 1 ${outerEndX} ${outerEndY} L ${innerEndX} ${innerEndY} A ${childrenInnerRadius} ${childrenInnerRadius} 0 ${largeArcFlag} 0 ${innerStartX} ${innerStartY} Z`;
-                        
-                        // Угол для текста (в математических координатах)
-                        textAngle = (startAngle + endAngle) / 2;
-                        // Преобразуем обратно в SVG координаты для rotate transform
-                        const textAngleSvg = textAngle - 90;
                     }
-                    
-                    // Координаты для текста (используем математические координаты для вычисления позиции)
-                    const textAngleRad = Math.PI * textAngle / 180;
-                    const textRadius = (childrenInnerRadius + childrenOuterRadius) / 2;
-                    const textX = centerX + textRadius * Math.cos(textAngleRad);
-                    const textY = centerY + textRadius * Math.sin(textAngleRad);
                     
                     // Получаем URL и название
                     const childUrl = buildChildUrl(child, isAuthenticated);
@@ -893,36 +890,67 @@
                     }
                     g.appendChild(pathEl);
                     
-                    // Создаем текст
-                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    textEl.setAttribute('x', textX);
-                    textEl.setAttribute('y', textY);
-                    textEl.setAttribute('text-anchor', 'middle');
-                    textEl.setAttribute('dominant-baseline', 'middle');
-                    textEl.setAttribute('class', 'children-sector-text text-xs font-medium');
-                    // Для rotate transform используем SVG координаты
-                    // textAngle в математических координатах (0° = право, 90° = верх)
-                    // Для SVG rotate: 0° = верх, нужно преобразовать: textAngle - 90°
-                    // Для вертикального текста добавляем 90°
-                    // Итого: textAngle - 90 + 90 = textAngle для вертикального текста
-                    // Но если textAngle уже в математических координатах, то для SVG rotate с вертикальным текстом:
-                    // textAngle (математических) -> textAngle - 90 (SVG) -> textAngle - 90 + 90 = textAngle (вертикальный)
-                    let textAngleForTransform;
+                    // Создаем путь-дугу для текста
+                    const textRadius = (childrenInnerRadius + childrenOuterRadius) / 2;
+                    let textPathD;
+                    const textPathId = `children-text-path-${parentId}-${index}`;
+                    
                     if (totalChildren === 1) {
-                        // Для одного элемента textAngle = 90 (верх в математических = 0° в SVG)
-                        textAngleForTransform = 90; // 90° в SVG = право, что нужно для вертикального текста от верха
+                        // Для одного элемента создаем путь-дугу для полного круга
+                        // Используем верх и низ точки
+                        const topAngle = 90; // Математический угол для верха
+                        const topAngleRad = Math.PI * topAngle / 180;
+                        const bottomAngle = 270; // Математический угол для низа
+                        const bottomAngleRad = Math.PI * bottomAngle / 180;
+                        
+                        const topX = centerX + textRadius * Math.cos(topAngleRad);
+                        const topY = centerY + textRadius * Math.sin(topAngleRad);
+                        const bottomX = centerX + textRadius * Math.cos(bottomAngleRad);
+                        const bottomY = centerY + textRadius * Math.sin(bottomAngleRad);
+                        
+                        // Путь для полного круга: две полудуги
+                        textPathD = `M ${topX} ${topY} A ${textRadius} ${textRadius} 0 1 1 ${bottomX} ${bottomY} A ${textRadius} ${textRadius} 0 1 1 ${topX} ${topY}`;
                     } else {
-                        // Для нескольких элементов: textAngle в математических, преобразуем в SVG и добавляем 90 для вертикального
-                        textAngleForTransform = textAngle - 90 + 90; // Упрощаем: textAngle
+                        // Для нескольких элементов создаем дугу от начала до конца сектора
+                        const startAngle = startAngleSvg + 90; // Преобразуем в математические координаты
+                        const endAngle = endAngleSvg + 90;
+                        const startAngleRad = Math.PI * startAngle / 180;
+                        const endAngleRad = Math.PI * endAngle / 180;
+                        
+                        const textStartX = centerX + textRadius * Math.cos(startAngleRad);
+                        const textStartY = centerY + textRadius * Math.sin(startAngleRad);
+                        const textEndX = centerX + textRadius * Math.cos(endAngleRad);
+                        const textEndY = centerY + textRadius * Math.sin(endAngleRad);
+                        
+                        const textPathLargeArcFlag = (childrenAngleStep > 180) ? 1 : 0;
+                        textPathD = `M ${textStartX} ${textStartY} A ${textRadius} ${textRadius} 0 ${textPathLargeArcFlag} 1 ${textEndX} ${textEndY}`;
                     }
-                    textEl.setAttribute('transform', `rotate(${textAngleForTransform}, ${textX}, ${textY})`);
+                    
+                    // Создаем defs с путем для текста
+                    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                    const textPathDef = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    textPathDef.setAttribute('id', textPathId);
+                    textPathDef.setAttribute('d', textPathD);
+                    defs.appendChild(textPathDef);
+                    g.appendChild(defs);
+                    
+                    // Создаем текст с textPath
+                    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textEl.setAttribute('class', 'children-sector-text text-xs font-medium');
                     // Устанавливаем начальный цвет текста
                     if (isDark) {
                         textEl.setAttribute('fill', '#EDEDEC');
                     } else {
                         textEl.setAttribute('fill', '#1b1b18');
                     }
-                    textEl.textContent = childName;
+                    
+                    const textPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+                    textPathEl.setAttribute('href', `#${textPathId}`);
+                    textPathEl.setAttribute('startOffset', '50%');
+                    textPathEl.setAttribute('text-anchor', 'middle');
+                    textPathEl.setAttribute('dominant-baseline', 'middle');
+                    textPathEl.textContent = childName;
+                    textEl.appendChild(textPathEl);
                     g.appendChild(textEl);
                     
                     // Обработчик клика на сектор дочернего элемента

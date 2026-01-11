@@ -111,6 +111,7 @@ class MenuService
      */
     public static function getTranslatedName(array $item): string
     {
+        // Try translation_key first
         if (isset($item['translation_key']) && $item['translation_key']) {
             $translated = __($item['translation_key']);
             if ($translated !== $item['translation_key']) {
@@ -118,7 +119,16 @@ class MenuService
             }
         }
         
-        return $item['name'] ?? '';
+        // If name looks like a translation key (contains dots), try to translate it
+        $name = $item['name'] ?? '';
+        if ($name && strpos($name, '.') !== false) {
+            $translated = __($name);
+            if ($translated !== $name) {
+                return $translated;
+            }
+        }
+        
+        return $name;
     }
 }
 

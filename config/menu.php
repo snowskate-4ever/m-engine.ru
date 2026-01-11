@@ -15,55 +15,54 @@ return [
         // Example menu item structure:
         [
             'id' => 'unique_id',
-            'name' => 'Menu Item 1',
-            'translation_key' => 'moonshine.types.values.resource_name', // Optional: translation key
+            'name' => 'ui.menu.about', // Translation key or plain text
+            'translation_key' => 'ui.menu.about', // Translation key for translation
             'href' => '#', // Route name or URL
             'href_params' => ['param' => 'value'], // Optional: route parameters
             'auth_required' => true, // Optional: requires authentication (default: false)
             'guest_href' => 'resources.stub', // Optional: route for non-authenticated users
             'guest_href_params' => ['type_id' => 1], // Optional: parameters for guest route
-            'children' => [ // Optional: sublevels
-                [
-                    'id' => 'sub_item_1',
-                    'name' => 'Sub Item 1',
-                    'href' => 'route.name1',
-                ],
-            ],
+            'children' => [],
         ],
         [
             'id' => 'unique_id',
-            'name' => 'Menu Item 2',
-            'translation_key' => 'moonshine.types.values.resource_name', // Optional: translation key
+            'name' => 'ui.menu.boocking', // Translation key or plain text
+            'translation_key' => 'ui.menu.boocking', // Translation key for translation
             'href' => '#', // Route name or URL
             'href_params' => ['param' => 'value'], // Optional: route parameters
             'auth_required' => true, // Optional: requires authentication (default: false)
             'guest_href' => 'resources.stub', // Optional: route for non-authenticated users
             'guest_href_params' => ['type_id' => 1], // Optional: parameters for guest route
-            'children' => [ // Optional: sublevels
-                [
-                    'id' => 'sub_item_2',
-                    'name' => 'Sub Item 2',
-                    'href' => 'route.name2',
-                ],
-            ],
+            'children' => [],
         ],
         [
             'id' => 'unique_id',
-            'name' => 'Menu Item 3',
-            'translation_key' => 'moonshine.types.values.resource_name', // Optional: translation key
+            'name' => 'ui.menu.search', // Translation key or plain text
+            'translation_key' => 'ui.menu.search', // Translation key for translation
             'href' => '#', // Route name or URL
             'href_params' => ['param' => 'value'], // Optional: route parameters
             'auth_required' => true, // Optional: requires authentication (default: false)
             'guest_href' => 'resources.stub', // Optional: route for non-authenticated users
             'guest_href_params' => ['type_id' => 1], // Optional: parameters for guest route
-            'children' => [ // Optional: sublevels
-                [
-                    'id' => 'sub_item_3',
-                    'name' => 'Sub Item 3',
-                    'href' => 'route.name3',
-                ],
-            ],
+            'children' => [],
         ],
+        // [
+        //     'id' => 'unique_id',
+        //     'name' => 'Menu Item 3',
+        //     'translation_key' => 'moonshine.types.values.resource_name', // Optional: translation key
+        //     'href' => '#', // Route name or URL
+        //     'href_params' => ['param' => 'value'], // Optional: route parameters
+        //     'auth_required' => true, // Optional: requires authentication (default: false)
+        //     'guest_href' => 'resources.stub', // Optional: route for non-authenticated users
+        //     'guest_href_params' => ['type_id' => 1], // Optional: parameters for guest route
+        //     'children' => [ // Optional: sublevels
+        //         [
+        //             'id' => 'sub_item_3',
+        //             'name' => 'Sub Item 3',
+        //             'href' => 'route.name3',
+        //         ],
+        //     ],
+        // ],
 
         // Resource types from database
         // This will be populated dynamically from Type model

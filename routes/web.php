@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 use App\Livewire\Account\Profiles;
 use App\Livewire\Settings\UpdateProfileInformation;
-;
 
 Route::get('/', function () {
     $menuItems = \App\Services\MenuService::getMenuItems();
@@ -15,8 +15,8 @@ Route::get('/', function () {
 // Заглушки для неавторизованных пользователей
 Route::get('/resources/type/{type_id}', function ($type_id) {
     // Если пользователь авторизован, редиректим на правильный маршрут
-    if (auth()->check()) {
-        return redirect()->route('resources.by_type', $type_id);
+    if (Auth::check()) {
+        return redirect()->route('resources.by_type', ['type_id' => $type_id]);
     }
     $type = \App\Models\Type::findOrFail($type_id);
     return view('resources.stub', ['type' => $type]);
