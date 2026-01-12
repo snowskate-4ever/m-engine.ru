@@ -12,6 +12,7 @@ use App\MoonShine\Resources\Event\Pages\EventDetailPage;
 
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 
 /**
  * @extends ModelResource<Event, EventIndexPage, EventFormPage, EventDetailPage>
@@ -38,5 +39,14 @@ class EventResource extends ModelResource
             EventFormPage::class,
             EventDetailPage::class,
         ];
+    }
+
+    /**
+     * Загружаем связи для оптимизации запросов
+     */
+    public function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['bookedResource', 'bookingResource', 'room.resource', 'user']);
     }
 }

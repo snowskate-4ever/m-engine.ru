@@ -43,7 +43,7 @@
                                 <th class="px-2 py-1">ID</th>
                                 <th class="px-2 py-1">{{ __('ui.name') ?? 'Name' }}</th>
                                 <th class="px-2 py-1">{{ __('ui.description') ?? 'Description' }}</th>
-                                <th class="px-2 py-1">Active</th>
+                                <th class="px-2 py-1">{{ __('moonshine.resources.active') }}</th>
                                 <th class="px-2 py-1">Type</th>
                                 <th class="px-2 py-1">Start</th>
                                 <th class="px-2 py-1">End</th>
@@ -57,11 +57,16 @@
                                     <td class="px-2 py-1">{{ $resource['id'] }}</td>
                                     <td class="px-2 py-1">{{ $resource['name'] }}</td>
                                     <td class="px-2 py-1">{{ $resource['description'] }}</td>
-                                    <td class="px-2 py-1">{{ $resource['active'] ? 'Yes' : 'No' }}</td>
+                                    <td class="px-2 py-1">
+                                        <input type="checkbox" 
+                                               class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2" 
+                                               {{ $resource['active'] ? 'checked' : '' }} 
+                                               disabled>
+                                    </td>
                                     <td class="px-2 py-1">{{ $resource['type_name'] }}</td>
-                                    <td class="px-2 py-1">{{ $resource['start_at'] }}</td>
-                                    <td class="px-2 py-1">{{ $resource['end_at'] }}</td>
-                                    <td class="px-2 py-1">{{ $resource['created_at'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['start_at'] ?: '-' }}</td>
+                                    <td class="px-2 py-1">{{ $resource['end_at'] ?: '-' }}</td>
+                                    <td class="px-2 py-1">{{ $resource['created_at'] ?: '-' }}</td>
                                     <td class="px-2 py-1">{{ $resource['updated_at'] }}</td>
                                 </tr>
                             @endforeach

@@ -39,6 +39,7 @@ Route::middleware(['auth'])->group(function () {
     Route::group(['prefix' => '/resources'], function () {
         Route::get('/', [App\Http\Controllers\ResourceController::class, 'get_resources'])->name('resources');
         Route::get('/type/{type_id}', [App\Http\Controllers\ResourceController::class, 'get_resources_by_type'])->name('resources.by_type');
+        Route::get('/create/{type}', [App\Http\Controllers\ResourceController::class, 'create_resources'])->name('resources.create');
     });
     Route::group(['prefix' => '/events'], function () {
         Route::get('/', [App\Http\Controllers\EventController::class, 'get_events'])->name('events');

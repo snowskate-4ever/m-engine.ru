@@ -49,7 +49,8 @@ class ResourceDetailPage extends DetailPage
                     ->creatable()
                     ->valuesQuery(fn(Builder $query) => $query->where('resource_type', 'resources')),
             Date::make(__('moonshine.resources.start_at'), 'start_at'),
-            Date::make(__('moonshine.resources.end_at'), 'end_at'),
+            Date::make(__('moonshine.resources.end_at'), 'end_at')
+                ->nullable(),
         ];
     }
 

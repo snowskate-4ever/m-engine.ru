@@ -40,7 +40,7 @@ class ResourceFormPage extends FormPage
     {
         return [
             Box::make([
-                ID::make()->sortBy('asc'),
+                ID::make(),
                 Text::make(__('moonshine.resources.name'), 'name'),
                 Textarea::make(__('moonshine.resources.description'), 'description'),
                 Checkbox::make(__('moonshine.resources.active'), 'active'),
@@ -52,7 +52,8 @@ class ResourceFormPage extends FormPage
                         ->creatable()
                         ->valuesQuery(fn(Builder $query) => $query->where('resource_type', 'resources')),
                 Date::make(__('moonshine.resources.start_at'), 'start_at'),
-                Date::make(__('moonshine.resources.end_at'), 'end_at'),
+                Date::make(__('moonshine.resources.end_at'), 'end_at')
+                    ->nullable(),
             ]),
         ];
     }

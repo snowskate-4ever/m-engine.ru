@@ -16,22 +16,22 @@ class ResourceController extends Controller
         return $resourceService->get_resources_by_type($type_id, $request);
     }
 
-    public function create_resources(Request $request, ResourceService $resourceService)
+    public function create_resources(int $type, Request $request, ResourceService $resourceService)
     {
-        return $resourceService->create_resources($request);
+        return $resourceService->create_resources($request, $type);
     }
     
-    public function get__resource(integer $id, ResourceService $resourceService)
+    public function get__resource(int $id, ResourceService $resourceService)
     {
         return $resourceService->get_resource($id);
     }
     
-    public function edit_resource(integer $id, Request $request, ResourceService $resourceService)
+    public function edit_resource(int $id, Request $request, ResourceService $resourceService)
     {
         return $resourceService->edit_resource($id, $request);
     }
     
-    public function delete_resource(integer $id, ResourceService $resourceService)
+    public function delete_resource(int $id, ResourceService $resourceService)
     {
         return $resourceService->delete_resource($id);
     }

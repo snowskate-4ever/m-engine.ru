@@ -25,15 +25,33 @@
 - `PUT /api/tasks/{id}` — обновить; при передаче новых `attachments[]` коллекция заменяется.
 - `DELETE /api/tasks/{id}` — удалить.
 
-## События (Event)
-Поля: `name` (unique), `description`, `active` (bool), `resource_id` (uuid, опц.), `room_id` (uuid, опц.), `start_at`, `end_at` (>= start_at, опц.).
+## События (Event) и Бронирования (Booking)
+Поля: 
+- `name` (unique, required) — название события/бронирования
+- `description` (опц.) — описание
+- `active` (bool, опц.) — активность, по умолчанию `true`
+- `booking_resource_id` (int, опц.) — ID ресурса, который делает бронирование
+- `booked_resource_id` (int, опц.) — ID забронированного ресурса (если указан, это бронирование)
+- `room_id` (int, опц.) — ID комнаты для бронирования (только если указан `booked_resource_id`)
+- `user_id` (int, опц.) — ID пользователя, создавшего бронирование (по умолчанию текущий пользователь)
+- `status` (опц.) — статус: `pending`, `confirmed`, `cancelled`, `completed` (по умолчанию `pending`)
+- `start_at` (datetime, опц.) — начало события/бронирования
+- `end_at` (datetime, опц.) — окончание (должно быть позже `start_at`)
+- `notes` (string, опц.) — примечания к бронированию
+- `price` (decimal, опц.) — цена бронирования
+
+**Важно**: Если указаны `booked_resource_id`, `start_at` и `end_at`, система автоматически использует `BookingService` для создания бронирования с проверкой доступности и валидацией пересечений времени.
 
 Маршруты (`auth:sanctum`):
-- `GET /api/events` — фильтры `active`, `resource_id`, `room_id`, `date_from`, `date_to`.
-- `POST /api/events` — создать.
-- `GET /api/events/{id}` — получить.
-- `PUT /api/events/{id}` — обновить (unique name c игнором текущего).
-- `DELETE /api/events/{id}` — удалить (soft delete).
+- `GET /api/events` — список событий/бронирований
+  - Фильтры: `active`, `booked_resource_id`, `booking_resource_id`, `room_id`, `user_id`, `status`, `date_from`, `date_to`, `bookings_only` (только бронирования), `room_bookings_only` (только бронирования с комнатами)
+- `POST /api/events` — создать событие/бронирование
+  - Если указан `booked_resource_id` + `start_at` + `end_at` → создается бронирование с проверкой доступности
+  - Автоматически проверяются пересечения времени
+- `GET /api/events/{id}` — получить событие/бронирование
+- `PUT /api/events/{id}` — обновить событие/бронирование
+  - Для бронирований автоматически проверяется доступность при изменении времени/ресурса/комнаты
+- `DELETE /api/events/{id}` — удалить (soft delete)
 
 ## Ресурсы (Resource)
 Поля: `name` (unique), `description`, `active` (bool), `type_id` (int, обяз.), `start_at` (date), `end_at` (date, >= start_at).

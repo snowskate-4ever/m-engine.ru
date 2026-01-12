@@ -23,6 +23,17 @@ class ResourceService
 
     public function get_resources(Request $request)
     {
+        // Для общего списка ресурсов используем первый доступный type_id
+        $firstType = \App\Models\Type::where('resource_type', 'resources')->first();
+        $typeId = $firstType ? $firstType->id : null;
+        
+        // Обновляем кнопку с учетом type_id (используем абсолютный путь)
+        $buttons = [
+            'options' => [
+                'add' => $typeId ? '/resources/create/' . $typeId : '/resources/create',
+            ]
+        ];
+        
         return view('components.layouts.sec_level_layout', [
             'data' => [
                 'title' => __('ui.resources'),
@@ -30,7 +41,7 @@ class ResourceService
                 'seo_description' => '',
                 'seo_keywords' => '',
                 'component' => 'resource.resource-list',
-                'buttons' => $this->buttons,
+                'buttons' => $buttons,
             ]
         ]);
     }
@@ -41,6 +52,13 @@ class ResourceService
         $typeName = $type ? (__('moonshine.types.values.' . $type->name) ?: $type->name) : '';
         $title = $typeName ? __('ui.resources') . ' - ' . $typeName : __('ui.resources');
         
+        // Обновляем кнопку с учетом type_id (используем абсолютный путь)
+        $buttons = [
+            'options' => [
+                'add' => '/resources/create/' . $type_id,
+            ]
+        ];
+        
         return view('components.layouts.sec_level_layout', [
             'data' => [
                 'title' => $title,
@@ -48,13 +66,13 @@ class ResourceService
                 'seo_description' => '',
                 'seo_keywords' => '',
                 'component' => 'resource.resource-list',
-                'buttons' => $this->buttons,
+                'buttons' => $buttons,
                 'type_id' => $type_id,
             ]
         ]);
     }
 
-    public function create_resources(Request $request)
+    public function create_resources(Request $request, ?int $type = null)
     {
         return view('components.layouts.sec_level_layout', [
             'data' => [
@@ -64,6 +82,7 @@ class ResourceService
                 'seo_keywords' => '',
                 'component' => 'resource.resource-create',
                 'buttons' => $this->buttons,
+                'type_id' => $type,
             ]
         ]);
     }

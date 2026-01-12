@@ -39,7 +39,7 @@ class ResourceIndexPage extends IndexPage
     protected function fields(): iterable
     {
         return [
-            ID::make()->sortBy('asc'),
+            ID::make()->sortable(),
             Text::make(__('moonshine.resources.name'), 'name'),
             Textarea::make(__('moonshine.resources.description'), 'description'),
             Checkbox::make(__('moonshine.resources.active'), 'active'),
@@ -59,7 +59,8 @@ class ResourceIndexPage extends IndexPage
                     //         ->mapWithKeys(fn($item) => [$item->id => $item->name])
                     // ),
             Date::make(__('moonshine.resources.start_at'), 'start_at'),
-            Date::make(__('moonshine.resources.end_at'), 'end_at'),
+            Date::make(__('moonshine.resources.end_at'), 'end_at')
+                ->nullable(),
         ];
     }
 
