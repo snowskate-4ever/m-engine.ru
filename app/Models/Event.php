@@ -14,8 +14,8 @@ class Event extends Model
         'name',
         'description',
         'active',
-        'resource_id',
-        'room_id',
+        'booking_resource_id',
+        'booked_resource_id',
         'start_at',
         'end_at',
     ];
@@ -26,18 +26,13 @@ class Event extends Model
         'end_at' => 'datetime',
     ];
     
-    public function room(): BelongsTo
+    public function bookingResource(): BelongsTo
     {
-        return $this->belongsTo(Room::class);
+        return $this->belongsTo(Resource::class, 'booking_resource_id');
     }
 
-    public function resource(): BelongsTo
+    public function bookedResource(): BelongsTo
     {
-        return $this->belongsTo(Resource::class);
-    }
-
-    public function place(): BelongsTo
-    {
-        return $this->belongsTo(Resource::class);
+        return $this->belongsTo(Resource::class, 'booked_resource_id');
     }
 }

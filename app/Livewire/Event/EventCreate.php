@@ -44,21 +44,20 @@ class EventCreate extends Component
 
     public function save()
     {
-        $this->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . auth()->id(),
-            'phone' => 'nullable|string|max:20',
-        ]);
+        // Валидация должна работать с event объектом, но метод пока не реализован
+        // TODO: Реализовать сохранение события
+        // $this->validate([
+        //     'event.name' => 'required|string|max:255',
+        //     'event.description' => 'nullable|string',
+        //     'event.active' => 'boolean',
+        //     'event.booking_resource_id' => 'nullable|exists:resources,id',
+        //     'event.booked_resource_id' => 'nullable|exists:resources,id',
+        //     'event.start_at' => 'nullable|date',
+        //     'event.end_at' => 'nullable|date|after_or_equal:event.start_at',
+        // ]);
         
-        auth()->user()->update([
-            'name' => $this->name,
-            'email' => $this->email,
-            'phone' => $this->phone,
-        ]);
-    
-        session()->flash('success', 'Данные успешно сохранены!');
-
-        $this->dispatch('profile-updated');
+        // $this->event->save();
+        // session()->flash('success', 'Событие успешно создано!');
     }
     
     public function dispatchBrowserEvent() 

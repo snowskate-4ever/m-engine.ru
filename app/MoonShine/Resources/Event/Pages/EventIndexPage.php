@@ -20,7 +20,6 @@ use MoonShine\UI\Fields\Field;
 use MoonShine\UI\Components\Table\TableBuilder;
 use MoonShine\UI\Components\Metrics\Wrapped\Metric;
 use App\Models\Resource;
-use App\Models\Room;
 use App\MoonShine\Resources\Event\EventResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 
@@ -43,16 +42,17 @@ class EventIndexPage extends IndexPage
             Textarea::make(__('moonshine.events.description'), 'description'),
             Checkbox::make(__('moonshine.events.active'), 'active'),
             BelongsTo::make(
-                    __('moonshine.events.resource'),
-                    'resource',
+                    __('moonshine.events.booking_resource'),
+                    'bookingResource',
+                    'booking_resource_id',
                     formatted: static fn (Resource $model) => $model->name,
                 ),
-            
             BelongsTo::make(
-                        __('moonshine.events.room'),
-                        'room',
-                        formatted: static fn (Room $model) => json_encode($model, JSON_PRETTY_PRINT),// $model->name.' - '.$model->resource_name.' - '.$model->resource_id,
-                )->valuesQuery(fn(Builder $query, Field $field) => $query->with('resources')),
+                    __('moonshine.events.booked_resource'),
+                    'bookedResource',
+                    'booked_resource_id',
+                    formatted: static fn (Resource $model) => $model->name,
+                ),
             Date::make(__('moonshine.events.start_at'), 'start_at')
                 ->withTime()
                 ->format('H:i d.m.Y'),

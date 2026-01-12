@@ -18,7 +18,6 @@ use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Textarea;
 use App\Models\Resource;
-use App\Models\Room;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use MoonShine\UI\Fields\Checkbox;
@@ -43,30 +42,27 @@ class EventFormPage extends FormPage
                 Textarea::make(__('moonshine.events.description'), 'description'),
                 Checkbox::make(__('moonshine.events.active'), 'active'),
                 BelongsTo::make(
-                        __('moonshine.events.room'),
-                        'room',
-                        formatted: static fn (Room $model) => $model->name.' - '.$model->resource_name,
-                )
-                        ->valuesQuery(fn(Builder $query, Field $field) => $query
-                            ->select('rooms.*', 
-                                'resources.name as resource_name',
-                                'resources.type_id',
-                                'types.resource_type'
-                                )
-                            ->leftjoin('resources', 'resources.id', '=', 'rooms.resource_id')
-                            ->leftjoin('types', 'types.id', '=', 'resources.type_id')
-                            ->whereIn('types.resource_type', ['place']))
-                        ->creatable(),
-                BelongsTo::make(
-                        __('moonshine.events.resource'),
-                        'resource',
+                        __('moonshine.events.booking_resource'),
+                        'bookingResource',
+                        'booking_resource_id',
                         formatted: static fn (Resource $model) => $model->name,
                     )
                         ->creatable()
                         ->valuesQuery(fn(Builder $query, Field $field) => $query
                             ->select('resources.*', 'types.resource_type')
                             ->leftjoin('types', 'types.id', '=', 'resources.type_id')
-                            ->whereIn('types.resource_type', ['peformer'])),
+                            ->where('types.resource_type', 'resources')),
+                BelongsTo::make(
+                        __('moonshine.events.booked_resource'),
+                        'bookedResource',
+                        'booked_resource_id',
+                        formatted: static fn (Resource $model) => $model->name,
+                    )
+                        ->creatable()
+                        ->valuesQuery(fn(Builder $query, Field $field) => $query
+                            ->select('resources.*', 'types.resource_type')
+                            ->leftjoin('types', 'types.id', '=', 'resources.type_id')
+                            ->where('types.resource_type', 'resources')),
                 Date::make(__('moonshine.events.start_at'), 'start_at')
                     ->withTime(),
                 Date::make(__('moonshine.events.end_at'), 'end_at')

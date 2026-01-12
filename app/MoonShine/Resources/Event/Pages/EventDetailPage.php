@@ -16,7 +16,6 @@ use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Textarea;
 use App\Models\Resource;
-use App\Models\Place;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use MoonShine\UI\Fields\Checkbox;
@@ -38,13 +37,15 @@ class EventDetailPage extends DetailPage
             Textarea::make(__('moonshine.events.description'), 'description'),
             Checkbox::make(__('moonshine.events.active'), 'active'),
             BelongsTo::make(
-                    __('moonshine.events.resource'),
-                    'resource',
+                    __('moonshine.events.booking_resource'),
+                    'bookingResource',
+                    'booking_resource_id',
                     formatted: static fn (Resource $model) => $model->name,
                 ),
             BelongsTo::make(
-                    __('moonshine.events.place'),
-                    'resource',
+                    __('moonshine.events.booked_resource'),
+                    'bookedResource',
+                    'booked_resource_id',
                     formatted: static fn (Resource $model) => $model->name,
                 ),
             Date::make(__('moonshine.events.start_at'), 'start_at')
