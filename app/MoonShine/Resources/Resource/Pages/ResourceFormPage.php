@@ -17,14 +17,12 @@ use MoonShine\UI\Components\Layout\Box;
 use MoonShine\UI\Fields\Field;
 use MoonShine\UI\Fields\Checkbox;
 use MoonShine\UI\Fields\Date;
-use MoonShine\UI\Fields\Text;
-use MoonShine\UI\Fields\Textarea;
-use MoonShine\UI\Fields\Number;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use App\Models\Resource as MResource;
 use App\Models\Type;
 use App\MoonShine\Resources\Resource\ResourceResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 use Throwable;
 
 
@@ -41,17 +39,18 @@ class ResourceFormPage extends FormPage
         return [
             Box::make([
                 ID::make(),
-                Text::make(__('moonshine.resources.name'), 'name'),
-                Textarea::make(__('moonshine.resources.description'), 'description'),
-                Checkbox::make(__('moonshine.resources.active'), 'active'),
+                Checkbox::make(__('moonshine.resources.active'), 'active')
+                    ->default(true),
                 BelongsTo::make(
                             __('moonshine.resources.resource_type'),
                             'type',
                             formatted: static fn (Type $model) => __('moonshine.types.values.'.$model->name),
                     )
+                        ->required()
                         ->creatable()
                         ->valuesQuery(fn(Builder $query) => $query->where('resource_type', 'resources')),
-                Date::make(__('moonshine.resources.start_at'), 'start_at'),
+                Date::make(__('moonshine.resources.start_at'), 'start_at')
+                    ->required(),
                 Date::make(__('moonshine.resources.end_at'), 'end_at')
                     ->nullable(),
             ]),
@@ -70,7 +69,14 @@ class ResourceFormPage extends FormPage
 
     protected function rules(DataWrapperContract $item): array
     {
-        return [];
+        $resourceId = $item->getKey();
+        
+        return [
+            'active' => ['sometimes', 'boolean'],
+            'type_id' => ['required', 'integer', 'exists:types,id'],
+            'start_at' => ['required', 'date'],
+            'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
+        ];
     }
 
     /**

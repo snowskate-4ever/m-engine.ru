@@ -13,8 +13,6 @@ return new class extends Migration
     {
         Schema::create('resources', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->unique();
-            $table->text('description');
             $table->boolean('active');
             $table->integer('type_id');
             $table->date('start_at');

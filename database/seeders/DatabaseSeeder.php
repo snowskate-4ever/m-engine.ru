@@ -13,15 +13,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Пользователи
+        $this->call([
+            UserSeeder::class,
+        ]);
 
-        User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => 'password',
-                'email_verified_at' => now(),
-            ]
-        );
+        // MoonShine роли и пользователи
+        $this->call([
+            MoonShineUserRoleSeeder::class,
+            MoonShineUserSeeder::class,
+        ]);
+
+        // Заполнение таблиц инструментов и жанров
+        $this->call([
+            InstrumentSeeder::class,
+            GenreSeeder::class,
+        ]);
+
+        // Заполнение регионов и городов России
+        $this->call([
+            RussiaRegionsSeeder::class,
+            RussiaCitiesSeeder::class,
+        ]);
     }
 }

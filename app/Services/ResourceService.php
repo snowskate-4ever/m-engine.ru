@@ -74,9 +74,20 @@ class ResourceService
 
     public function create_resources(Request $request, ?int $type = null)
     {
+        $title = __('ui.resource_create');
+        
+        // Добавляем название типа в заголовок, если тип указан
+        if ($type) {
+            $typeModel = \App\Models\Type::find($type);
+            if ($typeModel) {
+                $typeName = __('moonshine.types.values.' . $typeModel->name) ?: $typeModel->name;
+                $title = __('ui.resource_create') . ' - ' . $typeName;
+            }
+        }
+        
         return view('components.layouts.sec_level_layout', [
             'data' => [
-                'title' => __('ui.resource_create'),
+                'title' => $title,
                 'seo_title' => '',
                 'seo_description' => '',
                 'seo_keywords' => '',
@@ -109,13 +120,11 @@ class ResourceService
     {
         return [
             'id' => $resource->id,
-            'name' => $resource->name,
-            'description' => $resource->description,
             'active' => $resource->active,
             'type_id' => $resource->type_id,
             'type_name' => $resource->type->name,
             'start_at' => Carbon::parse($resource->start_at)->format('H:i d-m-Y'),
-            'end_at' => Carbon::parse($resource->end_at)->format('H:i d-m-Y'),
+            'end_at' => $resource->end_at ? Carbon::parse($resource->end_at)->format('H:i d-m-Y') : null,
             'created_at' => Carbon::parse($resource->created_at)->format('H:i d-m-Y'),
             'updated_at' => Carbon::parse($resource->updated_at)->format('H:i d-m-Y'),
         ];

@@ -13,12 +13,9 @@ use MoonShine\UI\Components\Metrics\Wrapped\Metric;
 use MoonShine\UI\Fields\ID;
 use App\MoonShine\Resources\Resource\ResourceResource;
 use MoonShine\Support\ListOf;
-use MoonShine\UI\Fields\Text;
 use MoonShine\UI\Fields\Field;
 use MoonShine\UI\Fields\Checkbox;
 use MoonShine\UI\Fields\Date;
-use MoonShine\UI\Fields\Textarea;
-use MoonShine\UI\Fields\Number;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 use App\Models\Resource as MResource;
 use App\Models\Type;
@@ -40,8 +37,6 @@ class ResourceIndexPage extends IndexPage
     {
         return [
             ID::make()->sortable(),
-            Text::make(__('moonshine.resources.name'), 'name'),
-            Textarea::make(__('moonshine.resources.description'), 'description'),
             Checkbox::make(__('moonshine.resources.active'), 'active'),
             BelongsTo::make(
                     __('moonshine.resources.resource_type'),

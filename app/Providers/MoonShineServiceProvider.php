@@ -26,6 +26,8 @@ use App\MoonShine\Resources\Country\CountryResource;
 use App\MoonShine\Resources\Region\RegionResource;
 use App\MoonShine\Resources\City\CityResource;
 use App\MoonShine\Resources\Address\AddressResource;
+use App\MoonShine\Resources\Instrument\InstrumentResource;
+use App\MoonShine\Resources\Genre\GenreResource;
 
 class MoonShineServiceProvider extends ServiceProvider
 {
@@ -54,6 +56,8 @@ class MoonShineServiceProvider extends ServiceProvider
                 RegionResource::class,
                 CityResource::class,
                 AddressResource::class,
+                InstrumentResource::class,
+                GenreResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),

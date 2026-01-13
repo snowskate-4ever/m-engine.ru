@@ -38,11 +38,10 @@ class ResourceList extends Component
             $query->where('type_id', $this->type_id);
         }
         
-        // Применяем поиск, если есть поисковый запрос
-        $searchTerm = trim($this->search ?? '');
-        if (!empty($searchTerm)) {
-            $query->search($searchTerm);
-        }
+        // Поиск временно отключен, так как поля name и description удалены из таблицы
+        // if (!empty(trim($this->search ?? ''))) {
+        //     $query->search(trim($this->search));
+        // }
         
         $resources = $query->get();
         
@@ -50,8 +49,6 @@ class ResourceList extends Component
         $this->resources = $resources->map(function ($resource) {
             return [
                 'id' => $resource->id,
-                'name' => $resource->name,
-                'description' => $resource->description,
                 'active' => $resource->active,
                 'type_name' => $resource->type ? (__('moonshine.types.values.' . $resource->type->name) ?: $resource->type->name) : '',
                 'start_at' => $resource->start_at ? Carbon::parse($resource->start_at)->format('H:i d-m-Y') : '',

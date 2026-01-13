@@ -197,4 +197,20 @@ return [
             'spb' => 'Санкт-Петербург',
         ],  
     ],
+    'instruments' => [
+        'Tablename' => 'Инструменты',
+        'tablename' => 'инструменты',
+        'name' => 'Название',
+        'description' => 'Описание',
+        'active' => 'Активность',
+        'sort_order' => 'Порядок сортировки',
+    ],
+    'genres' => [
+        'Tablename' => 'Жанры',
+        'tablename' => 'жанры',
+        'name' => 'Название',
+        'description' => 'Описание',
+        'active' => 'Активность',
+        'sort_order' => 'Порядок сортировки',
+    ],
 ];

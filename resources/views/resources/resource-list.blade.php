@@ -10,9 +10,9 @@
                 </div>
             @endif
             
+            {{-- Поиск временно отключен, так как поля name и description удалены из таблицы --}}
             @auth
-            <!-- Поле поиска -->
-            <div class="mb-4">
+            <div class="mb-4" style="display: none;">
                 <label for="search" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
                     {{ __('ui.search') }}
                 </label>
@@ -41,22 +41,18 @@
                         <thead class="text-left text-zinc-500">
                             <tr>
                                 <th class="px-2 py-1">ID</th>
-                                <th class="px-2 py-1">{{ __('ui.name') ?? 'Name' }}</th>
-                                <th class="px-2 py-1">{{ __('ui.description') ?? 'Description' }}</th>
                                 <th class="px-2 py-1">{{ __('moonshine.resources.active') }}</th>
-                                <th class="px-2 py-1">Type</th>
-                                <th class="px-2 py-1">Start</th>
-                                <th class="px-2 py-1">End</th>
-                                <th class="px-2 py-1">Create</th>
-                                <th class="px-2 py-1">Update</th>
+                                <th class="px-2 py-1">{{ __('moonshine.resources.resource_type') }}</th>
+                                <th class="px-2 py-1">{{ __('moonshine.resources.start_at') }}</th>
+                                <th class="px-2 py-1">{{ __('moonshine.resources.end_at') }}</th>
+                                <th class="px-2 py-1">{{ __('ui.created_at') ?: 'Created' }}</th>
+                                <th class="px-2 py-1">{{ __('ui.updated_at') ?: 'Updated' }}</th>
                             </tr>
                         </thead>
                         <tbody class="text-zinc-900 dark:text-zinc-100">
                             @foreach($resources as $resource)
                                 <tr class="border-t border-zinc-200 dark:border-zinc-700">
                                     <td class="px-2 py-1">{{ $resource['id'] }}</td>
-                                    <td class="px-2 py-1">{{ $resource['name'] }}</td>
-                                    <td class="px-2 py-1">{{ $resource['description'] }}</td>
                                     <td class="px-2 py-1">
                                         <input type="checkbox" 
                                                class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2" 
@@ -67,7 +63,7 @@
                                     <td class="px-2 py-1">{{ $resource['start_at'] ?: '-' }}</td>
                                     <td class="px-2 py-1">{{ $resource['end_at'] ?: '-' }}</td>
                                     <td class="px-2 py-1">{{ $resource['created_at'] ?: '-' }}</td>
-                                    <td class="px-2 py-1">{{ $resource['updated_at'] }}</td>
+                                    <td class="px-2 py-1">{{ $resource['updated_at'] ?: '-' }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

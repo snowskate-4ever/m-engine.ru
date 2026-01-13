@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('rehearsals', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->unique();
+            $table->text('description');
             $table->timestamps();
         });
     }
@@ -22,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rehersals');
+        Schema::dropIfExists('rehearsals');
     }
 };

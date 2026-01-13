@@ -159,6 +159,22 @@ return [
         'Tablename' => 'Goods in categories',
         'tablename' => 'Goods in categories',
     ],
+    'instruments' => [
+        'Tablename' => 'Instruments',
+        'tablename' => 'instruments',
+        'name' => 'Name',
+        'description' => 'Description',
+        'active' => 'Active',
+        'sort_order' => 'Sort Order',
+    ],
+    'genres' => [
+        'Tablename' => 'Genres',
+        'tablename' => 'genres',
+        'name' => 'Name',
+        'description' => 'Description',
+        'active' => 'Active',
+        'sort_order' => 'Sort Order',
+    ],
 ];
 
 

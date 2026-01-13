@@ -53,17 +53,16 @@ class ApiResourceService
     public static function create_resource(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255', 'unique:resources,name'],
-            'description' => ['required', 'string'],
             'active' => ['sometimes', 'boolean'],
-            'type_id' => ['required', 'integer'],
+            'type_id' => ['required', 'integer', 'exists:types,id'],
             'start_at' => ['required', 'date'],
-            'end_at' => ['required', 'date', 'after_or_equal:start_at'],
+            'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
         ], [
-            'name.required' => 'Название обязательно.',
-            'name.unique' => 'Ресурс с таким названием уже существует.',
-            'description.required' => 'Описание обязательно.',
             'type_id.required' => 'Тип обязателен.',
+            'type_id.exists' => 'Выбранный тип не существует.',
+            'start_at.required' => 'Дата начала обязательна.',
+            'start_at.date' => 'Дата начала должна быть корректной датой.',
+            'end_at.date' => 'Дата окончания должна быть корректной датой.',
             'end_at.after_or_equal' => 'Дата окончания не может быть раньше даты начала.',
         ]);
 
@@ -79,12 +78,10 @@ class ApiResourceService
         $data = $validator->validated();
 
         $resource = new Resource();
-        $resource->name = $data['name'];
-        $resource->description = $data['description'];
         $resource->active = $data['active'] ?? true;
         $resource->type_id = $data['type_id'];
         $resource->start_at = $data['start_at'];
-        $resource->end_at = $data['end_at'];
+        $resource->end_at = $data['end_at'] ?? null;
         $resource->save();
 
         return ApiService::successResponse('Ресурс создан', self::formatResource($resource));
@@ -120,17 +117,16 @@ class ApiResourceService
         }
 
         $validator = Validator::make($request->all(), [
-            'name' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('resources', 'name')->ignore($resource->id)],
-            'description' => ['sometimes', 'required', 'string'],
             'active' => ['sometimes', 'boolean'],
-            'type_id' => ['sometimes', 'required', 'integer'],
+            'type_id' => ['sometimes', 'required', 'integer', 'exists:types,id'],
             'start_at' => ['sometimes', 'required', 'date'],
-            'end_at' => ['sometimes', 'required', 'date', 'after_or_equal:start_at'],
+            'end_at' => ['sometimes', 'nullable', 'date', 'after_or_equal:start_at'],
         ], [
-            'name.required' => 'Название обязательно.',
-            'name.unique' => 'Ресурс с таким названием уже существует.',
-            'description.required' => 'Описание обязательно.',
             'type_id.required' => 'Тип обязателен.',
+            'type_id.exists' => 'Выбранный тип не существует.',
+            'start_at.required' => 'Дата начала обязательна.',
+            'start_at.date' => 'Дата начала должна быть корректной датой.',
+            'end_at.date' => 'Дата окончания должна быть корректной датой.',
             'end_at.after_or_equal' => 'Дата окончания не может быть раньше даты начала.',
         ]);
 
@@ -145,12 +141,6 @@ class ApiResourceService
 
         $data = $validator->validated();
 
-        if (array_key_exists('name', $data)) {
-            $resource->name = $data['name'];
-        }
-        if (array_key_exists('description', $data)) {
-            $resource->description = $data['description'];
-        }
         if (array_key_exists('active', $data)) {
             $resource->active = $data['active'];
         }
@@ -161,7 +151,7 @@ class ApiResourceService
             $resource->start_at = $data['start_at'];
         }
         if (array_key_exists('end_at', $data)) {
-            $resource->end_at = $data['end_at'];
+            $resource->end_at = $data['end_at'] ?? null;
         }
 
         $resource->save();
@@ -191,8 +181,6 @@ class ApiResourceService
     {
         return [
             'id' => $resource->id,
-            'name' => $resource->name,
-            'description' => $resource->description,
             'active' => $resource->active,
             'type_id' => $resource->type_id,
             'start_at' => $resource->start_at?->toDateString(),

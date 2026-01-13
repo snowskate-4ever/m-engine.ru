@@ -5,7 +5,7 @@
     </head>
     <body class="flex min-h-screen bg-white dark:bg-zinc-800">
         @livewire('components.left-sidebar')
-        <div class="p-4 w-full">
+        <div class="p-4 w-full min-h-screen">
             @include('partials.settings-heading', $data)
             @livewire($data['component'], isset($data['type_id']) ? ['type_id' => $data['type_id']] : [])
         </div>

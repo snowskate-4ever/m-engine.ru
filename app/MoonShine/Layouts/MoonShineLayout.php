@@ -31,6 +31,8 @@ use App\MoonShine\Resources\Country\CountryResource;
 use App\MoonShine\Resources\Region\RegionResource;
 use App\MoonShine\Resources\City\CityResource;
 use App\MoonShine\Resources\Address\AddressResource;
+use App\MoonShine\Resources\Instrument\InstrumentResource;
+use App\MoonShine\Resources\Genre\GenreResource;
 
 final class MoonShineLayout extends AppLayout
 {
@@ -75,6 +77,10 @@ final class MoonShineLayout extends AppLayout
             ]),
             MenuItem::make(ResourceResource::class),
             MenuItem::make(CommunicationResource::class),
+            MenuGroup::make('Музыка', [
+                MenuItem::make(InstrumentResource::class)->icon('musical-note'),
+                MenuItem::make(GenreResource::class)->icon('musical-note'),
+            ])->icon('musical-note'),
         ];
     }
     
