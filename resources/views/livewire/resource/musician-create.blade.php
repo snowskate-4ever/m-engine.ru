@@ -75,37 +75,6 @@
             <small class="text-gray-500 text-xs mt-1 block">{{ __('ui.optional') }}</small>
         </div>
 
-        <!-- Рейтинг -->
-        <div class="mb-3">
-            <label for="rating" class="form-label">{{ __('ui.rating') ?: 'Рейтинг' }}</label>
-            <input type="number" 
-                   id="rating"
-                   wire:model.blur="rating"
-                   step="0.01"
-                   min="0"
-                   max="5"
-                   class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
-            @error('rating')
-                <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-            @enderror
-            <small class="text-gray-500 text-xs mt-1 block">{{ __('ui.optional') }} (0-5)</small>
-        </div>
-
-        <!-- Цена за час -->
-        <div class="mb-3">
-            <label for="price_per_hour" class="form-label">{{ __('ui.price_per_hour') ?: 'Цена за час' }}</label>
-            <input type="number" 
-                   id="price_per_hour"
-                   wire:model.blur="price_per_hour"
-                   step="0.01"
-                   min="0"
-                   class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
-            @error('price_per_hour')
-                <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-            @enderror
-            <small class="text-gray-500 text-xs mt-1 block">{{ __('ui.optional') }}</small>
-        </div>
-
         <!-- Личная информация -->
         <h5 class="mb-3 mt-4">{{ __('ui.personal_info') ?: 'Личная информация' }}</h5>
 

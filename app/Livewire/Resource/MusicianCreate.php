@@ -35,8 +35,6 @@ class MusicianCreate extends Component
     
     // Профессиональные характеристики
     public ?string $bio = null;
-    public ?float $rating = null;
-    public ?float $price_per_hour = null;
     
     // Личная информация
     public ?string $birth_date = null;
@@ -70,8 +68,6 @@ class MusicianCreate extends Component
             'description' => ['required', 'string'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'bio' => ['nullable', 'string'],
-            'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
-            'price_per_hour' => ['nullable', 'numeric', 'min:0'],
             'birth_date' => ['nullable', 'date'],
             'gender' => ['nullable', 'in:male,female,other'],
             'education' => ['nullable', 'string'],
@@ -95,8 +91,6 @@ class MusicianCreate extends Component
             'user_id' => $this->user_id,
             'active' => $this->active,
             'bio' => $this->bio,
-            'rating' => $this->rating,
-            'price_per_hour' => $this->price_per_hour,
             'birth_date' => $this->birth_date,
             'gender' => $this->gender,
             'education' => $this->education,

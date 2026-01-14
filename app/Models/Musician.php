@@ -20,8 +20,6 @@ class Musician extends Model
         'photo',
         'avatar',
         'bio',
-        'rating',
-        'price_per_hour',
         'birth_date',
         'gender',
         'education',
@@ -38,8 +36,6 @@ class Musician extends Model
         'is_session' => 'boolean',
         'availability' => 'array',
         'metadata' => 'array',
-        'rating' => 'decimal:2',
-        'price_per_hour' => 'decimal:2',
         'birth_date' => 'date',
     ];
 
