@@ -39,4 +39,57 @@ class Resource extends Model
     {
         return $this->morphMany(Social::class, 'socialable');
     }
+
+    /**
+     * Static search method for compatibility with Laravel Scout-like API
+     * 
+     * @param string|null $search
+     * @return Builder
+     */
+    public static function search(?string $search = null): Builder
+    {
+        $query = static::query();
+
+        if (empty($search)) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($search) {
+            // Search by ID if search term is numeric
+            if (is_numeric($search)) {
+                $q->where('id', $search);
+            }
+            
+            // Search by type name through relationship
+            $q->orWhereHas('type', function ($typeQuery) use ($search) {
+                $typeQuery->where('name', 'LIKE', "%{$search}%");
+            });
+        });
+    }
+
+    /**
+     * Query scope for search functionality
+     * 
+     * @param Builder $query
+     * @param string|null $search
+     * @return Builder
+     */
+    public function scopeSearch(Builder $query, ?string $search = null): Builder
+    {
+        if (empty($search)) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($search) {
+            // Search by ID if search term is numeric
+            if (is_numeric($search)) {
+                $q->where('id', $search);
+            }
+            
+            // Search by type name through relationship
+            $q->orWhereHas('type', function ($typeQuery) use ($search) {
+                $typeQuery->where('name', 'LIKE', "%{$search}%");
+            });
+        });
+    }
 }
