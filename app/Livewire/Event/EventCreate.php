@@ -4,72 +4,88 @@ namespace App\Livewire\Event;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use Livewire\Attributes\Validate; 
 use App\Models\Event;
+use App\Models\Resource;
+use App\Models\Room;
 
 class EventCreate extends Component
 {
-    public $event;
+    #[Validate('required|string|max:255|unique:events,name')]
+    public string $name = '';
 
-    // public $resources = [];
-    
-    public $search = '';
-    
-    // #[Validate('required|string|max:255')] 
-    // public string $name = '';
+    #[Validate('required|string')]
+    public string $description = '';
 
-    // #[Validate('required|email|max:255')] 
-    // public string $email = '';
+    #[Validate('boolean')]
+    public bool $active = true;
 
-    // #[Validate('nullable|string|max:12')] 
-    // public string $phone = '';
+    #[Validate('nullable|exists:resources,id')]
+    public ?int $resource_id = null;
 
-    // public $showSuccess = false;
+    #[Validate('nullable|exists:rooms,id')]
+    public ?int $room_id = null;
+
+    #[Validate('nullable|date')]
+    public ?string $start_at = null;
+
+    #[Validate('nullable|date|after_or_equal:start_at')]
+    public ?string $end_at = null;
+
+    public $resourceSearch = '';
+    public $roomSearch = '';
 
     public function mount()
     {
-        $this->event = new Event();
-        // $this->resources = \App\Models\Resource::all();
-
-        // $this->name = $this->user->name;
-        // $table->string('name')->unique();
-        // $table->text('description');
-        // $table->boolean('active');
-        // $table->uuid('resource_id')->nullable();
-        // $table->uuid('room_id')->nullable();
-        // $table->dateTime('start_at')->nullable();
-        // $table->dateTime('end_at')->nullable();
+        // Инициализация пустых значений
     }
 
     public function save()
     {
-        // Валидация должна работать с event объектом, но метод пока не реализован
-        // TODO: Реализовать сохранение события
-        // $this->validate([
-        //     'event.name' => 'required|string|max:255',
-        //     'event.description' => 'nullable|string',
-        //     'event.active' => 'boolean',
-        //     'event.booking_resource_id' => 'nullable|exists:resources,id',
-        //     'event.booked_resource_id' => 'nullable|exists:resources,id',
-        //     'event.start_at' => 'nullable|date',
-        //     'event.end_at' => 'nullable|date|after_or_equal:event.start_at',
-        // ]);
+        $this->validate();
+
+        Event::create([
+            'name' => $this->name,
+            'description' => $this->description,
+            'active' => $this->active,
+            'resource_id' => $this->resource_id,
+            'room_id' => $this->room_id,
+            'start_at' => $this->start_at ? \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $this->start_at) : null,
+            'end_at' => $this->end_at ? \Carbon\Carbon::createFromFormat('Y-m-d\TH:i', $this->end_at) : null,
+        ]);
+
+        session()->flash('success', 'Событие успешно создано!');
         
-        // $this->event->save();
-        // session()->flash('success', 'Событие успешно создано!');
-    }
-    
-    public function dispatchBrowserEvent() 
-    {
-        return 'Данные успешно сохранены';
+        // Очистка формы
+        $this->reset(['name', 'description', 'active', 'resource_id', 'room_id', 'start_at', 'end_at', 'resourceSearch', 'roomSearch']);
+        $this->active = true; // Устанавливаем значение по умолчанию обратно
     }
 
     public function render()
     {
+        $resourcesQuery = Resource::query()->with('type');
+        
+        if ($this->resourceSearch) {
+            $resourcesQuery = Resource::search($this->resourceSearch)->with('type');
+        } elseif ($this->resource_id) {
+            $resourcesQuery->where('id', $this->resource_id);
+        }
+        
+        $resources = $resourcesQuery->limit(10)->get();
+
+        $roomsQuery = Room::query()->with('resource.type');
+        
+        if ($this->roomSearch) {
+            $roomsQuery->where('name', 'LIKE', "%{$this->roomSearch}%");
+        } elseif ($this->room_id) {
+            $roomsQuery->where('id', $this->room_id);
+        }
+        
+        $rooms = $roomsQuery->limit(10)->get();
+
         return view('event.event-create', [
-            'resources' => \App\Models\Resource::search($this->search)->get(),
-            // 'resources' => dd( $this->search, \App\Models\Resource::search($this->search)->get()),
+            'resources' => $resources,
+            'rooms' => $rooms,
         ]);
     }
 }

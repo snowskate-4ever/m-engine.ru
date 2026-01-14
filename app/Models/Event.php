@@ -15,6 +15,7 @@ class Event extends Model
         'name',
         'description',
         'active',
+        'resource_id',
         'booking_resource_id',
         'booked_resource_id',
         'room_id',
@@ -41,6 +42,11 @@ class Event extends Model
     public function bookedResource(): BelongsTo
     {
         return $this->belongsTo(Resource::class, 'booked_resource_id');
+    }
+
+    public function resource(): BelongsTo
+    {
+        return $this->belongsTo(Resource::class);
     }
 
     public function room(): BelongsTo
