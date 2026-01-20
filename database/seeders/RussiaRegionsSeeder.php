@@ -131,6 +131,12 @@ class RussiaRegionsSeeder extends Seeder
             ['name' => 'Чукотский автономный округ', 'code' => '87', 'federal_district' => 'Дальневосточный', 'sort_order' => 118],
         ];
 
+        // Get the default region type, create if not exists
+        $regionType = \App\Models\Type::firstOrCreate(
+            ['resource_type' => 'region'],
+            ['name' => 'Region', 'description' => 'Administrative region']
+        );
+
         foreach ($regions as $region) {
             Region::updateOrCreate(
                 [
@@ -138,6 +144,7 @@ class RussiaRegionsSeeder extends Seeder
                     'code' => $region['code'],
                 ],
                 [
+                    'type_id' => $regionType->id,
                     'name' => $region['name'],
                     'federal_district' => $region['federal_district'],
                     'sort_order' => $region['sort_order'],

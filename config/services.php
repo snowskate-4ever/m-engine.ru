@@ -45,4 +45,47 @@ return [
         'tunnel_url' => env('VK_TUNNEL_URL', null), // URL туннелинг сервиса (например, https://m-engine.loca.lt)
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | N8N Integration
+    |--------------------------------------------------------------------------
+    */
+    'n8n' => [
+        'webhook_secret' => env('N8N_WEBHOOK_SECRET'),
+        'allowed_ips' => explode(',', env('N8N_ALLOWED_IPS', '')),
+        'default_workflow_url' => env('N8N_WORKFLOW_URL'),
+        'timeout' => env('N8N_TIMEOUT', 30),
+        'retry_attempts' => env('N8N_RETRY_ATTEMPTS', 3),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Telegram Bot Integration
+    |--------------------------------------------------------------------------
+    */
+    'telegram' => [
+        'bot_token' => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+        'auth_timeout' => env('TELEGRAM_AUTH_TIMEOUT', 300),
+        'api_url' => env('TELEGRAM_API_URL', 'https://api.telegram.org/bot'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Channels Configuration
+    |--------------------------------------------------------------------------
+    */
+    'auth_channels' => [
+        'default_expiry' => env('AUTH_DEFAULT_EXPIRY', 1800), // 30 минут
+        'cleanup_days' => env('AUTH_CLEANUP_DAYS', 30),
+        'rate_limit' => [
+            'web' => env('AUTH_RATE_LIMIT_WEB', 5),        // попыток в минуту
+            'api' => env('AUTH_RATE_LIMIT_API', 10),
+            'telegram' => env('AUTH_RATE_LIMIT_TELEGRAM', 3),
+            'n8n' => env('AUTH_RATE_LIMIT_N8N', 60),
+        ],
+        'max_attempts_per_hour' => env('AUTH_MAX_ATTEMPTS_PER_HOUR', 20),
+        'block_duration_minutes' => env('AUTH_BLOCK_DURATION_MINUTES', 15),
+    ],
+
 ];

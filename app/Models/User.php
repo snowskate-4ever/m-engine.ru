@@ -25,6 +25,9 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
+        'registration_channel',
+        'registration_metadata',
+        'telegram_id',
     ];
 
     /**
@@ -49,6 +52,8 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'registration_metadata' => 'array',
+            'telegram_id' => 'integer',
         ];
     }
 
@@ -62,5 +67,25 @@ class User extends Authenticatable
             ->take(2)
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
+    }
+
+    public function authAttempts()
+    {
+        return $this->hasMany(AuthAttempt::class);
+    }
+
+    public function successfulAuthAttempts()
+    {
+        return $this->authAttempts()->where('status', 'success');
+    }
+
+    public function getRegistrationChannel(): ?string
+    {
+        return $this->registration_channel;
+    }
+
+    public function getRegistrationMetadata(): array
+    {
+        return $this->registration_metadata ?? [];
     }
 }

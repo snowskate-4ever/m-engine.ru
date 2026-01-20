@@ -143,14 +143,19 @@ class RussiaCitiesSeeder extends Seeder
                     'region_id' => $region->id,
                     'slug' => $slug,
                 ],
-                array_merge($cityData, [
+                [
+                    'name' => $cityData['name'],
+                    'name_eng' => $cityData['name_eng'] ?? null,
+                    'population' => $cityData['population'] ?? null,
+                    'latitude' => $cityData['latitude'] ?? null,
+                    'longitude' => $cityData['longitude'] ?? null,
                     'country_id' => $russia->id,
                     'region_id' => $region->id,
                     'slug' => $slug,
                     'is_capital' => $cityData['is_capital'] ?? false,
                     'is_active' => true,
                     'timezone' => $cityData['timezone'] ?? 'Europe/Moscow',
-                ])
+                ]
             );
         }
 

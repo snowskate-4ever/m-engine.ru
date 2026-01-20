@@ -40,23 +40,47 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('events', function (Blueprint $table) {
-            // Удаляем индексы
-            $table->dropIndex(['booked_resource_id', 'start_at', 'end_at']);
-            $table->dropIndex(['room_id', 'start_at', 'end_at']);
-            
-            // Удаляем внешние ключи
-            $table->dropForeign(['room_id']);
-            $table->dropForeign(['user_id']);
-            
-            // Удаляем колонки
-            $table->dropColumn([
-                'room_id',
-                'user_id',
-                'status',
-                'notes',
-                'price',
-            ]);
+        // For SQLite compatibility, recreate the table
+        $this->recreateEventsTableWithoutBookingFields();
+    }
+
+    private function recreateEventsTableWithoutBookingFields(): void
+    {
+        // Get existing data
+        $events = DB::table('events')->get();
+
+        Schema::dropIfExists('events');
+
+        Schema::create('events', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+
+            // Basic event fields
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->dateTime('start_at');
+            $table->dateTime('end_at')->nullable();
+            $table->boolean('active')->default(true);
+
+            // Resource and booking relation
+            $table->foreignId('booked_resource_id')->constrained('resources')->onDelete('cascade');
+
+            // Keep only the original fields, remove booking-specific ones
         });
+
+        // Restore data (excluding the booking fields that are being removed)
+        foreach ($events as $event) {
+            DB::table('events')->insert([
+                'id' => $event->id,
+                'title' => $event->title,
+                'description' => $event->description,
+                'start_at' => $event->start_at,
+                'end_at' => $event->end_at,
+                'active' => $event->active,
+                'booked_resource_id' => $event->booked_resource_id,
+                'created_at' => $event->created_at,
+                'updated_at' => $event->updated_at,
+            ]);
+        }
     }
 };

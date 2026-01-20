@@ -8,8 +8,28 @@ use App\Http\Controllers\api\ApiEventController;
 use App\Http\Controllers\api\ApiResourceController;
 use App\Http\Controllers\api\ApiTypeController;
 use App\Http\Controllers\api\VkApiController;
+use App\Http\Controllers\api\AuthController;
 
+// Устаревший маршрут для обратной совместимости
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
+
+// Новые маршруты мультиканальной авторизации
+Route::middleware(['detect.channel'])->group(function () {
+    // Основной endpoint для авторизации из любого канала
+    Route::post('/auth', [AuthController::class, 'authenticate'])
+        ->middleware(['throttle:5,1']) // 5 попыток в минуту
+        ->name('auth.authenticate');
+
+    // Проверка статуса попытки авторизации
+    Route::get('/auth/status/{attemptId}', [AuthController::class, 'checkStatus'])
+        ->middleware(['throttle:30,1']) // 30 проверок в минуту
+        ->name('auth.status');
+});
+
+// Webhook для N8N (с верификацией подписи)
+Route::post('/webhooks/n8n/auth', [AuthController::class, 'n8nWebhook'])
+    ->middleware(['throttle:60,1']) // 60 попыток в минуту для N8N
+    ->name('webhooks.n8n.auth');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tasks', [ApiTaskController::class, 'get_tasks'])->name('api_tasks');

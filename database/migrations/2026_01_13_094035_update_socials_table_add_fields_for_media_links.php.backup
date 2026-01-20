@@ -1,0 +1,173 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('socials', function (Blueprint $table) {
+            // Добавляем полиморфную связь для связи с resources и musicians
+            $table->unsignedBigInteger('socialable_id')->nullable()->after('id');
+            $table->string('socialable_type')->nullable()->after('socialable_id');
+            
+            // Тип ссылки (YouTube, Instagram, Facebook, Portfolio и т.д.)
+            $table->enum('type', [
+                'youtube',
+                'instagram',
+                'facebook',
+                'vk',
+                'telegram',
+                'twitter',
+                'tiktok',
+                'portfolio',
+                'website',
+                'soundcloud',
+                'spotify',
+                'apple_music',
+                'other'
+            ])->nullable()->after('link');
+            
+            // Название/описание ссылки
+            $table->string('name')->nullable()->after('type');
+            $table->text('description')->nullable()->after('name');
+            
+            // Порядок сортировки
+            $table->integer('sort_order')->default(0)->after('description');
+            
+            // Активность
+            $table->boolean('active')->default(true)->after('sort_order');
+            
+            // Индексы
+            $table->index(['socialable_id', 'socialable_type']);
+            $table->index('type');
+            $table->index('active');
+            $table->index('sort_order');
+        });
+        
+        // Переносим данные из resource_id в полиморфную связь
+        DB::table('socials')->whereNotNull('resource_id')->update([
+            'socialable_id' => DB::raw('resource_id'),
+            'socialable_type' => 'App\\Models\\Resource',
+        ]);
+        
+        // Удаляем старое поле resource_id после переноса данных
+        // For SQLite compatibility, we need to recreate the table
+        $this->recreateSocialsTableWithoutResourceId();
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('socials', function (Blueprint $table) {
+            // Восстанавливаем resource_id
+            $table->foreignId('resource_id')->nullable()->after('id');
+        });
+        
+        // Переносим данные обратно
+        DB::table('socials')
+            ->where('socialable_type', 'App\\Models\\Resource')
+            ->update([
+                'resource_id' => DB::raw('socialable_id'),
+            ]);
+        
+        Schema::table('socials', function (Blueprint $table) {
+            // Удаляем добавленные поля
+            $table->dropIndex(['socialable_id', 'socialable_type']);
+            $table->dropIndex(['type']);
+            $table->dropIndex(['active']);
+            $table->dropIndex(['sort_order']);
+            
+            $table->dropColumn([
+                'socialable_id',
+                'socialable_type',
+                'type',
+                'name',
+                'description',
+                'sort_order',
+                'active',
+            ]);
+        });
+    }
+
+    private function recreateSocialsTableWithoutResourceId(): void
+    {
+        // Get existing data
+        $socials = DB::table('socials')->get();
+
+        // Drop and recreate the table without resource_id
+        Schema::dropIfExists('socials');
+
+        Schema::create('socials', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->softDeletes();
+
+            // Добавляем полиморфную связь для связи с resources и musicians
+            $table->unsignedBigInteger('socialable_id')->nullable();
+            $table->string('socialable_type')->nullable();
+
+            // Тип ссылки (YouTube, Instagram, Facebook, Portfolio и т.д.)
+            $table->enum('type', [
+                'youtube',
+                'instagram',
+                'facebook',
+                'vk',
+                'telegram',
+                'twitter',
+                'tiktok',
+                'portfolio',
+                'website',
+                'soundcloud',
+                'spotify',
+                'apple_music',
+                'other'
+            ])->nullable();
+
+            // Название/описание ссылки
+            $table->string('name')->nullable();
+            $table->text('description')->nullable();
+
+            // Порядок сортировки
+            $table->integer('sort_order')->default(0);
+
+            // Активность
+            $table->boolean('active')->default(true);
+
+            // Basic link field
+            $table->string('link')->nullable();
+
+            // Индексы
+            $table->index(['socialable_id', 'socialable_type']);
+            $table->index('type');
+            $table->index('active');
+            $table->index('sort_order');
+        });
+
+        // Restore data (but without resource_id since it's been migrated to socialable_*)
+        foreach ($socials as $social) {
+            DB::table('socials')->insert([
+                'id' => $social->id,
+                'socialable_id' => $social->socialable_id,
+                'socialable_type' => $social->socialable_type,
+                'type' => $social->type,
+                'name' => $social->name,
+                'description' => $social->description,
+                'sort_order' => $social->sort_order ?? 0,
+                'active' => $social->active ?? true,
+                'link' => $social->link,
+                'created_at' => $social->created_at,
+                'updated_at' => $social->updated_at,
+                'deleted_at' => $social->deleted_at,
+            ]);
+        }
+    }
+};

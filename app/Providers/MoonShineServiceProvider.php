@@ -28,6 +28,8 @@ use App\MoonShine\Resources\City\CityResource;
 use App\MoonShine\Resources\Address\AddressResource;
 use App\MoonShine\Resources\Instrument\InstrumentResource;
 use App\MoonShine\Resources\Genre\GenreResource;
+use App\MoonShine\Resources\AuthAttempt\AuthAttemptResource;
+use App\MoonShine\Resources\AuthChannel\AuthChannelResource;
 
 class MoonShineServiceProvider extends ServiceProvider
 {
@@ -58,6 +60,8 @@ class MoonShineServiceProvider extends ServiceProvider
                 AddressResource::class,
                 InstrumentResource::class,
                 GenreResource::class,
+                AuthAttemptResource::class,
+                AuthChannelResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),
