@@ -174,6 +174,9 @@
                 <div>
                     <script src="https://unpkg.com/@vkid/sdk@<3.0.0/dist-sdk/umd/index.js"></script>
                     <script type="text/javascript">
+                        let vkUserToken = null;
+                        let vkUserId = null;
+
                         if ('VKIDSDK' in window) {
                             const VKID = window.VKIDSDK;
 
@@ -222,9 +225,6 @@
                                     });
                             });
                         
-                            let vkUserToken = null;
-                            let vkUserId = null;
-
                             function vkidOnSuccess(data) {
                                 floatingOneTap.close();
 
