@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Защита от ситуации, когда таблица уже существует (MySQL)
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('musician_genre');
+        Schema::enableForeignKeyConstraints();
+
         Schema::create('musician_genre', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('musician_id');
