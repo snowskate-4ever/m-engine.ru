@@ -9,9 +9,20 @@ use App\Models\Address;
 use App\MoonShine\Resources\Address\Pages\AddressIndexPage;
 use App\MoonShine\Resources\Address\Pages\AddressFormPage;
 use App\MoonShine\Resources\Address\Pages\AddressDetailPage;
+use App\MoonShine\Resources\Country\CountryResource;
+use App\MoonShine\Resources\Region\RegionResource;
+use App\MoonShine\Resources\City\CityResource;
 
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
+use MoonShine\Actions\FiltersAction;
+use MoonShine\Fields\BelongsTo;
+use MoonShine\Fields\ID;
+use MoonShine\Fields\MorphTo;
+use MoonShine\Fields\Number;
+use MoonShine\Fields\Select;
+use MoonShine\Fields\Switcher;
+use MoonShine\Fields\Text;
 
 /**
  * @extends ModelResource<Address, AddressIndexPage, AddressFormPage, AddressDetailPage>
