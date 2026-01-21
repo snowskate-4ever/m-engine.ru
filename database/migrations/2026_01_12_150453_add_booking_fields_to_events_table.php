@@ -11,7 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('events', function (Blueprint $table) {
+        $hasBookedResource = Schema::hasColumn('events', 'booked_resource_id');
+        $hasBookingResource = Schema::hasColumn('events', 'booking_resource_id');
+
+        Schema::table('events', function (Blueprint $table) use ($hasBookedResource, $hasBookingResource) {
+            if (!$hasBookedResource) {
+                $afterColumn = $hasBookingResource ? 'booking_resource_id' : 'active';
+                $table->unsignedBigInteger('booked_resource_id')->nullable()->after($afterColumn);
+                $table->foreign('booked_resource_id')->references('id')->on('resources')->onDelete('set null');
+            }
+
             // Связь с комнатой (опционально) - для бронирования конкретной комнаты
             $table->unsignedBigInteger('room_id')->nullable()->after('booked_resource_id');
             $table->foreign('room_id')->references('id')->on('rooms')->onDelete('set null');
