@@ -176,6 +176,7 @@
                     <script type="text/javascript">
                         let vkUserToken = null;
                         let vkUserId = null;
+                        let vkApiToken = sessionStorage.getItem('vk_api_token');
 
                         if ('VKIDSDK' in window) {
                             const VKID = window.VKIDSDK;
@@ -455,6 +456,15 @@
                             });
                         }
 
+                        function setVkApiToken(token) {
+                            vkApiToken = token;
+                            if (token) {
+                                sessionStorage.setItem('vk_api_token', token);
+                            } else {
+                                sessionStorage.removeItem('vk_api_token');
+                            }
+                        }
+
                         // Обработка ошибок загрузки скрипта
                         window.addEventListener('error', function(e) {
                             if (e.target && e.target.src && e.target.src.includes('@vkid/sdk')) {
@@ -470,10 +480,12 @@
 
         <div class="section">
             <h2>VK API - Группы пользователя</h2>
+            <button id="vkApiAuthBtn" class="btn">Получить VK API токен</button>
             <button id="getVkGroupsBtn" class="btn" disabled>Получить группы ВК</button>
             <div style="margin-top: 10px; color: #666; font-size: 14px;">
-                Сначала авторизуйтесь через VK ID выше
+                Для групп нужен VK API токен с доступом <code>groups</code>.
             </div>
+            <div id="vkApiTokenStatus" style="margin-top: 10px;"></div>
             
             <div id="vkGroupsResults" class="results"></div>
         </div>
@@ -526,7 +538,42 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const btn = document.getElementById('getVkGroupsBtn');
+            const vkApiAuthBtn = document.getElementById('vkApiAuthBtn');
+            const vkApiTokenStatus = document.getElementById('vkApiTokenStatus');
             const resultsDiv = document.getElementById('vkGroupsResults');
+
+            function updateVkApiStatus() {
+                if (vkApiToken) {
+                    vkApiTokenStatus.innerHTML =
+                        '<div class="success-message">✓ VK API токен сохранен для текущей сессии.</div>';
+                    btn.disabled = false;
+                } else {
+                    vkApiTokenStatus.innerHTML =
+                        '<div class="error-message">VK API токен не получен.</div>';
+                    btn.disabled = true;
+                }
+            }
+
+            const hashParams = new URLSearchParams(window.location.hash.slice(1));
+            const apiTokenFromHash = hashParams.get('access_token');
+            if (apiTokenFromHash) {
+                setVkApiToken(apiTokenFromHash);
+                history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }
+
+            updateVkApiStatus();
+
+            vkApiAuthBtn.addEventListener('click', function() {
+                const redirectUri = window.location.origin + '/admin/test';
+                const authUrl = new URL('https://oauth.vk.com/authorize');
+                authUrl.searchParams.set('client_id', '{{ config('services.vk.app_id', '54418904') }}');
+                authUrl.searchParams.set('redirect_uri', redirectUri);
+                authUrl.searchParams.set('scope', 'groups');
+                authUrl.searchParams.set('response_type', 'token');
+                authUrl.searchParams.set('v', '{{ config('services.vk.api_version', '5.131') }}');
+                authUrl.searchParams.set('display', 'page');
+                window.location.href = authUrl.toString();
+            });
 
             btn.addEventListener('click', async function() {
                 btn.disabled = true;
@@ -535,29 +582,30 @@
                 resultsDiv.innerHTML = '<div class="loading">Загрузка...</div>';
 
                 try {
-                                    if (!vkUserToken) {
+                    if (!vkApiToken) {
                                         resultsDiv.classList.add('show', 'error');
                                         resultsDiv.innerHTML = `
                                             <div class="error-message">
-                                                <strong>Ошибка:</strong> Сначала авторизуйтесь через VK ID выше
+                                <strong>Ошибка:</strong> Нужен VK API токен с доступом <code>groups</code>
                                             </div>
                                         `;
                                         return;
                                     }
 
                                     const data = await vkApiJsonp('groups.get', {
-                                        access_token: vkUserToken,
+                        access_token: vkApiToken,
                                         v: '{{ config('services.vk.api_version', '5.131') }}',
                                         extended: 1,
                                         user_id: vkUserId || undefined,
                                     });
 
-                                    if (data.error) {
+                    if (data.error) {
                                         resultsDiv.classList.add('show', 'error');
                                         resultsDiv.innerHTML = `
                                             <div class="error-message">
                                                 <strong>Ошибка:</strong> ${data.error.error_msg || 'Неизвестная ошибка'}
                                                 ${data.error.error_code ? `<br>Код ошибки: ${data.error.error_code}` : ''}
+                                ${data.error.error_code === 1051 ? '<br><small>Токен VK ID не подходит для VK API. Получите VK API токен кнопкой выше.</small>' : ''}
                                             </div>
                                         `;
                                         return;
