@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Защита от ситуации, когда таблица уже существует (MySQL)
+        Schema::disableForeignKeyConstraints();
+        Schema::dropIfExists('cities');
+        Schema::enableForeignKeyConstraints();
+
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('region_id')->nullable()->constrained('regions')->onDelete('cascade');
