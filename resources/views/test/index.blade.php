@@ -224,6 +224,15 @@
                         
                             function vkidOnSuccess(data) {
                                 floatingOneTap.close();
+
+                                const token = data.access_token || data.token;
+                                const userId = data.user?.id || data.user_id;
+
+                                if (!token) {
+                                    document.getElementById('vkAuthStatus').innerHTML =
+                                        '<div class="error-message">Ошибка: VK ID не вернул access_token</div>';
+                                    return;
+                                }
                                 
                                 // Сохраняем токен на сервере
                                 fetch('{{ route("admin.test.vk-token") }}', {
@@ -235,19 +244,26 @@
                                     },
                                     credentials: 'same-origin',
                                     body: JSON.stringify({
-                                        token: data.token,
-                                        user_id: data.user?.id
+                                        token: token,
+                                        user_id: userId
                                     })
                                 })
-                                .then(response => response.json())
+                                .then(async response => {
+                                    const contentType = response.headers.get('content-type') || '';
+                                    if (contentType.includes('application/json')) {
+                                        return { ok: response.ok, data: await response.json() };
+                                    }
+                                    return { ok: response.ok, data: null };
+                                })
                                 .then(result => {
-                                    if (result.success) {
+                                    if (result.ok && result.data?.success) {
                                         document.getElementById('vkAuthStatus').innerHTML = 
                                             '<div class="success-message">✓ Авторизация успешна! Токен сохранен.</div>';
                                         document.getElementById('getVkGroupsBtn').disabled = false;
                                     } else {
+                                        const errorText = result.data?.message || 'Ошибка сохранения токена';
                                         document.getElementById('vkAuthStatus').innerHTML = 
-                                            '<div class="error-message">Ошибка сохранения токена</div>';
+                                            '<div class="error-message">' + errorText + '</div>';
                                     }
                                 })
                                 .catch(error => {
