@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -12,9 +13,15 @@ return new class extends Migration
     public function up(): void
     {
         // Защита от ситуации, когда таблица уже существует (MySQL)
-        Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('cities');
-        Schema::enableForeignKeyConstraints();
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            DB::statement('DROP TABLE IF EXISTS `cities`');
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        } else {
+            Schema::disableForeignKeyConstraints();
+            Schema::dropIfExists('cities');
+            Schema::enableForeignKeyConstraints();
+        }
 
         Schema::create('cities', function (Blueprint $table) {
             $table->id();
