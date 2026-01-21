@@ -49,7 +49,6 @@ return new class extends Migration
             $table->index('region_id');
             $table->index('country_id');
             $table->index('population');
-            $table->index('is_capital');
             $table->index('is_active');
             $table->index('sort_order');
             $table->index(['country_id', 'region_id']);
