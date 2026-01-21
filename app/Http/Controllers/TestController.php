@@ -48,12 +48,12 @@ class TestController extends Controller
     {
         $request->validate([
             'token' => 'required|string',
-            'user_id' => 'sometimes|string',
+            'user_id' => 'sometimes|integer',
         ]);
 
         $request->session()->put('vk_user_token', $request->input('token'));
         if ($request->has('user_id')) {
-            $request->session()->put('vk_user_id', $request->input('user_id'));
+            $request->session()->put('vk_user_id', (string) $request->input('user_id'));
         }
 
         return response()->json([
