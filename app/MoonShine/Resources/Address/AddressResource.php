@@ -16,13 +16,13 @@ use App\MoonShine\Resources\City\CityResource;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Actions\FiltersAction;
-use MoonShine\Fields\BelongsTo;
-use MoonShine\Fields\ID;
-use MoonShine\Fields\MorphTo;
-use MoonShine\Fields\Number;
-use MoonShine\Fields\Select;
-use MoonShine\Fields\Switcher;
-use MoonShine\Fields\Text;
+use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\MorphTo;
+use MoonShine\UI\Fields\Number;
+use MoonShine\UI\Fields\Select;
+use MoonShine\UI\Fields\Switcher;
+use MoonShine\UI\Fields\Text;
+use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 
 /**
  * @extends ModelResource<Address, AddressIndexPage, AddressFormPage, AddressDetailPage>
@@ -49,17 +49,17 @@ class AddressResource extends ModelResource
                 ->searchable()
                 ->showOnExport(),
             
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: new CountryResource())
+            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: CountryResource::class)
                 ->required()
                 ->searchable()
                 ->showOnExport(),
             
-            BelongsTo::make('Регион', 'region', fn($item) => $item->name, resource: new RegionResource())
+            BelongsTo::make('Регион', 'region', fn($item) => $item->name, resource: RegionResource::class)
                 ->nullable()
                 ->searchable()
                 ->showOnExport(),
             
-            BelongsTo::make('Город', 'city', fn($item) => $item->name, resource: new CityResource())
+            BelongsTo::make('Город', 'city', fn($item) => $item->name, resource: CityResource::class)
                 ->nullable()
                 ->searchable()
                 ->showOnExport(),
@@ -187,11 +187,11 @@ class AddressResource extends ModelResource
     public function filters(): array
     {
         return [
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: new CountryResource())
+            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: CountryResource::class)
                 ->nullable()
                 ->searchable(),
             
-            BelongsTo::make('Город', 'city', fn($item) => $item->name, resource: new CityResource())
+            BelongsTo::make('Город', 'city', fn($item) => $item->name, resource: CityResource::class)
                 ->nullable()
                 ->searchable(),
             

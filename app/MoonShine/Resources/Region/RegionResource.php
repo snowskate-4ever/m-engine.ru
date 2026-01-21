@@ -90,7 +90,7 @@ class RegionResource extends ModelResource
             Switcher::make('Активен', 'is_active')
                 ->default(true),
             
-            HasMany::make('Города', 'cities', resource: new CityResource())
+            HasMany::make('Города', 'cities', resource: CityResource::class)
                 ->creatable()
                 ->hideOnIndex(),
         ];
