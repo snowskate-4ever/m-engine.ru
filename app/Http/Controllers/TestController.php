@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use App\Services\TestService;
 use App\Services\api\VkApiService;
 
@@ -24,6 +25,8 @@ class TestController extends Controller
             'results' => $results,
             'timestamp' => now()->toDateTimeString(),
             'vkRedirectUrl' => $redirectUrl,
+            'vkApiTokenSaved' => $request->session()->has('vk_api_token'),
+            'vkApiError' => $request->session()->get('vk_api_error'),
         ]);
     }
 
@@ -32,10 +35,17 @@ class TestController extends Controller
      */
     public function getVkGroups(Request $request)
     {
-        // Используем токен пользователя из сессии, если есть
-        $userToken = $request->session()->get('vk_user_token');
+        // Используем VK API токен из сессии, если есть, иначе токен VK ID
+        $userToken = $request->session()->get('vk_api_token')
+            ?: $request->session()->get('vk_user_token');
         if ($userToken) {
             $request->merge(['user_token' => $userToken]);
+        }
+
+        $userId = $request->session()->get('vk_api_user_id')
+            ?: $request->session()->get('vk_user_id');
+        if ($userId && !$request->has('user_id')) {
+            $request->merge(['user_id' => $userId]);
         }
         
         return VkApiService::getUserGroups($request);
@@ -60,6 +70,61 @@ class TestController extends Controller
             'success' => true,
             'message' => 'Токен сохранен',
         ]);
+    }
+
+    /**
+     * OAuth callback для получения VK API токена (authorization code flow)
+     */
+    public function handleVkOAuth(Request $request)
+    {
+        $code = $request->query('code');
+        $error = $request->query('error_description') ?? $request->query('error');
+
+        if (!$code) {
+            $request->session()->flash('vk_api_error', $error ?: 'Код авторизации не получен.');
+            return redirect()->route('admin.test');
+        }
+
+        $clientId = config('services.vk.app_id');
+        $clientSecret = config('services.vk.client_secret');
+        $redirectUri = $request->getSchemeAndHttpHost() . '/admin/test/vk-oauth';
+
+        if (!$clientId || !$clientSecret) {
+            $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID или VK_CLIENT_SECRET.');
+            return redirect()->route('admin.test');
+        }
+
+        $response = Http::get('https://oauth.vk.com/access_token', [
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
+            'redirect_uri' => $redirectUri,
+            'code' => $code,
+        ]);
+
+        if (!$response->ok()) {
+            $request->session()->flash('vk_api_error', 'Не удалось получить токен VK API.');
+            return redirect()->route('admin.test');
+        }
+
+        $data = $response->json();
+        if (isset($data['error'])) {
+            $request->session()->flash('vk_api_error', $data['error_description'] ?? $data['error']);
+            return redirect()->route('admin.test');
+        }
+
+        if (empty($data['access_token'])) {
+            $request->session()->flash('vk_api_error', 'VK API не вернул access_token.');
+            return redirect()->route('admin.test');
+        }
+
+        $request->session()->put('vk_api_token', $data['access_token']);
+        if (!empty($data['user_id'])) {
+            $request->session()->put('vk_api_user_id', (string) $data['user_id']);
+        }
+
+        $request->session()->flash('vk_api_token_saved', true);
+
+        return redirect()->route('admin.test');
     }
 }
 

@@ -176,7 +176,8 @@
                     <script type="text/javascript">
                         let vkUserToken = null;
                         let vkUserId = null;
-                        let vkApiToken = sessionStorage.getItem('vk_api_token');
+                        const vkApiTokenSaved = @json($vkApiTokenSaved ?? false);
+                        const vkApiError = @json($vkApiError ?? null);
 
                         if ('VKIDSDK' in window) {
                             const VKID = window.VKIDSDK;
@@ -418,53 +419,6 @@
                             }, 2000);
                         }
                         
-                        function vkApiJsonp(method, params = {}) {
-                            return new Promise((resolve, reject) => {
-                                const callbackName = `vkJsonp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-                                const script = document.createElement('script');
-                                const timeoutId = setTimeout(() => {
-                                    cleanup();
-                                    reject(new Error('VK API timeout'));
-                                }, 10000);
-
-                                function cleanup() {
-                                    delete window[callbackName];
-                                    script.remove();
-                                    clearTimeout(timeoutId);
-                                }
-
-                                window[callbackName] = function(data) {
-                                    cleanup();
-                                    resolve(data);
-                                };
-
-                                const url = new URL(`https://api.vk.com/method/${method}`);
-                                Object.entries(params).forEach(([key, value]) => {
-                                    if (value !== undefined && value !== null && value !== '') {
-                                        url.searchParams.set(key, String(value));
-                                    }
-                                });
-                                url.searchParams.set('callback', callbackName);
-
-                                script.src = url.toString();
-                                script.onerror = () => {
-                                    cleanup();
-                                    reject(new Error('Ошибка загрузки VK API'));
-                                };
-
-                                document.body.appendChild(script);
-                            });
-                        }
-
-                        function setVkApiToken(token) {
-                            vkApiToken = token;
-                            if (token) {
-                                sessionStorage.setItem('vk_api_token', token);
-                            } else {
-                                sessionStorage.removeItem('vk_api_token');
-                            }
-                        }
-
                         // Обработка ошибок загрузки скрипта
                         window.addEventListener('error', function(e) {
                             if (e.target && e.target.src && e.target.src.includes('@vkid/sdk')) {
@@ -543,33 +497,27 @@
             const resultsDiv = document.getElementById('vkGroupsResults');
 
             function updateVkApiStatus() {
-                if (vkApiToken) {
+                if (vkApiTokenSaved) {
                     vkApiTokenStatus.innerHTML =
                         '<div class="success-message">✓ VK API токен сохранен для текущей сессии.</div>';
                     btn.disabled = false;
                 } else {
+                    const errorText = vkApiError ? `Ошибка: ${vkApiError}` : 'VK API токен не получен.';
                     vkApiTokenStatus.innerHTML =
-                        '<div class="error-message">VK API токен не получен.</div>';
+                        `<div class="error-message">${errorText}</div>`;
                     btn.disabled = true;
                 }
-            }
-
-            const hashParams = new URLSearchParams(window.location.hash.slice(1));
-            const apiTokenFromHash = hashParams.get('access_token');
-            if (apiTokenFromHash) {
-                setVkApiToken(apiTokenFromHash);
-                history.replaceState(null, document.title, window.location.pathname + window.location.search);
             }
 
             updateVkApiStatus();
 
             vkApiAuthBtn.addEventListener('click', function() {
-                const redirectUri = window.location.origin + '/admin/test';
+                const redirectUri = window.location.origin + '/admin/test/vk-oauth';
                 const authUrl = new URL('https://oauth.vk.com/authorize');
                 authUrl.searchParams.set('client_id', '{{ config('services.vk.app_id', '54418904') }}');
                 authUrl.searchParams.set('redirect_uri', redirectUri);
                 authUrl.searchParams.set('scope', 'groups');
-                authUrl.searchParams.set('response_type', 'token');
+                authUrl.searchParams.set('response_type', 'code');
                 authUrl.searchParams.set('v', '{{ config('services.vk.api_version', '5.131') }}');
                 authUrl.searchParams.set('display', 'page');
                 window.location.href = authUrl.toString();
@@ -582,39 +530,35 @@
                 resultsDiv.innerHTML = '<div class="loading">Загрузка...</div>';
 
                 try {
-                    if (!vkApiToken) {
-                                        resultsDiv.classList.add('show', 'error');
-                                        resultsDiv.innerHTML = `
-                                            <div class="error-message">
-                                <strong>Ошибка:</strong> Нужен VK API токен с доступом <code>groups</code>
-                                            </div>
-                                        `;
-                                        return;
-                                    }
+                    const response = await fetch('{{ route("admin.test.vk-groups") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        credentials: 'same-origin'
+                    });
 
-                                    const data = await vkApiJsonp('groups.get', {
-                        access_token: vkApiToken,
-                                        v: '{{ config('services.vk.api_version', '5.131') }}',
-                                        extended: 1,
-                                        user_id: vkUserId || undefined,
-                                    });
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        const isAuthRedirect = response.redirected || response.url.includes('/admin/login');
+                        resultsDiv.classList.add('show', 'error');
+                        resultsDiv.innerHTML = `
+                            <div class="error-message">
+                                <strong>Ошибка:</strong> ${isAuthRedirect ? 'Требуется авторизация в админке' : 'Ответ сервера не в формате JSON'}
+                                <br><small>Перезайдите в админку и попробуйте снова</small>
+                            </div>
+                        `;
+                        return;
+                    }
 
-                    if (data.error) {
-                                        resultsDiv.classList.add('show', 'error');
-                                        resultsDiv.innerHTML = `
-                                            <div class="error-message">
-                                                <strong>Ошибка:</strong> ${data.error.error_msg || 'Неизвестная ошибка'}
-                                                ${data.error.error_code ? `<br>Код ошибки: ${data.error.error_code}` : ''}
-                                ${data.error.error_code === 1051 ? '<br><small>Токен VK ID не подходит для VK API. Получите VK API токен кнопкой выше.</small>' : ''}
-                                            </div>
-                                        `;
-                                        return;
-                                    }
+                    const data = await response.json();
 
-                                    if (data.response) {
+                    if (data.success) {
                                         resultsDiv.classList.add('show', 'success');
-                                        const groups = data.response.items || data.response || [];
-                                        const count = data.response.count || groups.length;
+                        const groups = data.data.groups || [];
+                        const count = data.data.count || 0;
 
                         let html = `<div class="success-message">Успешно получено групп: ${count}</div>`;
                         
@@ -638,11 +582,12 @@
                         }
 
                         resultsDiv.innerHTML = html;
-                                    } else {
+                    } else {
                                         resultsDiv.classList.add('show', 'error');
                                         resultsDiv.innerHTML = `
                                             <div class="error-message">
-                                                <strong>Ошибка:</strong> Неожиданный формат ответа VK API
+                                <strong>Ошибка:</strong> ${data.message || 'Неизвестная ошибка'}
+                                ${data.codError ? `<br>Код ошибки: ${data.codError}` : ''}
                                             </div>
                                         `;
                                     }
