@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('musician_genre', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('musician_id')->constrained('musicians')->onDelete('cascade');
-            $table->foreignId('genre_id')->constrained('genres')->onDelete('cascade');
+            $table->unsignedBigInteger('musician_id');
+            $table->unsignedBigInteger('genre_id');
             $table->integer('preference_level')->nullable()->default(5); // Уровень предпочтения от 1 до 10
             $table->boolean('is_primary')->default(false); // Основной жанр
             $table->timestamps();

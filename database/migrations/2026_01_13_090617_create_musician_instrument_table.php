@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('musician_instrument', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('musician_id')->constrained('musicians')->onDelete('cascade');
-            $table->foreignId('instrument_id')->constrained('instruments')->onDelete('cascade');
+            $table->unsignedBigInteger('musician_id');
+            $table->unsignedBigInteger('instrument_id');
             $table->integer('proficiency_level')->nullable()->default(5); // Уровень владения от 1 до 10
             $table->boolean('is_primary')->default(false); // Основной инструмент
             $table->timestamps();
