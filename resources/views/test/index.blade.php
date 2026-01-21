@@ -417,6 +417,44 @@
                             }, 2000);
                         }
                         
+                        function vkApiJsonp(method, params = {}) {
+                            return new Promise((resolve, reject) => {
+                                const callbackName = `vkJsonp_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+                                const script = document.createElement('script');
+                                const timeoutId = setTimeout(() => {
+                                    cleanup();
+                                    reject(new Error('VK API timeout'));
+                                }, 10000);
+
+                                function cleanup() {
+                                    delete window[callbackName];
+                                    script.remove();
+                                    clearTimeout(timeoutId);
+                                }
+
+                                window[callbackName] = function(data) {
+                                    cleanup();
+                                    resolve(data);
+                                };
+
+                                const url = new URL(`https://api.vk.com/method/${method}`);
+                                Object.entries(params).forEach(([key, value]) => {
+                                    if (value !== undefined && value !== null && value !== '') {
+                                        url.searchParams.set(key, String(value));
+                                    }
+                                });
+                                url.searchParams.set('callback', callbackName);
+
+                                script.src = url.toString();
+                                script.onerror = () => {
+                                    cleanup();
+                                    reject(new Error('Ошибка загрузки VK API'));
+                                };
+
+                                document.body.appendChild(script);
+                            });
+                        }
+
                         // Обработка ошибок загрузки скрипта
                         window.addEventListener('error', function(e) {
                             if (e.target && e.target.src && e.target.src.includes('@vkid/sdk')) {
@@ -507,20 +545,12 @@
                                         return;
                                     }
 
-                                    const apiUrl = new URL('https://api.vk.com/method/groups.get');
-                                    apiUrl.searchParams.set('access_token', vkUserToken);
-                                    apiUrl.searchParams.set('v', '{{ config('services.vk.api_version', '5.131') }}');
-                                    apiUrl.searchParams.set('extended', '1');
-                                    if (vkUserId) {
-                                        apiUrl.searchParams.set('user_id', vkUserId);
-                                    }
-
-                                    const response = await fetch(apiUrl.toString(), {
-                                        method: 'GET',
-                                        headers: { 'Accept': 'application/json' },
+                                    const data = await vkApiJsonp('groups.get', {
+                                        access_token: vkUserToken,
+                                        v: '{{ config('services.vk.api_version', '5.131') }}',
+                                        extended: 1,
+                                        user_id: vkUserId || undefined,
                                     });
-
-                                    const data = await response.json();
 
                                     if (data.error) {
                                         resultsDiv.classList.add('show', 'error');
