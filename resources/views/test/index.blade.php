@@ -222,6 +222,9 @@
                                     });
                             });
                         
+                            let vkUserToken = null;
+                            let vkUserId = null;
+
                             function vkidOnSuccess(data) {
                                 floatingOneTap.close();
 
@@ -234,6 +237,9 @@
                                     return;
                                 }
                                 
+                                vkUserToken = token;
+                                vkUserId = userId;
+
                                 // Сохраняем токен на сервере
                                 fetch('{{ route("admin.test.vk-token") }}', {
                                     method: 'POST',
@@ -491,22 +497,46 @@
                 resultsDiv.innerHTML = '<div class="loading">Загрузка...</div>';
 
                 try {
-                    const response = await fetch('{{ route("admin.test.vk-groups") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        credentials: 'same-origin'
-                    });
+                                    if (!vkUserToken) {
+                                        resultsDiv.classList.add('show', 'error');
+                                        resultsDiv.innerHTML = `
+                                            <div class="error-message">
+                                                <strong>Ошибка:</strong> Сначала авторизуйтесь через VK ID выше
+                                            </div>
+                                        `;
+                                        return;
+                                    }
 
-                    const data = await response.json();
+                                    const apiUrl = new URL('https://api.vk.com/method/groups.get');
+                                    apiUrl.searchParams.set('access_token', vkUserToken);
+                                    apiUrl.searchParams.set('v', '{{ config('services.vk.api_version', '5.131') }}');
+                                    apiUrl.searchParams.set('extended', '1');
+                                    if (vkUserId) {
+                                        apiUrl.searchParams.set('user_id', vkUserId);
+                                    }
 
-                    if (data.success) {
-                        resultsDiv.classList.add('show', 'success');
-                        const groups = data.data.groups || [];
-                        const count = data.data.count || 0;
+                                    const response = await fetch(apiUrl.toString(), {
+                                        method: 'GET',
+                                        headers: { 'Accept': 'application/json' },
+                                    });
+
+                                    const data = await response.json();
+
+                                    if (data.error) {
+                                        resultsDiv.classList.add('show', 'error');
+                                        resultsDiv.innerHTML = `
+                                            <div class="error-message">
+                                                <strong>Ошибка:</strong> ${data.error.error_msg || 'Неизвестная ошибка'}
+                                                ${data.error.error_code ? `<br>Код ошибки: ${data.error.error_code}` : ''}
+                                            </div>
+                                        `;
+                                        return;
+                                    }
+
+                                    if (data.response) {
+                                        resultsDiv.classList.add('show', 'success');
+                                        const groups = data.response.items || data.response || [];
+                                        const count = data.response.count || groups.length;
 
                         let html = `<div class="success-message">Успешно получено групп: ${count}</div>`;
                         
@@ -530,21 +560,20 @@
                         }
 
                         resultsDiv.innerHTML = html;
-                    } else {
-                        resultsDiv.classList.add('show', 'error');
-                        resultsDiv.innerHTML = `
-                            <div class="error-message">
-                                <strong>Ошибка:</strong> ${data.message || 'Неизвестная ошибка'}
-                                ${data.codError ? `<br>Код ошибки: ${data.codError}` : ''}
-                            </div>
-                        `;
-                    }
+                                    } else {
+                                        resultsDiv.classList.add('show', 'error');
+                                        resultsDiv.innerHTML = `
+                                            <div class="error-message">
+                                                <strong>Ошибка:</strong> Неожиданный формат ответа VK API
+                                            </div>
+                                        `;
+                                    }
                 } catch (error) {
                     resultsDiv.classList.add('show', 'error');
                     resultsDiv.innerHTML = `
                         <div class="error-message">
-                            <strong>Ошибка запроса:</strong> ${error.message}
-                            <br><small>Возможно, требуется авторизация через API токен Sanctum</small>
+                                            <strong>Ошибка запроса:</strong> ${error.message}
+                                            <br><small>Если ошибка CORS — используйте серверный запрос или прокси</small>
                         </div>
                     `;
                 } finally {
