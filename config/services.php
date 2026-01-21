@@ -40,7 +40,7 @@ return [
         'api_version' => env('VK_API_VERSION', '5.131'),
         'api_url' => env('VK_API_URL', 'https://api.vk.com/method'),
         'verify_ssl' => env('VK_VERIFY_SSL', true),
-        'app_id' => env('VK_APP_ID', '54418904'),
+        'app_id' => env('VK_APP_ID', '54428914'),
         'redirect_url' => env('VK_REDIRECT_URL', 'https://m-engine.ru'),
         'tunnel_url' => env('VK_TUNNEL_URL', null), // URL туннелинг сервиса (например, https://m-engine.loca.lt)
     ],
