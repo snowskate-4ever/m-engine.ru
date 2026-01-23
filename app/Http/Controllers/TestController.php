@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use App\Services\TestService;
 use App\Services\api\ApiService;
 use App\Services\api\VkApiService;
@@ -39,6 +40,13 @@ class TestController extends Controller
      */
     public function getVkGroups(Request $request)
     {
+        Log::info('VK groups request (admin.test.vk-groups)', [
+            'session_id' => $request->session()->getId(),
+            'has_vk_api_token' => $request->session()->has('vk_api_token'),
+            'has_vk_user_token' => $request->session()->has('vk_user_token'),
+            'has_user_id' => $request->session()->has('vk_api_user_id') || $request->session()->has('vk_user_id'),
+        ]);
+
         // Для получения групп требуется VK API токен с доступом groups
         $userToken = $request->input('user_token')
             ?: $request->session()->get('vk_api_token');
@@ -97,6 +105,13 @@ class TestController extends Controller
             return redirect()->route('admin.test');
         }
 
+        Log::info('VK OAuth start', [
+            'session_id' => $request->session()->getId(),
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'origin' => $request->getSchemeAndHttpHost(),
+        ]);
+
         $query = http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
@@ -116,6 +131,14 @@ class TestController extends Controller
     {
         $code = $request->query('code');
         $error = $request->query('error_description') ?? $request->query('error');
+
+        Log::info('VK OAuth callback', [
+            'session_id' => $request->session()->getId(),
+            'code_present' => !empty($code),
+            'error' => $error,
+            'redirected_from' => $request->headers->get('referer'),
+            'query' => $request->query(),
+        ]);
 
         if (!$code) {
             $request->session()->flash('vk_api_error', $error ?: 'Код авторизации не получен.');
@@ -140,17 +163,28 @@ class TestController extends Controller
         ]);
 
         if (!$response->ok()) {
+            Log::warning('VK OAuth token request failed', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
             $request->session()->flash('vk_api_error', 'Не удалось получить токен VK API.');
             return redirect()->route('admin.test');
         }
 
         $data = $response->json();
         if (isset($data['error'])) {
+            Log::warning('VK OAuth token error', [
+                'error' => $data['error'],
+                'error_description' => $data['error_description'] ?? null,
+            ]);
             $request->session()->flash('vk_api_error', $data['error_description'] ?? $data['error']);
             return redirect()->route('admin.test');
         }
 
         if (empty($data['access_token'])) {
+            Log::warning('VK OAuth token missing access_token', [
+                'response' => $data,
+            ]);
             $request->session()->flash('vk_api_error', 'VK API не вернул access_token.');
             return redirect()->route('admin.test');
         }
@@ -159,6 +193,10 @@ class TestController extends Controller
         if (!empty($data['user_id'])) {
             $request->session()->put('vk_api_user_id', (string) $data['user_id']);
         }
+        Log::info('VK OAuth token stored in session', [
+            'session_id' => $request->session()->getId(),
+            'user_id' => $data['user_id'] ?? null,
+        ]);
 
         $request->session()->flash('vk_api_token_saved', true);
 
