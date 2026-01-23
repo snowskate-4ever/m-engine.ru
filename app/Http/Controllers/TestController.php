@@ -45,6 +45,8 @@ class TestController extends Controller
             'has_vk_api_token' => $request->session()->has('vk_api_token'),
             'has_vk_user_token' => $request->session()->has('vk_user_token'),
             'has_user_id' => $request->session()->has('vk_api_user_id') || $request->session()->has('vk_user_id'),
+            'client_ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         // Для получения групп требуется VK API токен с доступом groups
@@ -110,6 +112,8 @@ class TestController extends Controller
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
             'origin' => $request->getSchemeAndHttpHost(),
+            'client_ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         $query = http_build_query([
@@ -138,6 +142,8 @@ class TestController extends Controller
             'error' => $error,
             'redirected_from' => $request->headers->get('referer'),
             'query' => $request->query(),
+            'client_ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ]);
 
         if (!$code) {
@@ -196,6 +202,7 @@ class TestController extends Controller
         Log::info('VK OAuth token stored in session', [
             'session_id' => $request->session()->getId(),
             'user_id' => $data['user_id'] ?? null,
+            'client_ip' => $request->ip(),
         ]);
 
         $request->session()->flash('vk_api_token_saved', true);
