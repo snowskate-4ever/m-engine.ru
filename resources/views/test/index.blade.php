@@ -436,7 +436,7 @@
 
         <div class="section">
             <h2>VK API - Группы пользователя</h2>
-            <button id="vkApiAuthBtn" class="btn">Получить VK API токен</button>
+            <a id="vkApiAuthBtn" class="btn" href="{{ route('admin.test.vk-oauth-start') }}">Получить VK API токен</a>
             <button id="getVkGroupsBtn" class="btn" disabled>Получить группы ВК</button>
             <div style="margin-top: 10px; color: #666; font-size: 14px;">
                 Для групп нужен VK API токен с доступом <code>groups</code>.
@@ -521,10 +521,6 @@
             }
 
             updateVkApiStatus();
-
-            vkApiAuthBtn.addEventListener('click', function() {
-                window.location.href = '{{ route("admin.test.vk-oauth-start") }}';
-            });
 
             btn.addEventListener('click', async function() {
                 btn.disabled = true;
