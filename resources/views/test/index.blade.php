@@ -177,7 +177,9 @@
                         let vkUserToken = null;
                         let vkUserId = null;
                         const vkApiTokenSaved = @json($vkApiTokenSaved ?? false);
+                        const vkUserTokenSaved = @json($vkUserTokenSaved ?? false);
                         const vkApiError = @json($vkApiError ?? null);
+                        const vkOauthRedirectUri = @json($vkOauthRedirectUri ?? (url('/admin/test/vk-oauth')));
 
                         if ('VKIDSDK' in window) {
                             const VKID = window.VKIDSDK;
@@ -501,21 +503,28 @@
                     vkApiTokenStatus.innerHTML =
                         '<div class="success-message">✓ VK API токен сохранен для текущей сессии.</div>';
                     btn.disabled = false;
-                } else {
-                    const errorText = vkApiError ? `Ошибка: ${vkApiError}` : 'VK API токен не получен.';
-                    vkApiTokenStatus.innerHTML =
-                        `<div class="error-message">${errorText}</div>`;
-                    btn.disabled = true;
+                    return;
                 }
+
+                if (vkUserTokenSaved) {
+                    vkApiTokenStatus.innerHTML =
+                        '<div class="error-message">✓ VK ID токен сохранен, но для групп нужен VK API токен с доступом <code>groups</code>.</div>';
+                    btn.disabled = true;
+                    return;
+                }
+
+                const errorText = vkApiError ? `Ошибка: ${vkApiError}` : 'VK API токен не получен.';
+                vkApiTokenStatus.innerHTML =
+                    `<div class="error-message">${errorText}</div>`;
+                btn.disabled = true;
             }
 
             updateVkApiStatus();
 
             vkApiAuthBtn.addEventListener('click', function() {
-                const redirectUri = window.location.origin + '/admin/test/vk-oauth';
                 const authUrl = new URL('https://oauth.vk.com/authorize');
-                authUrl.searchParams.set('client_id', '{{ config('services.vk.app_id', '54418904') }}');
-                authUrl.searchParams.set('redirect_uri', redirectUri);
+                authUrl.searchParams.set('client_id', '{{ config('services.vk.app_id') }}');
+                authUrl.searchParams.set('redirect_uri', vkOauthRedirectUri);
                 authUrl.searchParams.set('scope', 'groups');
                 authUrl.searchParams.set('response_type', 'code');
                 authUrl.searchParams.set('v', '{{ config('services.vk.api_version', '5.131') }}');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use App\Services\TestService;
+use App\Services\api\ApiService;
 use App\Services\api\VkApiService;
 
 class TestController extends Controller
@@ -20,12 +21,15 @@ class TestController extends Controller
         // Если указан туннелинг URL в конфигурации, используем его (для HTTPS)
         $tunnelUrl = config('services.vk.tunnel_url');
         $redirectUrl = $tunnelUrl ?: $request->getSchemeAndHttpHost();
+        $vkOauthRedirectUri = $redirectUrl . '/admin/test/vk-oauth';
         
         return view('test.index', [
             'results' => $results,
             'timestamp' => now()->toDateTimeString(),
             'vkRedirectUrl' => $redirectUrl,
+            'vkOauthRedirectUri' => $vkOauthRedirectUri,
             'vkApiTokenSaved' => $request->session()->has('vk_api_token'),
+            'vkUserTokenSaved' => $request->session()->has('vk_user_token'),
             'vkApiError' => $request->session()->get('vk_api_error'),
         ]);
     }
@@ -35,12 +39,19 @@ class TestController extends Controller
      */
     public function getVkGroups(Request $request)
     {
-        // Используем VK API токен из сессии, если есть, иначе токен VK ID
-        $userToken = $request->session()->get('vk_api_token')
-            ?: $request->session()->get('vk_user_token');
-        if ($userToken) {
-            $request->merge(['user_token' => $userToken]);
+        // Для получения групп требуется VK API токен с доступом groups
+        $userToken = $request->input('user_token')
+            ?: $request->session()->get('vk_api_token');
+        if (!$userToken) {
+            return ApiService::errorResponse(
+                'Нужен VK API токен с доступом groups.',
+                ApiService::VK_TOKEN_NOT_CONFIGURED,
+                [],
+                400
+            );
         }
+
+        $request->merge(['user_token' => $userToken]);
 
         $userId = $request->session()->get('vk_api_user_id')
             ?: $request->session()->get('vk_user_id');
@@ -87,7 +98,8 @@ class TestController extends Controller
 
         $clientId = config('services.vk.app_id');
         $clientSecret = config('services.vk.client_secret');
-        $redirectUri = $request->getSchemeAndHttpHost() . '/admin/test/vk-oauth';
+        $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
+        $redirectUri = $redirectBase . '/admin/test/vk-oauth';
 
         if (!$clientId || !$clientSecret) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID или VK_CLIENT_SECRET.');
