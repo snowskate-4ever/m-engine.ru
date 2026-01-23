@@ -86,6 +86,32 @@ class TestController extends Controller
     /**
      * OAuth callback для получения VK API токена (authorization code flow)
      */
+    public function startVkOAuth(Request $request)
+    {
+        $clientId = config('services.vk.app_id');
+        $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
+        $redirectUri = $redirectBase . '/admin/test/vk-oauth';
+
+        if (!$clientId) {
+            $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID.');
+            return redirect()->route('admin.test');
+        }
+
+        $query = http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'scope' => 'groups',
+            'response_type' => 'code',
+            'v' => config('services.vk.api_version', '5.131'),
+            'display' => 'page',
+        ]);
+
+        return redirect()->away('https://oauth.vk.com/authorize?' . $query);
+    }
+
+    /**
+     * OAuth callback для получения VK API токена (authorization code flow)
+     */
     public function handleVkOAuth(Request $request)
     {
         $code = $request->query('code');

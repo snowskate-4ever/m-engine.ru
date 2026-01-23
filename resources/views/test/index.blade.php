@@ -507,8 +507,9 @@
                 }
 
                 if (vkUserTokenSaved) {
+                    const errorText = vkApiError ? `Ошибка: ${vkApiError}<br>` : '';
                     vkApiTokenStatus.innerHTML =
-                        '<div class="error-message">✓ VK ID токен сохранен, но для групп нужен VK API токен с доступом <code>groups</code>.</div>';
+                        `<div class="error-message">${errorText}✓ VK ID токен сохранен, но для групп нужен VK API токен с доступом <code>groups</code>.</div>`;
                     btn.disabled = true;
                     return;
                 }
@@ -522,14 +523,7 @@
             updateVkApiStatus();
 
             vkApiAuthBtn.addEventListener('click', function() {
-                const authUrl = new URL('https://oauth.vk.com/authorize');
-                authUrl.searchParams.set('client_id', '{{ config('services.vk.app_id') }}');
-                authUrl.searchParams.set('redirect_uri', vkOauthRedirectUri);
-                authUrl.searchParams.set('scope', 'groups');
-                authUrl.searchParams.set('response_type', 'code');
-                authUrl.searchParams.set('v', '{{ config('services.vk.api_version', '5.131') }}');
-                authUrl.searchParams.set('display', 'page');
-                window.location.href = authUrl.toString();
+                window.location.href = '{{ route("admin.test.vk-oauth-start") }}';
             });
 
             btn.addEventListener('click', async function() {
