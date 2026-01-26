@@ -20,12 +20,17 @@ class TestController extends Controller
 
         $tunnelUrl = config('services.vk.tunnel_url');
         $redirectUrl = $tunnelUrl ?: $request->getSchemeAndHttpHost();
+        $vkTrackings = \App\Models\VkTracking::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         return view('test.openapi', [
             'results' => $results,
             'timestamp' => now()->toDateTimeString(),
             'vkRedirectUrl' => $redirectUrl,
             'vkOpenApiAppId' => config('services.vk.app_id'),
+            'vkTrackings' => $vkTrackings,
         ]);
     }
 

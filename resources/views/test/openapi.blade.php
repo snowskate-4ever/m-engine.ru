@@ -111,7 +111,20 @@
             <button id="vkOpenApiLoginBtn" class="btn" disabled>Войти через VK</button>
             <button id="vkOpenApiGroupsBtn" class="btn" disabled>Получить группы ВК</button>
             <button id="vkOpenApiNewsBtn" class="btn" disabled>Получить ленту новостей</button>
-            <button id="vkOpenApiGroupNewsBtn" class="btn" disabled>Новости группы muzspb</button>
+            <div style="margin-top: 15px;">
+                <label for="vkOpenApiGroupSelect" style="display: block; margin-bottom: 6px; color: #555;">
+                    Группа для отслеживания
+                </label>
+                <select id="vkOpenApiGroupSelect" class="btn" style="background: #fff; color: #333; border: 1px solid #ddd;">
+                    <option value="">Выберите группу</option>
+                    @foreach(($vkTrackings ?? []) as $tracking)
+                        <option value="{{ $tracking->screen_name }}" data-group-id="{{ $tracking->group_id }}">
+                            {{ $tracking->name }} ({{ $tracking->screen_name }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <button id="vkOpenApiGroupNewsBtn" class="btn" disabled style="margin-top: 10px;">Новости выбранной группы</button>
             <div id="vkOpenApiStatus" style="margin-top: 10px;"></div>
             <div style="margin-top: 10px; color: #666; font-size: 14px;">
                 Если вход не завершается, разрешите pop-up окна и сторонние cookies для домена <code>vk.com</code>.
@@ -179,6 +192,7 @@
             const groupNewsBtn = document.getElementById('vkOpenApiGroupNewsBtn');
             const groupNewsMoreBtn = document.getElementById('vkOpenApiGroupNewsMoreBtn');
             const groupNewsMoreWrap = document.getElementById('vkOpenApiGroupNewsMore');
+            const groupSelect = document.getElementById('vkOpenApiGroupSelect');
             const statusDiv = document.getElementById('vkOpenApiStatus');
             const resultsDiv = document.getElementById('vkOpenApiGroupsResults');
 
@@ -364,6 +378,7 @@
             });
 
             let groupNewsNextFrom = null;
+            let currentGroupId = null;
             function formatUnixDate(value) {
                 if (!value) {
                     return '';
@@ -397,18 +412,20 @@
                 groupNewsResults.classList.remove('show', 'success', 'error');
                 groupNewsResults.innerHTML = '';
                 groupNewsNextFrom = null;
+                currentGroupId = null;
                 groupNewsMoreWrap.classList.remove('show');
                 groupNewsMoreBtn.disabled = true;
 
-                VK.Api.call('groups.getById', { group_id: 'muzspb', v: '5.131' }, function(r) {
-                    if (!r || r.error || !r.response || !r.response[0]) {
-                        groupNewsResults.classList.add('show', 'error');
-                        const errorText = r?.error?.error_msg || 'Не удалось получить данные группы';
-                        groupNewsResults.innerHTML = `<div class="error-message">${errorText}</div>`;
-                        return;
-                    }
+                const selected = groupSelect?.value || '';
+                if (!selected) {
+                    showError('Выберите группу для загрузки новостей.');
+                    return;
+                }
 
-                    const groupId = r.response[0].id;
+                const option = groupSelect.options[groupSelect.selectedIndex];
+                const storedGroupId = option?.dataset?.groupId ? Number(option.dataset.groupId) : null;
+                const loadNews = function(groupId) {
+                    currentGroupId = groupId;
                     VK.Api.call('newsfeed.get', { filters: 'post', source_ids: `-${groupId}`, count: 20, v: '5.131' }, function(nr) {
                         if (!nr || nr.error) {
                             groupNewsResults.classList.add('show', 'error');
@@ -425,36 +442,44 @@
                         groupNewsResults.innerHTML = `<div class="success-message">Успешно получено записей: ${items.length}</div>`;
                         renderGroupNews(items, groupNewsResults);
                     });
+                };
+
+                if (storedGroupId) {
+                    loadNews(storedGroupId);
+                    return;
+                }
+
+                VK.Api.call('groups.getById', { group_id: selected, v: '5.131' }, function(r) {
+                    if (!r || r.error || !r.response || !r.response[0]) {
+                        groupNewsResults.classList.add('show', 'error');
+                        const errorText = r?.error?.error_msg || 'Не удалось получить данные группы';
+                        groupNewsResults.innerHTML = `<div class="error-message">${errorText}</div>`;
+                        return;
+                    }
+
+                    const groupId = r.response[0].id;
+                    loadNews(groupId);
                 });
             });
 
             groupNewsMoreBtn.addEventListener('click', function() {
-                if (!groupNewsNextFrom) {
+                if (!groupNewsNextFrom || !currentGroupId) {
                     showError('Больше записей нет или лента еще не загружена.');
                     return;
                 }
 
                 const groupNewsResults = document.getElementById('vkOpenApiGroupNewsResults');
-                VK.Api.call('groups.getById', { group_id: 'muzspb', v: '5.131' }, function(r) {
-                    if (!r || r.error || !r.response || !r.response[0]) {
-                        const errorText = r?.error?.error_msg || 'Не удалось получить данные группы';
+                VK.Api.call('newsfeed.get', { filters: 'post', source_ids: `-${currentGroupId}`, start_from: groupNewsNextFrom, count: 20, v: '5.131' }, function(nr) {
+                    if (!nr || nr.error) {
+                        const errorText = nr?.error?.error_msg || 'Неизвестная ошибка VK API';
                         showError(errorText);
                         return;
                     }
 
-                    const groupId = r.response[0].id;
-                    VK.Api.call('newsfeed.get', { filters: 'post', source_ids: `-${groupId}`, start_from: groupNewsNextFrom, count: 20, v: '5.131' }, function(nr) {
-                        if (!nr || nr.error) {
-                            const errorText = nr?.error?.error_msg || 'Неизвестная ошибка VK API';
-                            showError(errorText);
-                            return;
-                        }
-
-                        const items = nr.response?.items || [];
-                        groupNewsNextFrom = nr.response?.next_from || null;
-                        renderGroupNews(items, groupNewsResults);
-                        groupNewsMoreBtn.disabled = !groupNewsNextFrom;
-                    });
+                    const items = nr.response?.items || [];
+                    groupNewsNextFrom = nr.response?.next_from || null;
+                    renderGroupNews(items, groupNewsResults);
+                    groupNewsMoreBtn.disabled = !groupNewsNextFrom;
                 });
             });
         });
