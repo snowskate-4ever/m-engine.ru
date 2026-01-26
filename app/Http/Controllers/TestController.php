@@ -22,7 +22,7 @@ class TestController extends Controller
         // Если указан туннелинг URL в конфигурации, используем его (для HTTPS)
         $tunnelUrl = config('services.vk.tunnel_url');
         $redirectUrl = $tunnelUrl ?: $request->getSchemeAndHttpHost();
-        $vkOauthRedirectUri = $redirectUrl . '/admin/test/vk-oauth';
+        $vkOauthRedirectUri = $redirectUrl . '/vk-oauth';
         
         return view('test.index', [
             'results' => $results,
@@ -100,7 +100,7 @@ class TestController extends Controller
     {
         $clientId = config('services.vk.app_id');
         $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
-        $redirectUri = $redirectBase . '/admin/test/vk-oauth';
+        $redirectUri = $redirectBase . '/vk-oauth';
 
         if (!$clientId) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID.');
@@ -154,7 +154,7 @@ class TestController extends Controller
         $clientId = config('services.vk.app_id');
         $clientSecret = config('services.vk.client_secret');
         $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
-        $redirectUri = $redirectBase . '/admin/test/vk-oauth';
+        $redirectUri = $redirectBase . '/vk-oauth';
 
         if (!$clientId || !$clientSecret) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID или VK_CLIENT_SECRET.');
