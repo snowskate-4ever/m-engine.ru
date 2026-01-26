@@ -179,41 +179,38 @@
                         const vkApiTokenSaved = @json($vkApiTokenSaved ?? false);
                         const vkUserTokenSaved = @json($vkUserTokenSaved ?? false);
                         const vkApiError = @json($vkApiError ?? null);
-                        const vkOauthRedirectUri = @json($vkOauthRedirectUri ?? (url('/vk-oauth')));
+                            const vkOauthRedirectUri = @json($vkOauthRedirectUri ?? (url('/vk-oauth')));
 
                         if ('VKIDSDK' in window) {
                             const VKID = window.VKIDSDK;
 
-                            const redirectUrl = '{{ $vkRedirectUrl ?? (config('services.vk.tunnel_url') ?: config('services.vk.redirect_url', url('/'))) }}';
+                            const redirectUrl = @json($vkRedirectUrl ?? url('/'));
                             
                             console.log('VK ID Config:', {
-                                app: {{ config('services.vk.app_id', '54418904') }},
+                                app: {{ config('services.vk.app_id') }},
                                 redirectUrl: redirectUrl,
                                 currentOrigin: window.location.origin
                             });
                             
                             VKID.Config.init({
-                                app: {{ config('services.vk.app_id', '54418904') }},
+                                app: {{ config('services.vk.app_id') }},
                                 redirectUrl: redirectUrl,
                                 responseMode: VKID.ConfigResponseMode.Callback,
                                 source: VKID.ConfigSource.LOWCODE,
                                 scope: '', // Заполните нужными доступами по необходимости
                             });
 
-                            const floatingOneTap = new VKID.FloatingOneTap();
+                            const oneTap = new VKID.OneTap();
 
-                            floatingOneTap.render({
-                                appName: 'm-engine',
+                            oneTap.render({
+                                container: document.currentScript.parentElement,
                                 showAlternativeLogin: true
-                            })
-                            .on(VKID.WidgetEvents.LOADED, function() {
-                                console.log('VK ID FloatingOneTap loaded');
                             })
                             .on(VKID.WidgetEvents.ERROR, function(error) {
                                 console.error('VK ID Widget Error:', error);
                                 vkidOnError(error);
                             })
-                            .on(VKID.FloatingOneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+                            .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
                                 console.log('VK ID Login Success Payload:', payload);
                                 const code = payload.code;
                                 const deviceId = payload.device_id;
@@ -230,7 +227,9 @@
                             });
                         
                             function vkidOnSuccess(data) {
-                                floatingOneTap.close();
+                                if (typeof oneTap?.close === 'function') {
+                                    oneTap.close();
+                                }
 
                                 const token = data.access_token || data.token;
                                 const userId = data.user?.id || data.user_id;
