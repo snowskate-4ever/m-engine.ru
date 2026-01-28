@@ -197,7 +197,7 @@
                                 redirectUrl: redirectUrl,
                                 responseMode: VKID.ConfigResponseMode.Callback,
                                 source: VKID.ConfigSource.LOWCODE,
-                                scope: '', // Заполните нужными доступами по необходимости
+                                scope: 'messages&', // Заполните нужными доступами по необходимости
                             });
 
                             const floatingOneTap = new VKID.FloatingOneTap();
@@ -522,7 +522,7 @@
 
             updateVkApiStatus();
 
-            btn.addEventListener('click', async function() {
+            async function fetchVkGroups() {
                 btn.disabled = true;
                 btn.classList.add('btn-loading');
                 resultsDiv.classList.remove('show', 'success', 'error');
@@ -602,7 +602,20 @@
                     btn.disabled = false;
                     btn.classList.remove('btn-loading');
                 }
+            }
+
+            btn.addEventListener('click', async function() {
+                await fetchVkGroups();
             });
+
+            // Автозагрузка групп при открытии страницы, если токен уже есть
+            if (vkApiTokenSaved) {
+                fetchVkGroups();
+            } else {
+                resultsDiv.classList.add('show');
+                resultsDiv.innerHTML =
+                    '<div class="error-message">Для получения групп нужен VK API токен с доступом <code>groups</code>. Нажмите «Получить VK API токен».</div>';
+            }
         });
     </script>
 </body>

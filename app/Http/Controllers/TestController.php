@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use App\Services\TestService;
 use App\Services\api\ApiService;
 use App\Services\api\VkApiService;
+use App\Models\User;
 
 class TestController extends Controller
 {
@@ -80,12 +81,21 @@ class TestController extends Controller
         $request->validate([
             'token' => 'required|string',
             'user_id' => 'sometimes|integer',
+            'refresh_token' => 'sometimes|string',
+            'expires_in' => 'sometimes|integer',
         ]);
 
         $request->session()->put('vk_user_token', $request->input('token'));
         if ($request->has('user_id')) {
             $request->session()->put('vk_user_id', (string) $request->input('user_id'));
         }
+
+        $this->storeVkTokensForUser($request->user(), [
+            'access_token' => $request->input('token'),
+            'refresh_token' => $request->input('refresh_token'),
+            'expires_in' => $request->input('expires_in'),
+            'user_id' => $request->input('user_id'),
+        ]);
 
         return response()->json([
             'success' => true,
@@ -205,9 +215,30 @@ class TestController extends Controller
             'client_ip' => $request->ip(),
         ]);
 
+        $this->storeVkTokensForUser($request->user(), $data);
+
         $request->session()->flash('vk_api_token_saved', true);
 
         return redirect()->route('admin.test');
+    }
+
+    private function storeVkTokensForUser(?User $user, array $data): void
+    {
+        if (!$user) {
+            Log::info('VK OAuth token not saved to user: no auth user.');
+            return;
+        }
+
+        $expiresAt = null;
+        if (!empty($data['expires_in'])) {
+            $expiresAt = now()->addSeconds((int) $data['expires_in']);
+        }
+
+        $user->vk_access_token = $data['access_token'] ?? null;
+        $user->vk_refresh_token = $data['refresh_token'] ?? null;
+        $user->vk_token_expires_at = $expiresAt;
+        $user->vk_user_id = isset($data['user_id']) ? (int) $data['user_id'] : null;
+        $user->save();
     }
 }
 

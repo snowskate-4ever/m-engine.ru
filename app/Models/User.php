@@ -28,6 +28,10 @@ class User extends Authenticatable
         'registration_channel',
         'registration_metadata',
         'telegram_id',
+        'vk_access_token',
+        'vk_refresh_token',
+        'vk_token_expires_at',
+        'vk_user_id',
     ];
 
     /**
@@ -40,6 +44,8 @@ class User extends Authenticatable
         'two_factor_secret',
         'two_factor_recovery_codes',
         'remember_token',
+        'vk_access_token',
+        'vk_refresh_token',
     ];
 
     /**
@@ -54,6 +60,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'registration_metadata' => 'array',
             'telegram_id' => 'integer',
+            'vk_token_expires_at' => 'datetime',
+            'vk_user_id' => 'integer',
         ];
     }
 
