@@ -155,7 +155,7 @@
                                 <code style="background: #f4f4f4; padding: 5px; border-radius: 3px;">VK_TUNNEL_URL=https://xxxxx.loca.lt</code><br>
                                 (Замените <code>xxxxx</code> на ваш реальный URL)</li>
                             <li><strong>Перезапустите сервер Laravel</strong> (Ctrl+C и снова <code>php artisan serve --port=80</code>)</li>
-                            <li><strong>Откройте HTTPS URL в браузере:</strong> Используйте туннель URL (например, <code>https://xxxxx.loca.lt/admin/test</code>), а НЕ <code>http://localhost</code></li>
+                            <li><strong>Откройте HTTPS URL в браузере:</strong> Используйте туннель URL (например, <code>https://xxxxx.loca.lt/vktest</code>), а НЕ <code>http://localhost</code></li>
                             <li><strong>Добавьте URL в настройки VK ID:</strong> Перейдите на <a href="https://dev.vk.com/apps?act=manage" target="_blank">https://dev.vk.com/apps?act=manage</a>, откройте приложение ID 54418904, добавьте ваш HTTPS URL в "Базовые домены"</li>
                         </ol>
                         <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border-radius: 4px; font-size: 12px;">
@@ -179,41 +179,38 @@
                         const vkApiTokenSaved = @json($vkApiTokenSaved ?? false);
                         const vkUserTokenSaved = @json($vkUserTokenSaved ?? false);
                         const vkApiError = @json($vkApiError ?? null);
-                        const vkOauthRedirectUri = @json($vkOauthRedirectUri ?? (url('/admin/test/vk-oauth')));
+                            const vkOauthRedirectUri = @json($vkOauthRedirectUri ?? (url('/vk-oauth')));
 
                         if ('VKIDSDK' in window) {
                             const VKID = window.VKIDSDK;
 
-                            const redirectUrl = '{{ $vkRedirectUrl ?? (config('services.vk.tunnel_url') ?: config('services.vk.redirect_url', url('/'))) }}';
+                            const redirectUrl = @json($vkRedirectUrl ?? url('/'));
                             
                             console.log('VK ID Config:', {
-                                app: {{ config('services.vk.app_id', '54418904') }},
+                                app: {{ config('services.vk.app_id') }},
                                 redirectUrl: redirectUrl,
                                 currentOrigin: window.location.origin
                             });
                             
                             VKID.Config.init({
-                                app: {{ config('services.vk.app_id', '54418904') }},
+                                app: {{ config('services.vk.app_id') }},
                                 redirectUrl: redirectUrl,
                                 responseMode: VKID.ConfigResponseMode.Callback,
                                 source: VKID.ConfigSource.LOWCODE,
                                 scope: 'messages&', // Заполните нужными доступами по необходимости
                             });
 
-                            const floatingOneTap = new VKID.FloatingOneTap();
+                            const oneTap = new VKID.OneTap();
 
-                            floatingOneTap.render({
-                                appName: 'm-engine',
+                            oneTap.render({
+                                container: document.currentScript.parentElement,
                                 showAlternativeLogin: true
-                            })
-                            .on(VKID.WidgetEvents.LOADED, function() {
-                                console.log('VK ID FloatingOneTap loaded');
                             })
                             .on(VKID.WidgetEvents.ERROR, function(error) {
                                 console.error('VK ID Widget Error:', error);
                                 vkidOnError(error);
                             })
-                            .on(VKID.FloatingOneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
+                            .on(VKID.OneTapInternalEvents.LOGIN_SUCCESS, function (payload) {
                                 console.log('VK ID Login Success Payload:', payload);
                                 const code = payload.code;
                                 const deviceId = payload.device_id;
@@ -230,7 +227,9 @@
                             });
                         
                             function vkidOnSuccess(data) {
-                                floatingOneTap.close();
+                                if (typeof oneTap?.close === 'function') {
+                                    oneTap.close();
+                                }
 
                                 const token = data.access_token || data.token;
                                 const userId = data.user?.id || data.user_id;

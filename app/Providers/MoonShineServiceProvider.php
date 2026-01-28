@@ -30,6 +30,7 @@ use App\MoonShine\Resources\Instrument\InstrumentResource;
 use App\MoonShine\Resources\Genre\GenreResource;
 use App\MoonShine\Resources\AuthAttempt\AuthAttemptResource;
 use App\MoonShine\Resources\AuthChannel\AuthChannelResource;
+use App\MoonShine\Resources\VkTracking\VkTrackingResource;
 
 class MoonShineServiceProvider extends ServiceProvider
 {
@@ -62,6 +63,7 @@ class MoonShineServiceProvider extends ServiceProvider
                 GenreResource::class,
                 AuthAttemptResource::class,
                 AuthChannelResource::class,
+                VkTrackingResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),

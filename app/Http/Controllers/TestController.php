@@ -13,6 +13,29 @@ use App\Models\User;
 class TestController extends Controller
 {
     /**
+     * Страница тестов VK Open API
+     */
+    public function openApiIndex(Request $request)
+    {
+        $results = TestService::runTests($request);
+
+        $tunnelUrl = config('services.vk.tunnel_url');
+        $redirectUrl = $tunnelUrl ?: $request->getSchemeAndHttpHost();
+        $vkTrackings = \App\Models\VkTracking::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
+        return view('test.openapi', [
+            'results' => $results,
+            'timestamp' => now()->toDateTimeString(),
+            'vkRedirectUrl' => $redirectUrl,
+            'vkOpenApiAppId' => config('services.vk.app_id'),
+            'vkTrackings' => $vkTrackings,
+        ]);
+    }
+
+    /**
      * Страница тестов
      */
     public function index(Request $request)
@@ -23,7 +46,7 @@ class TestController extends Controller
         // Если указан туннелинг URL в конфигурации, используем его (для HTTPS)
         $tunnelUrl = config('services.vk.tunnel_url');
         $redirectUrl = $tunnelUrl ?: $request->getSchemeAndHttpHost();
-        $vkOauthRedirectUri = $redirectUrl . '/admin/test/vk-oauth';
+        $vkOauthRedirectUri = $redirectUrl . '/vk-oauth';
         
         return view('test.index', [
             'results' => $results,
@@ -104,13 +127,99 @@ class TestController extends Controller
     }
 
     /**
+     * Сохранить и проверить сессию VK Open API
+     */
+    public function saveVkOpenApiSession(Request $request)
+    {
+        $request->validate([
+            'session' => 'required|array',
+        ]);
+
+        $session = $request->input('session');
+        $requiredKeys = ['expire', 'mid', 'secret', 'sid', 'sig'];
+
+        foreach ($requiredKeys as $key) {
+            if (!isset($session[$key])) {
+                return ApiService::errorResponse(
+                    'Отсутствует параметр сессии: ' . $key,
+                    ApiService::UNPROCESSABLE_CONTENT,
+                    [],
+                    422
+                );
+            }
+        }
+
+        $protectedKey = config('services.vk.protected_key');
+        if (empty($protectedKey)) {
+            return ApiService::errorResponse(
+                'VK_PROTECTED_KEY не настроен.',
+                ApiService::VK_TOKEN_NOT_CONFIGURED,
+                [],
+                400
+            );
+        }
+
+        $signSession = [
+            'expire' => $session['expire'],
+            'mid' => $session['mid'],
+            'secret' => $session['secret'],
+            'sid' => $session['sid'],
+        ];
+        ksort($signSession);
+
+        $sign = '';
+        foreach ($signSession as $key => $value) {
+            if (is_array($value) || is_object($value)) {
+                return ApiService::errorResponse(
+                    'Некорректное значение сессии VK: ' . $key,
+                    ApiService::UNPROCESSABLE_CONTENT,
+                    [],
+                    422
+                );
+            }
+            $sign .= $key . '=' . (string) $value;
+        }
+        $sign .= $protectedKey;
+        $calcSig = md5($sign);
+
+        if (!hash_equals($calcSig, (string) $session['sig'])) {
+            Log::warning('VK Open API session signature mismatch', [
+                'calc' => $calcSig,
+                'sig' => $session['sig'],
+            ]);
+            return ApiService::errorResponse(
+                'Некорректная подпись сессии VK.',
+                ApiService::VK_API_ERROR,
+                [],
+                403
+            );
+        }
+
+        if ((int) $session['expire'] < time()) {
+            return ApiService::errorResponse(
+                'Сессия VK истекла.',
+                ApiService::VK_API_ERROR,
+                [],
+                403
+            );
+        }
+
+        $request->session()->put('vk_openapi_session', $session);
+        $request->session()->put('vk_openapi_user_id', (string) $session['mid']);
+
+        return ApiService::successResponse('Сессия VK сохранена', [
+            'user_id' => (string) $session['mid'],
+        ]);
+    }
+
+    /**
      * OAuth callback для получения VK API токена (authorization code flow)
      */
     public function startVkOAuth(Request $request)
     {
         $clientId = config('services.vk.app_id');
         $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
-        $redirectUri = $redirectBase . '/admin/test/vk-oauth';
+        $redirectUri = $redirectBase . '/vk-oauth';
 
         if (!$clientId) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID.');
@@ -164,7 +273,7 @@ class TestController extends Controller
         $clientId = config('services.vk.app_id');
         $clientSecret = config('services.vk.client_secret');
         $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
-        $redirectUri = $redirectBase . '/admin/test/vk-oauth';
+        $redirectUri = $redirectBase . '/vk-oauth';
 
         if (!$clientId || !$clientSecret) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID или VK_CLIENT_SECRET.');

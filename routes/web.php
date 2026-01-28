@@ -13,15 +13,14 @@ Route::get('/', function () {
     return view('welcome', ['menuItems' => $menuItems]);
 })->name('home');
 
-// Маршруты для тестов (только для авторизованных пользователей MoonShine)
-Route::middleware(MoonShineAuthenticate::class)->group(function () {
-    Route::get('/admin/test', [App\Http\Controllers\TestController::class, 'index'])->name('admin.test');
-    Route::get('/admin/test/vk-oauth-start', [App\Http\Controllers\TestController::class, 'startVkOAuth'])->name('admin.test.vk-oauth-start');
-    Route::post('/admin/test/vk-groups', [App\Http\Controllers\TestController::class, 'getVkGroups'])->name('admin.test.vk-groups');
-    Route::post('/admin/test/vk-token', [App\Http\Controllers\TestController::class, 'saveVkToken'])->name('admin.test.vk-token');
-});
-
-Route::get('/admin/test/vk-oauth', [App\Http\Controllers\TestController::class, 'handleVkOAuth'])
+// Маршруты для тестов VK
+Route::get('/admin/vktest', [App\Http\Controllers\TestController::class, 'openApiIndex'])->name('admin.vktest');
+Route::post('/admin/vktest/session', [App\Http\Controllers\TestController::class, 'saveVkOpenApiSession'])->name('admin.vktest.session');
+Route::redirect('/vktest', '/admin/vktest');
+Route::get('/vk-oauth-start', [App\Http\Controllers\TestController::class, 'startVkOAuth'])->name('admin.test.vk-oauth-start');
+Route::post('/vk-groups', [App\Http\Controllers\TestController::class, 'getVkGroups'])->name('admin.test.vk-groups');
+Route::post('/vk-token', [App\Http\Controllers\TestController::class, 'saveVkToken'])->name('admin.test.vk-token');
+Route::get('/vk-oauth', [App\Http\Controllers\TestController::class, 'handleVkOAuth'])
     ->name('admin.test.vk-oauth');
 
 // Заглушки для неавторизованных пользователей
