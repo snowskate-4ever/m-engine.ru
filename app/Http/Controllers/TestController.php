@@ -13,109 +13,13 @@ use App\Models\User;
 class TestController extends Controller
 {
     /**
-     * Страница тестов VK Open API
+     * Страница тестов VK Open API.
+     * Список групп пользователя получается через VK Open API (виджет) на клиенте:
+     * 1. Нажать «Войти через VK» — авторизация через VK.Auth.login
+     * 2. Нажать «Получить группы ВК» — VK.Api.call('groups.get', { extended: 1 })
      */
     public function openApiIndex(Request $request)
     {
-        // ================== НАСТРОЙКИ ==================
-        $client_id     = '54434788'; // Замените на ID вашего приложения VK ID
-        $redirect_uri  = 'https://m-engine.ru/admin/vktest'; // Должен совпадать с настройками приложения
-        $scope         = 'wall,photos,messages,groups'; // Запрошенные права доступа
-        // ===============================================
-
-        session_start();
-
-        // Шаг 1: Генерация code_verifier и code_challenge для PKCE
-        if (empty($_GET['code'])) {
-            $code_verifier = bin2hex(random_bytes(32)); // Уникальная случайная строка
-            $code_challenge = strtr(rtrim(base64_encode(hash('sha256', $code_verifier, true)), '='), '+/', '-_');
-            
-            // Сохраняем в сессию для последующего использования
-            $_SESSION['code_verifier'] = $code_verifier;
-            
-            // Формируем URL для авторизации пользователя
-            $auth_url = 'https://id.vk.com/authorize?' . http_build_query([
-                'client_id'     => $client_id,
-                'redirect_uri'  => $redirect_uri,
-                'response_type' => 'code',
-                'scope'         => $scope,
-                'code_challenge' => $code_challenge,
-                'code_challenge_method' => 'S256'
-            ]);
-            
-            // Перенаправляем пользователя на страницу авторизации VK
-            header('Location: ' . $auth_url);
-            exit();
-        }
-
-        // Шаг 2: Обмен authorization_code на access_token
-        if (isset($_GET['code']) && !empty($_SESSION['code_verifier'])) {
-            $code = $_GET['code'];
-            $code_verifier = $_SESSION['code_verifier'];
-            Echo '<pre>'.print_r($_GET, true).'</pre>';
-            Echo '<pre>'.print_r($_SESSION, true).'</pre>';
-             // URL для запроса токена
-            $token_url = 'https://id.vk.com/oauth2/auth';
-            
-            // Данные для POST-запроса
-            $post_data = http_build_query([
-                'grant_type'    => 'authorization_code',
-                'code'          => $code,
-                'redirect_uri'  => $redirect_uri,
-                'client_id'     => $client_id,
-                'code_verifier' => $code_verifier,
-                'device_id'     => $_GET['device_id']
-            ]);
-            
-            Echo '<pre>'.print_r([
-                'grant_type'    => 'authorization_code',
-                'code'          => $code,
-                'redirect_uri'  => $redirect_uri,
-                'client_id'     => $client_id,
-                'code_verifier' => $code_verifier
-            ], true).'</pre>';
-            // Настройка cURL-запроса
-            $ch = curl_init($token_url);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/x-www-form-urlencoded'
-            ]);
-            
-            // Выполнение запроса
-            $response = curl_exec($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            
-            Echo '<pre>'.print_r($response, true).'</pre>';
-            // Обработка ответа
-            if ($http_code == 200) {
-                $token_data = json_decode($response, true);
-                
-                $this->storeVkTokensForUser($request->user(), $token_data);
-
-                echo "<h3>Токен успешно получен!</h3>";
-                echo "<pre>";
-                echo "Access Token: " . $token_data['access_token'] . "\n";
-                echo "User ID: " . $token_data['user_id'] . "\n";
-                echo "Expires in: " . $token_data['expires_in'] . " секунд\n";
-                echo "Refresh Token: " . ($token_data['refresh_token'] ?? 'не предоставлен');
-                echo "</pre>";
-                
-                // Токен готов для использования в API-запросах
-                // Пример: $api_response = file_get_contents('https://api.vk.com/method/users.get?access_token=' . $token_data['access_token'] . '&v=5.199');
-            } else {
-                echo "<h3>Ошибка при получении токена</h3>";
-                echo "<pre>";
-                var_dump($response);
-                echo "</pre>";
-            }
-            
-            // Очищаем сессию
-            unset($_SESSION['code_verifier']);
-        }
-
         $results = TestService::runTests($request);
 
         $tunnelUrl = config('services.vk.tunnel_url');
@@ -193,6 +97,37 @@ class TestController extends Controller
         }
         
         return VkApiService::getUserGroups($request);
+    }
+
+    /**
+     * Получить чаты пользователя ВК по сохраненному токену
+     */
+    public function getVkChats(Request $request)
+    {
+        $user = User::query()->where('email', 'mad.md@yandex.ru')->first();
+        if (!$user) {
+            return ApiService::errorResponse(
+                'Пользователь с почтой mad.md@yandex.ru не найден.',
+                ApiService::UNPROCESSABLE_CONTENT,
+                [],
+                404
+            );
+        }
+
+        if (empty($user->vk_access_token)) {
+            return ApiService::errorResponse(
+                'У пользователя не сохранен VK access token.',
+                ApiService::VK_TOKEN_NOT_CONFIGURED,
+                [],
+                400
+            );
+        }
+
+        $request->merge([
+            'user_token' => $user->vk_access_token,
+        ]);
+
+        return VkApiService::getUserChats($request);
     }
 
     /**
@@ -337,7 +272,7 @@ class TestController extends Controller
         $query = http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
-            'scope' => 'groups',
+            'scope' => 'groups,messages',
             'response_type' => 'code',
             'v' => config('services.vk.api_version', '5.131'),
             'display' => 'page',
