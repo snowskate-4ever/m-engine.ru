@@ -13,7 +13,10 @@ use App\Models\User;
 class TestController extends Controller
 {
     /**
-     * Страница тестов VK Open API
+     * Страница тестов VK Open API.
+     * Список групп пользователя получается через VK Open API (виджет) на клиенте:
+     * 1. Нажать «Войти через VK» — авторизация через VK.Auth.login
+     * 2. Нажать «Получить группы ВК» — VK.Api.call('groups.get', { extended: 1 })
      */
     public function openApiIndex(Request $request)
     {
@@ -96,6 +99,37 @@ class TestController extends Controller
         }
         
         return VkApiService::getUserGroups($request);
+    }
+
+    /**
+     * Получить чаты пользователя ВК по сохраненному токену
+     */
+    public function getVkChats(Request $request)
+    {
+        $user = User::query()->where('email', 'mad.md@yandex.ru')->first();
+        if (!$user) {
+            return ApiService::errorResponse(
+                'Пользователь с почтой mad.md@yandex.ru не найден.',
+                ApiService::UNPROCESSABLE_CONTENT,
+                [],
+                404
+            );
+        }
+
+        if (empty($user->vk_access_token)) {
+            return ApiService::errorResponse(
+                'У пользователя не сохранен VK access token.',
+                ApiService::VK_TOKEN_NOT_CONFIGURED,
+                [],
+                400
+            );
+        }
+
+        $request->merge([
+            'user_token' => $user->vk_access_token,
+        ]);
+
+        return VkApiService::getUserChats($request);
     }
 
     /**
@@ -240,7 +274,7 @@ class TestController extends Controller
         $query = http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
-            'scope' => 'groups',
+            'scope' => 'groups,messages',
             'response_type' => 'code',
             'v' => config('services.vk.api_version', '5.131'),
             'display' => 'page',

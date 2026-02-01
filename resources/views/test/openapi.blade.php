@@ -51,6 +51,26 @@
             background: #ccc;
             cursor: not-allowed;
         }
+        .btn-loading {
+            position: relative;
+            padding-left: 40px;
+        }
+        .btn-loading::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
         .results {
             margin-top: 20px;
             padding: 15px;
@@ -77,6 +97,22 @@
             border-left: 3px solid #4CAF50;
             border-radius: 4px;
         }
+        .chat-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-left: 3px solid #2196f3;
+            border-radius: 4px;
+        }
+        .chat-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .chat-info {
+            font-size: 14px;
+            color: #666;
+        }
         .group-name {
             font-weight: bold;
             color: #333;
@@ -84,6 +120,11 @@
         }
         .group-info {
             font-size: 14px;
+            color: #666;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
             color: #666;
         }
         .error-message {
@@ -149,6 +190,36 @@
         </div>
 
         <div class="section">
+            <h2>VK API - Группы и чаты (рабочий способ)</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 12px;">
+                Старый виджет «Войти через VK» больше не поддерживается VK. Используйте OAuth ниже.
+            </p>
+            <a id="vkApiAuthBtn" class="btn" href="{{ route('admin.test.vk-oauth-start') }}">Получить VK API токен</a>
+            <button id="getVkGroupsApiBtn" class="btn" {{ !($vkApiTokenSaved ?? false) ? 'disabled' : '' }}>Получить группы ВК</button>
+            <button id="getVkChatsBtn" class="btn">Получить чаты ВК</button>
+            <div style="margin-top: 10px; color: #666; font-size: 14px;">
+                Чаты получаются по VK токену пользователя <code>mad.md@yandex.ru</code>.
+            </div>
+            <div style="margin-top: 10px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <label style="font-size: 14px; color: #555;">
+                    Offset:
+                    <input id="vkChatsOffset" type="number" min="0" value="0" style="margin-left: 6px; padding: 6px; width: 90px;">
+                </label>
+                <label style="font-size: 14px; color: #555;">
+                    Count:
+                    <input id="vkChatsCount" type="number" min="1" max="200" value="20" style="margin-left: 6px; padding: 6px; width: 90px;">
+                </label>
+                <label style="font-size: 14px; color: #555;">
+                    Filter:
+                    <input id="vkChatsFilter" type="text" placeholder="all, unread" style="margin-left: 6px; padding: 6px; width: 150px;">
+                </label>
+            </div>
+            <div id="vkApiTokenHint" style="margin-top: 10px; color: #666; font-size: 14px;"></div>
+            <div id="vkGroupsApiResults" class="results"></div>
+            <div id="vkChatsResults" class="results"></div>
+        </div>
+
+        <div class="section">
             <h2>Результаты системных тестов</h2>
             <div id="testResults">
                 @if(isset($results))
@@ -197,6 +268,7 @@
     <script type="text/javascript">
         document.addEventListener('DOMContentLoaded', function() {
             const appId = @json($vkOpenApiAppId);
+            const vkApiTokenSaved = @json($vkApiTokenSaved ?? false);
             const loginBtn = document.getElementById('vkOpenApiLoginBtn');
             const groupsBtn = document.getElementById('vkOpenApiGroupsBtn');
             const newsBtn = document.getElementById('vkOpenApiNewsBtn');
@@ -206,6 +278,14 @@
             const groupSelect = document.getElementById('vkOpenApiGroupSelect');
             const statusDiv = document.getElementById('vkOpenApiStatus');
             const resultsDiv = document.getElementById('vkOpenApiGroupsResults');
+            const getVkGroupsApiBtn = document.getElementById('getVkGroupsApiBtn');
+            const vkGroupsApiResults = document.getElementById('vkGroupsApiResults');
+            const vkApiTokenHint = document.getElementById('vkApiTokenHint');
+            const chatsBtn = document.getElementById('getVkChatsBtn');
+            const chatsResultsDiv = document.getElementById('vkChatsResults');
+            const chatsOffsetInput = document.getElementById('vkChatsOffset');
+            const chatsCountInput = document.getElementById('vkChatsCount');
+            const chatsFilterInput = document.getElementById('vkChatsFilter');
 
             function showError(message) {
                 statusDiv.innerHTML = `<div class="error-message">${message}</div>`;
@@ -535,6 +615,175 @@
                     groupNewsMoreBtn.disabled = !groupNewsNextFrom;
                 });
             });
+
+            async function fetchVkChats() {
+                chatsBtn.disabled = true;
+                chatsBtn.classList.add('btn-loading');
+                chatsResultsDiv.classList.remove('show', 'success', 'error');
+                chatsResultsDiv.innerHTML = '<div class="loading">Загрузка...</div>';
+
+                const offset = parseInt(chatsOffsetInput.value || '0', 10);
+                const count = parseInt(chatsCountInput.value || '20', 10);
+                const filter = (chatsFilterInput.value || '').trim();
+
+                try {
+                    const response = await fetch('{{ route("admin.test.vk-chats") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                            offset: Number.isNaN(offset) ? 0 : offset,
+                            count: Number.isNaN(count) ? 20 : count,
+                            filter: filter || undefined
+                        })
+                    });
+
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        const isAuthRedirect = response.redirected || response.url.includes('/admin/login');
+                        chatsResultsDiv.classList.add('show', 'error');
+                        chatsResultsDiv.innerHTML = `
+                            <div class="error-message">
+                                <strong>Ошибка:</strong> ${isAuthRedirect ? 'Требуется авторизация в админке' : 'Ответ сервера не в формате JSON'}
+                                <br><small>Перезайдите в админку и попробуйте снова</small>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        chatsResultsDiv.classList.add('show', 'success');
+                        const conversations = data.data.conversations || [];
+                        const total = data.data.count || 0;
+
+                        let html = `<div class="success-message">Успешно получено бесед: ${total}</div>`;
+                        if (conversations.length > 0) {
+                            html += '<div style="margin-top: 15px;">';
+                            conversations.forEach(item => {
+                                const conversation = item.conversation || {};
+                                const peer = conversation.peer || {};
+                                const chatSettings = conversation.chat_settings || {};
+                                const title = chatSettings.title
+                                    || (peer.type === 'user' ? `Диалог с пользователем ${peer.id || 'N/A'}` : `Диалог ${peer.id || 'N/A'}`);
+                                const lastMessage = item.last_message || {};
+                                const lastText = lastMessage.text ? lastMessage.text : 'Нет текста';
+
+                                html += `
+                                    <div class="chat-item">
+                                        <div class="chat-title">${title}</div>
+                                        <div class="chat-info">
+                                            Peer ID: ${peer.id || 'N/A'} | Тип: ${peer.type || 'N/A'}
+                                        </div>
+                                        <div class="chat-info" style="margin-top: 4px;">
+                                            Последнее сообщение: ${lastText}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            html += '</div>';
+                        } else {
+                            html += '<div style="margin-top: 15px; color: #666;">Беседы не найдены</div>';
+                        }
+
+                        chatsResultsDiv.innerHTML = html;
+                    } else {
+                        chatsResultsDiv.classList.add('show', 'error');
+                        chatsResultsDiv.innerHTML = `
+                            <div class="error-message">
+                                <strong>Ошибка:</strong> ${data.message || 'Неизвестная ошибка'}
+                                ${data.codError ? `<br>Код ошибки: ${data.codError}` : ''}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    chatsResultsDiv.classList.add('show', 'error');
+                    chatsResultsDiv.innerHTML = `
+                        <div class="error-message">
+                            <strong>Ошибка запроса:</strong> ${error.message}
+                            <br><small>Если ошибка CORS — используйте серверный запрос или прокси</small>
+                        </div>
+                    `;
+                } finally {
+                    chatsBtn.disabled = false;
+                    chatsBtn.classList.remove('btn-loading');
+                }
+            }
+
+            chatsBtn.addEventListener('click', function() {
+                fetchVkChats();
+            });
+
+            if (vkApiTokenSaved) {
+                vkApiTokenHint.innerHTML = '<span class="success-message" style="display:inline-block;padding:6px 10px;">✓ Токен есть. Можно получить группы.</span>';
+                if (getVkGroupsApiBtn) getVkGroupsApiBtn.disabled = false;
+            } else {
+                vkApiTokenHint.innerHTML = '<span style="color:#f57c00;">Сначала получите VK API токен (кнопка выше). OAuth перенаправит на другую страницу — после возврата токен будет в сессии.</span>';
+            }
+
+            async function fetchVkGroupsApi() {
+                if (!getVkGroupsApiBtn) return;
+                getVkGroupsApiBtn.disabled = true;
+                getVkGroupsApiBtn.classList.add('btn-loading');
+                vkGroupsApiResults.classList.remove('show', 'success', 'error');
+                vkGroupsApiResults.innerHTML = '<div class="loading">Загрузка...</div>';
+                vkGroupsApiResults.classList.add('show');
+
+                try {
+                    const response = await fetch('{{ route("admin.test.vk-groups") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ extended: 1 })
+                    });
+
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        vkGroupsApiResults.classList.add('error');
+                        vkGroupsApiResults.innerHTML = '<div class="error-message">Ответ не JSON. Проверьте авторизацию.</div>';
+                        return;
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        vkGroupsApiResults.classList.add('success');
+                        const groups = data.data?.groups || [];
+                        const count = data.data?.count ?? groups.length;
+                        let html = '<div class="success-message">Групп: ' + count + '</div>';
+                        if (Array.isArray(groups) && groups.length > 0) {
+                            html += '<div style="margin-top:15px;">';
+                            groups.forEach(function(g) {
+                                html += '<div class="group-item"><div class="group-name">' + (g.name || 'Без названия') + '</div><div class="group-info">ID: ' + (g.id || 'N/A') + ' | ' + (g.screen_name || '') + ' | Участников: ' + (g.members_count || 'N/A') + '</div></div>';
+                            });
+                            html += '</div>';
+                        } else {
+                            html += '<div style="margin-top:15px;color:#666;">Группы не найдены</div>';
+                        }
+                        vkGroupsApiResults.innerHTML = html;
+                    } else {
+                        vkGroupsApiResults.classList.add('error');
+                        vkGroupsApiResults.innerHTML = '<div class="error-message"><strong>Ошибка:</strong> ' + (data.message || 'Неизвестная ошибка') + (data.codError ? ' (код: ' + data.codError + ')' : '') + '</div>';
+                    }
+                } catch (err) {
+                    vkGroupsApiResults.classList.add('error');
+                    vkGroupsApiResults.innerHTML = '<div class="error-message">Ошибка запроса: ' + err.message + '</div>';
+                } finally {
+                    getVkGroupsApiBtn.disabled = false;
+                    getVkGroupsApiBtn.classList.remove('btn-loading');
+                }
+            }
+
+            if (getVkGroupsApiBtn) {
+                getVkGroupsApiBtn.addEventListener('click', fetchVkGroupsApi);
+            }
         });
     </script>
 </body>
