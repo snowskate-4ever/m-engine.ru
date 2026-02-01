@@ -108,7 +108,8 @@
 
         <div class="section">
             <h2>Авторизация VK Open API</h2>
-            <button id="vkOpenApiLoginBtn" class="btn" disabled>Войти через VK</button>
+            <button id="vkOpenApiLoginBtn" class="btn" disabled>Войти через VK (виджет)</button>
+            <a href="{{ route('admin.test.vk-oauth-start') }}" class="btn" style="display: inline-block; text-decoration: none; margin-left: 8px;">Войти через OAuth</a>
             <button id="vkOpenApiGroupsBtn" class="btn" disabled>Получить группы ВК</button>
             <button id="vkOpenApiNewsBtn" class="btn" disabled>Получить ленту новостей</button>
             <div style="margin-top: 15px;">
@@ -126,8 +127,18 @@
             </div>
             <button id="vkOpenApiGroupNewsBtn" class="btn" disabled style="margin-top: 10px;">Новости выбранной группы</button>
             <div id="vkOpenApiStatus" style="margin-top: 10px;"></div>
+            @if(!empty($vkApiError))
+                <div class="error-message" style="margin-top: 10px;">{{ $vkApiError }}</div>
+            @endif
+            @if(!empty($vkOAuthTokenSaved))
+                <div class="success-message" style="margin-top: 10px;">✓ Токен получен через OAuth. Нажмите «Получить группы (через сервер)» ниже.</div>
+                <button type="button" id="vkOAuthGroupsBtn" class="btn" style="margin-top: 8px;">Получить группы (через сервер)</button>
+            @endif
             <div style="margin-top: 10px; color: #666; font-size: 14px;">
                 Если вход не завершается, разрешите pop-up окна и сторонние cookies для домена <code>vk.com</code>.
+            </div>
+            <div style="margin-top: 8px; padding: 10px; background: #fff3cd; border-radius: 4px; font-size: 13px;">
+                <strong>«Выбранный способ авторизации не доступен для приложения»</strong> — это сообщение от VK (виджет может быть отключён для приложения). Используйте кнопку <strong>«Войти через OAuth»</strong> — она ведёт на VK и обратно по вашему «Доверенный redirect URI» (<code>https://m-engine.ru/vk-oauth</code>). В .env на сервере должен быть задан <code>VK_CLIENT_SECRET</code> (Client Secret из настроек приложения).
             </div>
             <div id="vkOpenApiGroupsResults" class="results"></div>
             <div id="vkOpenApiNewsResults" class="results"></div>
@@ -299,6 +310,48 @@
                     });
                 }, 270338);
             });
+
+            const vkOAuthGroupsBtn = document.getElementById('vkOAuthGroupsBtn');
+            if (vkOAuthGroupsBtn) {
+                vkOAuthGroupsBtn.addEventListener('click', function() {
+                    resultsDiv.classList.remove('show', 'success', 'error');
+                    resultsDiv.innerHTML = '<div style="color: #666;">Загрузка...</div>';
+                    resultsDiv.classList.add('show');
+                    fetch('{{ route("admin.test.vk-groups") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.success || data.data === undefined) {
+                            resultsDiv.classList.add('error');
+                            resultsDiv.innerHTML = `<div class="error-message">${data.message || 'Ошибка запроса'}</div>`;
+                            return;
+                        }
+                        const groups = data.data.groups || [];
+                        const count = data.data.count != null ? data.data.count : groups.length;
+                        let html = `<div class="success-message">Успешно получено групп: ${count}</div>`;
+                        if (groups.length > 0) {
+                            html += '<div style="margin-top: 15px;">';
+                            groups.forEach(g => {
+                                html += `<div class="group-item"><div class="group-name">${g.name || 'Без названия'}</div><div class="group-info">ID: ${g.id || 'N/A'} | Тип: ${g.type || 'N/A'} | Участников: ${g.members_count || 'N/A'}</div></div>`;
+                            });
+                            html += '</div>';
+                        }
+                        resultsDiv.classList.add('success');
+                        resultsDiv.innerHTML = html;
+                    })
+                    .catch(err => {
+                        resultsDiv.classList.add('error');
+                        resultsDiv.innerHTML = `<div class="error-message">Ошибка: ${err.message}</div>`;
+                    });
+                });
+            }
 
             groupsBtn.addEventListener('click', function() {
                 resultsDiv.classList.remove('show', 'success', 'error');

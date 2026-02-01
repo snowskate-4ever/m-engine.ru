@@ -32,6 +32,8 @@ class TestController extends Controller
             'vkRedirectUrl' => $redirectUrl,
             'vkOpenApiAppId' => config('services.vk.app_id'),
             'vkTrackings' => $vkTrackings,
+            'vkOAuthTokenSaved' => $request->session()->get('vk_api_token_saved'),
+            'vkApiError' => $request->session()->get('vk_api_error'),
         ]);
     }
 
@@ -223,7 +225,7 @@ class TestController extends Controller
 
         if (!$clientId) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID.');
-            return redirect()->route('admin.test');
+            return redirect()->route('admin.vktest');
         }
 
         Log::info('VK OAuth start', [
@@ -267,7 +269,7 @@ class TestController extends Controller
 
         if (!$code) {
             $request->session()->flash('vk_api_error', $error ?: 'Код авторизации не получен.');
-            return redirect()->route('admin.test');
+            return redirect()->route('admin.vktest');
         }
 
         $clientId = config('services.vk.app_id');
@@ -277,7 +279,7 @@ class TestController extends Controller
 
         if (!$clientId || !$clientSecret) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID или VK_CLIENT_SECRET.');
-            return redirect()->route('admin.test');
+            return redirect()->route('admin.vktest');
         }
 
         $response = Http::get('https://oauth.vk.com/access_token', [
@@ -293,7 +295,7 @@ class TestController extends Controller
                 'body' => $response->body(),
             ]);
             $request->session()->flash('vk_api_error', 'Не удалось получить токен VK API.');
-            return redirect()->route('admin.test');
+            return redirect()->route('admin.vktest');
         }
 
         $data = $response->json();
@@ -303,7 +305,7 @@ class TestController extends Controller
                 'error_description' => $data['error_description'] ?? null,
             ]);
             $request->session()->flash('vk_api_error', $data['error_description'] ?? $data['error']);
-            return redirect()->route('admin.test');
+            return redirect()->route('admin.vktest');
         }
 
         if (empty($data['access_token'])) {
@@ -311,7 +313,7 @@ class TestController extends Controller
                 'response' => $data,
             ]);
             $request->session()->flash('vk_api_error', 'VK API не вернул access_token.');
-            return redirect()->route('admin.test');
+            return redirect()->route('admin.vktest');
         }
 
         $request->session()->put('vk_api_token', $data['access_token']);
@@ -328,7 +330,7 @@ class TestController extends Controller
 
         $request->session()->flash('vk_api_token_saved', true);
 
-        return redirect()->route('admin.test');
+        return redirect()->route('admin.vktest');
     }
 
     private function storeVkTokensForUser(?User $user, array $data): void

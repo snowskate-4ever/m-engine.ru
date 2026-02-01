@@ -23,6 +23,12 @@ Route::post('/vk-token', [App\Http\Controllers\TestController::class, 'saveVkTok
 Route::get('/vk-oauth', [App\Http\Controllers\TestController::class, 'handleVkOAuth'])
     ->name('admin.test.vk-oauth');
 
+// Сбор постов из групп VK (очереди)
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/vk-posts', [App\Http\Controllers\VkPostsController::class, 'index'])->name('admin.vk-posts.index');
+    Route::post('/admin/vk-posts/fetch', [App\Http\Controllers\VkPostsController::class, 'fetch'])->name('admin.vk-posts.fetch');
+});
+
 // Заглушки для неавторизованных пользователей
 Route::get('/resources/type/{type_id}', function ($type_id) {
     // Если пользователь авторизован, редиректим на правильный маршрут

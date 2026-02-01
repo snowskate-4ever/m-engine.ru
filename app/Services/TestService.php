@@ -25,6 +25,9 @@ class TestService
         // Тест 4: Проверка конфигурации
         $results['configuration'] = self::testConfiguration();
         
+        // Тест 5: VK Open API (для страницы /admin/vktest)
+        $results['vk_openapi'] = self::testVkOpenApiConfig();
+        
         return $results;
     }
     
@@ -141,6 +144,32 @@ class TestService
         }
         
         return $results;
+    }
+    
+    /**
+     * Проверка конфигурации VK Open API (app_id, protected_key)
+     */
+    protected static function testVkOpenApiConfig()
+    {
+        $appId = config('services.vk.app_id');
+        $protectedKey = config('services.vk.protected_key');
+        $missing = [];
+        if (empty($appId)) {
+            $missing[] = 'VK_APP_ID';
+        }
+        if (empty($protectedKey)) {
+            $missing[] = 'VK_PROTECTED_KEY';
+        }
+        if (!empty($missing)) {
+            return [
+                'status' => 'error',
+                'message' => 'В .env не заданы: ' . implode(', ', $missing) . '. Без них сохранение сессии после «Войти через VK» не работает.',
+            ];
+        }
+        return [
+            'status' => 'success',
+            'message' => 'VK Open API настроен (app_id, protected_key)',
+        ];
     }
 }
 

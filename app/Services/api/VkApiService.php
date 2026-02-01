@@ -424,5 +424,48 @@ class VkApiService
             'response' => $result['response'],
         ]);
     }
+
+    /**
+     * Получить посты со стены сообщества (wall.get)
+     *
+     * @param int $groupId ID группы VK (положительное число, в API передаётся как -groupId)
+     * @param string|null $userToken Токен пользователя с доступом к группе
+     * @param int $count Количество постов (макс. 100)
+     * @param int $offset Смещение
+     * @param string|null $startFrom Значение next_from из предыдущего ответа для пагинации
+     * @return array { error: bool, response?: { items: [], next_from?: string }, error_msg?: string }
+     */
+    public function getWallPosts(
+        int $groupId,
+        ?string $userToken,
+        int $count = 100,
+        int $offset = 0,
+        ?string $startFrom = null
+    ): array {
+        $params = [
+            'owner_id' => -$groupId,
+            'count' => min(max(1, $count), 100),
+            'extended' => 1,
+        ];
+        if ($startFrom !== null && $startFrom !== '') {
+            $params['start_from'] = $startFrom;
+        } else {
+            $params['offset'] = $offset;
+        }
+        $result = $this->makeRequest('wall.get', $params, $userToken);
+        if ($result['error']) {
+            return $result;
+        }
+        $res = $result['response'];
+        $items = $res['items'] ?? [];
+        $nextFrom = $res['next_from'] ?? null;
+        return [
+            'error' => false,
+            'response' => [
+                'items' => $items,
+                'next_from' => $nextFrom,
+            ],
+        ];
+    }
 }
 
