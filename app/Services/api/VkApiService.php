@@ -467,5 +467,89 @@ class VkApiService
             ],
         ];
     }
+
+    /**
+     * Получить посты со стены пользователя (wall.get)
+     *
+     * @param string|null $userToken Токен пользователя VK
+     * @param int $userId VK ID пользователя (положительное число)
+     * @param int $count Количество постов (макс. 100)
+     * @param int $offset Смещение
+     * @param string|null $startFrom Значение next_from для пагинации
+     * @return array { error: bool, response?: { items: [], next_from?: string }, error_msg?: string }
+     */
+    public function getUserWallPosts(
+        ?string $userToken,
+        int $userId,
+        int $count = 50,
+        int $offset = 0,
+        ?string $startFrom = null
+    ): array {
+        $params = [
+            'owner_id' => $userId,
+            'count' => min(max(1, $count), 100),
+            'extended' => 1,
+        ];
+        if ($startFrom !== null && $startFrom !== '') {
+            $params['start_from'] = $startFrom;
+        } else {
+            $params['offset'] = $offset;
+        }
+        $result = $this->makeRequest('wall.get', $params, $userToken);
+        if ($result['error']) {
+            return $result;
+        }
+        $res = $result['response'];
+        $items = $res['items'] ?? [];
+        $nextFrom = $res['next_from'] ?? null;
+        return [
+            'error' => false,
+            'response' => [
+                'items' => $items,
+                'next_from' => $nextFrom,
+            ],
+        ];
+    }
+
+    /**
+     * Получить ленту новостей пользователя (newsfeed.get).
+     * Токен из vk_settings. По 15 записей, пагинация через start_from.
+     *
+     * @param string|null $userToken Токен пользователя VK
+     * @param int $count Количество записей (по умолчанию 15, макс. 100)
+     * @param string|null $startFrom Значение next_from для «Загрузить ещё»
+     * @return array { error: bool, response?: { items: [], next_from?: string, profiles?: [], groups?: [] }, error_msg?: string }
+     */
+    public function getNewsfeed(
+        ?string $userToken,
+        int $count = 15,
+        ?string $startFrom = null
+    ): array {
+        $params = [
+            'count' => min(max(1, $count), 100),
+            'extended' => 1,
+        ];
+        if ($startFrom !== null && $startFrom !== '') {
+            $params['start_from'] = $startFrom;
+        }
+        $result = $this->makeRequest('newsfeed.get', $params, $userToken);
+        if ($result['error']) {
+            return $result;
+        }
+        $res = $result['response'];
+        $items = $res['items'] ?? [];
+        $nextFrom = $res['next_from'] ?? null;
+        $profiles = $res['profiles'] ?? [];
+        $groups = $res['groups'] ?? [];
+        return [
+            'error' => false,
+            'response' => [
+                'items' => $items,
+                'next_from' => $nextFrom,
+                'profiles' => $profiles,
+                'groups' => $groups,
+            ],
+        ];
+    }
 }
 

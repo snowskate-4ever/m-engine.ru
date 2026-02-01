@@ -144,7 +144,77 @@
     </style>
 </head>
 <body>
-    <div class="container">
+        <div class="container">
+        @include('vk_menu')
+
+        <div class="section">
+            <h2>Результаты системных тестов</h2>
+            @if(isset($vkSettings))
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <strong>Таблица vk_settings:</strong>
+                    <ul style="margin: 8px 0; padding-left: 20px; list-style: none;">
+                        <li><strong>vk_access_token:</strong> @if(!empty($vkSettings->vk_access_token)){{ strlen($vkSettings->vk_access_token) > 10 ? substr($vkSettings->vk_access_token, 0, 6) . '...' . substr($vkSettings->vk_access_token, -4) : '***' }}@else — @endif</li>
+                        <li><strong>vk_refresh_token:</strong> @if(!empty($vkSettings->vk_refresh_token)){{ strlen($vkSettings->vk_refresh_token) > 10 ? substr($vkSettings->vk_refresh_token, 0, 6) . '...' . substr($vkSettings->vk_refresh_token, -4) : '***' }}@else — @endif</li>
+                        <li><strong>vk_token_expires_at:</strong> {{ $vkSettings->vk_token_expires_at ? $vkSettings->vk_token_expires_at->format('Y-m-d H:i:s') : '—' }}</li>
+                        <li><strong>vk_user_id:</strong> {{ $vkSettings->vk_user_id ?? '—' }}</li>
+                        <li><strong>token_received_at:</strong> {{ $vkSettings->token_received_at ? $vkSettings->token_received_at->setTimezone('Europe/Moscow')->format('Y-m-d H:i:s') : '—' }} <span style="color:#666;">(МСК, время записи в таблицу)</span></li>
+                    </ul>
+                </div>
+            @endif
+            <div id="testResults">
+                @if(isset($results))
+                    @foreach($results as $testName => $testResult)
+                        <div style="margin-bottom: 15px;">
+                            <strong>{{ ucfirst(str_replace('_', ' ', $testName)) }}:</strong>
+                            @if(is_array($testResult))
+                                @if(isset($testResult['status']))
+                                    <span style="color: {{ $testResult['status'] === 'success' ? '#4CAF50' : '#f44336' }}">
+                                        {{ $testResult['status'] === 'success' ? '✓' : '✗' }} {{ $testResult['message'] ?? '' }}
+                                    </span>
+                                @else
+                                    <ul style="margin: 5px 0; padding-left: 20px;">
+                                        @foreach($testResult as $key => $value)
+                                            <li>
+                                                <strong>{{ $key }}:</strong>
+                                                @if(is_array($value))
+                                                    @if(isset($value['status']))
+                                                        <span style="color: {{ $value['status'] === 'success' ? '#4CAF50' : '#f44336' }}">
+                                                            {{ $value['status'] === 'success' ? '✓' : '✗' }} {{ $value['message'] ?? '' }}
+                                                        </span>
+                                                    @else
+                                                        {{ json_encode($value) }}
+                                                    @endif
+                                                @else
+                                                    {{ $value }}
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            @else
+                                {{ $testResult }}
+                            @endif
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+            @if(isset($vkSettings))
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <strong>Таблица vk_settings:</strong>
+                    <ul style="margin: 8px 0; padding-left: 20px; list-style: none;">
+                        <li><strong>vk_access_token:</strong> @if(!empty($vkSettings->vk_access_token)){{ strlen($vkSettings->vk_access_token) > 10 ? substr($vkSettings->vk_access_token, 0, 6) . '...' . substr($vkSettings->vk_access_token, -4) : '***' }}@else — @endif</li>
+                        <li><strong>vk_refresh_token:</strong> @if(!empty($vkSettings->vk_refresh_token)){{ strlen($vkSettings->vk_refresh_token) > 10 ? substr($vkSettings->vk_refresh_token, 0, 6) . '...' . substr($vkSettings->vk_refresh_token, -4) : '***' }}@else — @endif</li>
+                        <li><strong>vk_token_expires_at:</strong> {{ $vkSettings->vk_token_expires_at ? $vkSettings->vk_token_expires_at->format('Y-m-d H:i:s') : '—' }}</li>
+                        <li><strong>vk_user_id:</strong> {{ $vkSettings->vk_user_id ?? '—' }}</li>
+                        <li><strong>token_received_at:</strong> {{ $vkSettings->token_received_at ? $vkSettings->token_received_at->setTimezone('Europe/Moscow')->format('Y-m-d H:i:s') : '—' }} <span style="color:#666;">(МСК, время записи в таблицу)</span></li>
+                    </ul>
+                </div>
+            @endif
+            <div style="margin-top: 15px; color: #666; font-size: 14px;">
+                Время выполнения: {{ $timestamp ?? 'N/A' }}
+            </div>
+        </div>
+
         <h1>VK Open API тест</h1>
 
         <div class="section">
@@ -174,6 +244,15 @@
             @if(!empty($vkOAuthTokenSaved))
                 <div class="success-message" style="margin-top: 10px;">✓ Токен получен через OAuth. Нажмите «Получить группы (через сервер)» ниже.</div>
                 <button type="button" id="vkOAuthGroupsBtn" class="btn" style="margin-top: 8px;">Получить группы (через сервер)</button>
+            @endif
+            @if(isset($vkOauthResponse))
+                <div class="section" style="margin-top: 20px;">
+                    <h3 style="margin-top: 0; color: #555;">Данные от VK после авторизации (как есть)</h3>
+                    <pre style="background: #f5f5f5; padding: 16px; border-radius: 6px; overflow-x: auto; font-size: 13px; border: 1px solid #ddd; margin: 0;">{{ is_array($vkOauthResponse) ? json_encode($vkOauthResponse, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : (string) $vkOauthResponse }}</pre>
+                    @if(is_array($vkOauthResponse) && !isset($vkOauthResponse['refresh_token']))
+                        <p style="margin-top: 10px; color: #856404; font-size: 13px;">В ответе VK нет <code>refresh_token</code> — для этого типа приложения или scope VK может не возвращать refresh_token.</p>
+                    @endif
+                </div>
             @endif
             <div style="margin-top: 10px; color: #666; font-size: 14px;">
                 Если вход не завершается, разрешите pop-up окна и сторонние cookies для домена <code>vk.com</code>.
@@ -214,50 +293,6 @@
             </div>
             <div id="vkApiTokenHint" style="margin-top: 10px; color: #666; font-size: 14px;"></div>
             <p style="margin-top: 10px; color: #666; font-size: 14px;">Результаты групп и чатов выводятся в общий блок выше.</p>
-        </div>
-
-        <div class="section">
-            <h2>Результаты системных тестов</h2>
-            <div id="testResults">
-                @if(isset($results))
-                    @foreach($results as $testName => $testResult)
-                        <div style="margin-bottom: 15px;">
-                            <strong>{{ ucfirst(str_replace('_', ' ', $testName)) }}:</strong>
-                            @if(is_array($testResult))
-                                @if(isset($testResult['status']))
-                                    <span style="color: {{ $testResult['status'] === 'success' ? '#4CAF50' : '#f44336' }}">
-                                        {{ $testResult['status'] === 'success' ? '✓' : '✗' }} {{ $testResult['message'] ?? '' }}
-                                    </span>
-                                @else
-                                    <ul style="margin: 5px 0; padding-left: 20px;">
-                                        @foreach($testResult as $key => $value)
-                                            <li>
-                                                <strong>{{ $key }}:</strong>
-                                                @if(is_array($value))
-                                                    @if(isset($value['status']))
-                                                        <span style="color: {{ $value['status'] === 'success' ? '#4CAF50' : '#f44336' }}">
-                                                            {{ $value['status'] === 'success' ? '✓' : '✗' }} {{ $value['message'] ?? '' }}
-                                                        </span>
-                                                    @else
-                                                        {{ json_encode($value) }}
-                                                    @endif
-                                                @else
-                                                    {{ $value }}
-                                                @endif
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            @else
-                                {{ $testResult }}
-                            @endif
-                        </div>
-                    @endforeach
-                @endif
-            </div>
-            <div style="margin-top: 15px; color: #666; font-size: 14px;">
-                Время выполнения: {{ $timestamp ?? 'N/A' }}
-            </div>
         </div>
     </div>
 

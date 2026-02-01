@@ -9,6 +9,7 @@ use App\Services\TestService;
 use App\Services\api\ApiService;
 use App\Services\api\VkApiService;
 use App\Models\User;
+use App\Models\VkSetting;
 
 class TestController extends Controller
 {
@@ -29,14 +30,25 @@ class TestController extends Controller
             ->orderBy('name')
             ->get();
 
+        $vkSettings = VkSetting::instance();
+
+        // Ответ VK после OAuth — читаем из сессии, передаём в шаблон, затем удаляем (показать один раз)
+        $vkOauthResponse = $request->session()->get('vk_oauth_response');
+        if ($vkOauthResponse !== null) {
+            $request->session()->forget('vk_oauth_response');
+        }
+
         return view('test.openapi', [
+            'vkMenuActive' => 'token',
             'results' => $results,
             'timestamp' => now()->toDateTimeString(),
+            'vkSettings' => $vkSettings,
             'vkRedirectUrl' => $redirectUrl,
             'vkOpenApiAppId' => config('services.vk.app_id'),
             'vkTrackings' => $vkTrackings,
             'vkOAuthTokenSaved' => $request->session()->get('vk_api_token_saved'),
             'vkApiError' => $request->session()->get('vk_api_error'),
+            'vkOauthResponse' => $vkOauthResponse,
         ]);
     }
 
@@ -102,23 +114,14 @@ class TestController extends Controller
     }
 
     /**
-     * Получить чаты пользователя ВК по сохраненному токену
+     * Получить чаты пользователя ВК по токену из vk_settings
      */
     public function getVkChats(Request $request)
     {
-        $user = User::query()->where('email', 'mad.md@yandex.ru')->first();
-        if (!$user) {
+        $settings = VkSetting::instance();
+        if (empty($settings->vk_access_token)) {
             return ApiService::errorResponse(
-                'Пользователь с почтой mad.md@yandex.ru не найден.',
-                ApiService::UNPROCESSABLE_CONTENT,
-                [],
-                404
-            );
-        }
-
-        if (empty($user->vk_access_token)) {
-            return ApiService::errorResponse(
-                'У пользователя не сохранен VK access token.',
+                'VK access token не сохранён в настройках (таблица vk_settings).',
                 ApiService::VK_TOKEN_NOT_CONFIGURED,
                 [],
                 400
@@ -126,7 +129,7 @@ class TestController extends Controller
         }
 
         $request->merge([
-            'user_token' => $user->vk_access_token,
+            'user_token' => $settings->vk_access_token,
         ]);
 
         return VkApiService::getUserChats($request);
@@ -149,7 +152,7 @@ class TestController extends Controller
             $request->session()->put('vk_user_id', (string) $request->input('user_id'));
         }
 
-        $this->storeVkTokensForUser($request->user(), [
+        $this->storeVkTokensToSettings([
             'access_token' => $request->input('token'),
             'refresh_token' => $request->input('refresh_token'),
             'expires_in' => $request->input('expires_in'),
@@ -254,12 +257,13 @@ class TestController extends Controller
     public function startVkOAuth(Request $request)
     {
         $clientId = config('services.vk.app_id');
-        $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
+        // Явный redirect_url из конфига (VK_REDIRECT_URL), иначе — текущий хост (за прокси может быть http)
+        $redirectBase = rtrim(config('services.vk.redirect_url') ?: config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost(), '/');
         $redirectUri = $redirectBase . '/vk-oauth';
 
         if (!$clientId) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID.');
-            return redirect()->route('admin.vktest');
+            return redirect()->route('admin.vk');
         }
 
         Log::info('VK OAuth start', [
@@ -274,7 +278,7 @@ class TestController extends Controller
         $query = http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
-            'scope' => 'groups,messages',
+            'scope' => 'groups,offline', // offline — для долгоживущего токена и refresh_token (если VK вернёт)
             'response_type' => 'code',
             'v' => config('services.vk.api_version', '5.131'),
             'display' => 'page',
@@ -303,17 +307,17 @@ class TestController extends Controller
 
         if (!$code) {
             $request->session()->flash('vk_api_error', $error ?: 'Код авторизации не получен.');
-            return redirect()->route('admin.vktest');
+            return redirect()->route('admin.vk');
         }
 
         $clientId = config('services.vk.app_id');
         $clientSecret = config('services.vk.client_secret');
-        $redirectBase = config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost();
+        $redirectBase = rtrim(config('services.vk.redirect_url') ?: config('services.vk.tunnel_url') ?: $request->getSchemeAndHttpHost(), '/');
         $redirectUri = $redirectBase . '/vk-oauth';
 
         if (!$clientId || !$clientSecret) {
             $request->session()->flash('vk_api_error', 'Не задан VK_APP_ID или VK_CLIENT_SECRET.');
-            return redirect()->route('admin.vktest');
+            return redirect()->route('admin.vk');
         }
 
         $response = Http::get('https://oauth.vk.com/access_token', [
@@ -329,7 +333,7 @@ class TestController extends Controller
                 'body' => $response->body(),
             ]);
             $request->session()->flash('vk_api_error', 'Не удалось получить токен VK API.');
-            return redirect()->route('admin.vktest');
+            return redirect()->route('admin.vk');
         }
 
         $data = $response->json();
@@ -339,7 +343,7 @@ class TestController extends Controller
                 'error_description' => $data['error_description'] ?? null,
             ]);
             $request->session()->flash('vk_api_error', $data['error_description'] ?? $data['error']);
-            return redirect()->route('admin.vktest');
+            return redirect()->route('admin.vk');
         }
 
         if (empty($data['access_token'])) {
@@ -347,7 +351,7 @@ class TestController extends Controller
                 'response' => $data,
             ]);
             $request->session()->flash('vk_api_error', 'VK API не вернул access_token.');
-            return redirect()->route('admin.vktest');
+            return redirect()->route('admin.vk');
         }
 
         $request->session()->put('vk_api_token', $data['access_token']);
@@ -360,36 +364,39 @@ class TestController extends Controller
             'client_ip' => $request->ip(),
         ]);
 
-        // Сохраняем токены в пользователя mad.md@yandex.ru (vk_access_token, vk_refresh_token)
-        $targetUser = User::where('email', 'mad.md@yandex.ru')->first();
-        if ($targetUser) {
-            $this->storeVkTokensForUser($targetUser, $data);
-        } else {
-            Log::warning('VK OAuth: пользователь mad.md@yandex.ru не найден, токены в БД не сохранены.');
-        }
+        // Сохраняем токены в таблицу vk_settings
+        $this->storeVkTokensToSettings($data);
 
+        // Ответ VK сохраняем в сессию (put) — на странице прочитаем и выведем, затем удалим
+        $request->session()->put('vk_oauth_response', $data);
         $request->session()->flash('vk_api_token_saved', true);
 
-        return redirect()->route('admin.vktest');
+        return redirect()->route('admin.vk');
     }
 
-    private function storeVkTokensForUser(?User $user, array $data): void
+    /**
+     * Запись токенов VK в таблицу vk_settings.
+     * Вызывается из handleVkOAuth (после OAuth) и из saveVkToken (сохранение токена с клиента).
+     */
+    private function storeVkTokensToSettings(array $data): void
     {
-        if (!$user) {
-            Log::info('VK OAuth token not saved to user: no auth user.');
-            return;
+        $settings = VkSetting::instance();
+        $settings->vk_access_token = $data['access_token'] ?? null;
+        $settings->vk_refresh_token = $data['refresh_token'] ?? null;
+        $settings->vk_user_id = isset($data['user_id']) ? (string) $data['user_id'] : null;
+        // Обновляем vk_token_expires_at только если VK прислал expires_in (иначе не затираем старую дату)
+        if (isset($data['expires_in']) && $data['expires_in'] !== '' && $data['expires_in'] !== null) {
+            $settings->vk_token_expires_at = now()->addSeconds((int) $data['expires_in']);
         }
+        $settings->token_received_at = now('Europe/Moscow');
+        $settings->save();
 
-        $expiresAt = null;
-        if (!empty($data['expires_in'])) {
-            $expiresAt = now()->addSeconds((int) $data['expires_in']);
-        }
-
-        $user->vk_access_token = $data['access_token'] ?? null;
-        $user->vk_refresh_token = $data['refresh_token'] ?? null;
-        $user->vk_token_expires_at = $expiresAt;
-        $user->vk_user_id = isset($data['user_id']) ? (int) $data['user_id'] : null;
-        $user->save();
+        Log::info('Запись в таблицу vk_settings', [
+            'где' => 'TestController::storeVkTokensToSettings',
+            'вызов' => 'handleVkOAuth или saveVkToken',
+            'token_received_at' => $settings->token_received_at?->setTimezone('Europe/Moscow')->format('Y-m-d H:i:s (Europe/Moscow)'),
+            'vk_user_id' => $settings->vk_user_id,
+        ]);
     }
 }
 

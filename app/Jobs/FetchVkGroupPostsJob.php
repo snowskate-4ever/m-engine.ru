@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Jobs;
 
 use App\Models\VkPost;
 use App\Models\VkPostMedia;
@@ -27,8 +27,7 @@ class FetchVkGroupPostsJob implements ShouldQueue
         public int $vkTrackingId,
         public int $userId,
         public int $count = 100,
-        public ?string $startFrom = null,
-        public int $offset = 0
+        public ?string $startFrom = null
     ) {
         $this->onQueue('vk');
     }
@@ -53,7 +52,7 @@ class FetchVkGroupPostsJob implements ShouldQueue
             (int) $tracking->group_id,
             $token,
             $this->count,
-            ($this->startFrom !== null && $this->startFrom !== '') ? 0 : max(0, $this->offset),
+            $this->startFrom ? 0 : 0,
             $this->startFrom
         );
 
@@ -81,7 +80,7 @@ class FetchVkGroupPostsJob implements ShouldQueue
             }
 
             $postedAt = isset($post['date']) ? \Carbon\Carbon::createFromTimestamp((int) $post['date']) : null;
-            $rawJson = $post;
+            $rawJson = $post; // сохраняем сырой пост целиком
 
             $vkPost = VkPost::create([
                 'vk_tracking_id' => $this->vkTrackingId,
