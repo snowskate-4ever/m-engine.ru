@@ -181,10 +181,8 @@
             <div style="margin-top: 8px; padding: 10px; background: #fff3cd; border-radius: 4px; font-size: 13px;">
                 <strong>«Выбранный способ авторизации не доступен для приложения»</strong> — это сообщение от VK (виджет может быть отключён для приложения). Используйте кнопку <strong>«Войти через OAuth»</strong> — она ведёт на VK и обратно по вашему «Доверенный redirect URI» (<code>https://m-engine.ru/vk-oauth</code>). В .env на сервере должен быть задан <code>VK_CLIENT_SECRET</code> (Client Secret из настроек приложения).
             </div>
-            <div id="vkOpenApiGroupsResults" class="results"></div>
-            <div id="vkOpenApiNewsResults" class="results"></div>
-            <div id="vkOpenApiGroupNewsResults" class="results"></div>
-            <div id="vkOpenApiGroupNewsMore" class="results">
+            <div id="vkDataResults" class="results" style="max-height: 70vh; overflow-y: auto;"></div>
+            <div id="vkGroupNewsMoreWrap" style="margin-top: 10px; display: none;">
                 <button id="vkOpenApiGroupNewsMoreBtn" class="btn" disabled>Загрузить еще</button>
             </div>
         </div>
@@ -215,8 +213,7 @@
                 </label>
             </div>
             <div id="vkApiTokenHint" style="margin-top: 10px; color: #666; font-size: 14px;"></div>
-            <div id="vkGroupsApiResults" class="results"></div>
-            <div id="vkChatsResults" class="results"></div>
+            <p style="margin-top: 10px; color: #666; font-size: 14px;">Результаты групп и чатов выводятся в общий блок выше.</p>
         </div>
 
         <div class="section">
@@ -277,15 +274,25 @@
             const groupNewsMoreWrap = document.getElementById('vkOpenApiGroupNewsMore');
             const groupSelect = document.getElementById('vkOpenApiGroupSelect');
             const statusDiv = document.getElementById('vkOpenApiStatus');
-            const resultsDiv = document.getElementById('vkOpenApiGroupsResults');
+            const dataResultsDiv = document.getElementById('vkDataResults');
+            const groupNewsMoreWrap = document.getElementById('vkGroupNewsMoreWrap');
             const getVkGroupsApiBtn = document.getElementById('getVkGroupsApiBtn');
-            const vkGroupsApiResults = document.getElementById('vkGroupsApiResults');
             const vkApiTokenHint = document.getElementById('vkApiTokenHint');
             const chatsBtn = document.getElementById('getVkChatsBtn');
-            const chatsResultsDiv = document.getElementById('vkChatsResults');
             const chatsOffsetInput = document.getElementById('vkChatsOffset');
             const chatsCountInput = document.getElementById('vkChatsCount');
             const chatsFilterInput = document.getElementById('vkChatsFilter');
+
+            function clearDataResults() {
+                dataResultsDiv.innerHTML = '';
+                dataResultsDiv.classList.remove('show', 'success', 'error');
+                if (groupNewsMoreWrap) groupNewsMoreWrap.style.display = 'none';
+            }
+            function showDataLoading() {
+                clearDataResults();
+                dataResultsDiv.innerHTML = '<div class="loading">Загрузка...</div>';
+                dataResultsDiv.classList.add('show');
+            }
 
             function showError(message) {
                 statusDiv.innerHTML = `<div class="error-message">${message}</div>`;
@@ -394,9 +401,7 @@
             const vkOAuthGroupsBtn = document.getElementById('vkOAuthGroupsBtn');
             if (vkOAuthGroupsBtn) {
                 vkOAuthGroupsBtn.addEventListener('click', function() {
-                    resultsDiv.classList.remove('show', 'success', 'error');
-                    resultsDiv.innerHTML = '<div style="color: #666;">Загрузка...</div>';
-                    resultsDiv.classList.add('show');
+                    showDataLoading();
                     fetch('{{ route("admin.test.vk-groups") }}', {
                         method: 'POST',
                         headers: {
@@ -409,8 +414,8 @@
                     .then(r => r.json())
                     .then(data => {
                         if (!data.success || data.data === undefined) {
-                            resultsDiv.classList.add('error');
-                            resultsDiv.innerHTML = `<div class="error-message">${data.message || 'Ошибка запроса'}</div>`;
+                            dataResultsDiv.classList.add('show', 'error');
+                            dataResultsDiv.innerHTML = `<div class="error-message">${data.message || 'Ошибка запроса'}</div>`;
                             return;
                         }
                         const groups = data.data.groups || [];
@@ -423,25 +428,23 @@
                             });
                             html += '</div>';
                         }
-                        resultsDiv.classList.add('success');
-                        resultsDiv.innerHTML = html;
+                        dataResultsDiv.classList.add('show', 'success');
+                        dataResultsDiv.innerHTML = html;
                     })
                     .catch(err => {
-                        resultsDiv.classList.add('error');
-                        resultsDiv.innerHTML = `<div class="error-message">Ошибка: ${err.message}</div>`;
+                        dataResultsDiv.classList.add('show', 'error');
+                        dataResultsDiv.innerHTML = `<div class="error-message">Ошибка: ${err.message}</div>`;
                     });
                 });
             }
 
             groupsBtn.addEventListener('click', function() {
-                resultsDiv.classList.remove('show', 'success', 'error');
-                resultsDiv.innerHTML = '';
-
+                showDataLoading();
                 VK.Api.call('groups.get', { extended: 1, v: '5.131' }, function(r) {
                     if (!r || r.error) {
-                        resultsDiv.classList.add('show', 'error');
+                        dataResultsDiv.classList.add('show', 'error');
                         const errorText = r?.error?.error_msg || 'Неизвестная ошибка VK API';
-                        resultsDiv.innerHTML = `<div class="error-message">${errorText}</div>`;
+                        dataResultsDiv.innerHTML = `<div class="error-message">${errorText}</div>`;
                         return;
                     }
 
@@ -468,21 +471,18 @@
                         html += '<div style="margin-top: 15px; color: #666;">Группы не найдены</div>';
                     }
 
-                    resultsDiv.classList.add('show', 'success');
-                    resultsDiv.innerHTML = html;
+                    dataResultsDiv.classList.add('show', 'success');
+                    dataResultsDiv.innerHTML = html;
                 });
             });
 
             newsBtn.addEventListener('click', function() {
-                const newsResults = document.getElementById('vkOpenApiNewsResults');
-                newsResults.classList.remove('show', 'success', 'error');
-                newsResults.innerHTML = '';
-
+                showDataLoading();
                 VK.Api.call('newsfeed.get', { filters: 'post', count: 20, v: '5.131' }, function(r) {
                     if (!r || r.error) {
-                        newsResults.classList.add('show', 'error');
+                        dataResultsDiv.classList.add('show', 'error');
                         const errorText = r?.error?.error_msg || 'Неизвестная ошибка VK API';
-                        newsResults.innerHTML = `<div class="error-message">${errorText}</div>`;
+                        dataResultsDiv.innerHTML = `<div class="error-message">${errorText}</div>`;
                         return;
                     }
 
@@ -505,8 +505,8 @@
                         html += '<div style="margin-top: 15px; color: #666;">Записей не найдено</div>';
                     }
 
-                    newsResults.classList.add('show', 'success');
-                    newsResults.innerHTML = html;
+                    dataResultsDiv.classList.add('show', 'success');
+                    dataResultsDiv.innerHTML = html;
                 });
             });
 
@@ -541,12 +541,10 @@
             }
 
             groupNewsBtn.addEventListener('click', function() {
-                const groupNewsResults = document.getElementById('vkOpenApiGroupNewsResults');
-                groupNewsResults.classList.remove('show', 'success', 'error');
-                groupNewsResults.innerHTML = '';
+                showDataLoading();
                 groupNewsNextFrom = null;
                 currentGroupId = null;
-                groupNewsMoreWrap.classList.remove('show');
+                if (groupNewsMoreWrap) groupNewsMoreWrap.style.display = 'none';
                 groupNewsMoreBtn.disabled = true;
 
                 const selected = groupSelect?.value || '';
@@ -561,19 +559,19 @@
                     currentGroupId = groupId;
                     VK.Api.call('newsfeed.get', { filters: 'post', source_ids: `-${groupId}`, count: 20, v: '5.131' }, function(nr) {
                         if (!nr || nr.error) {
-                            groupNewsResults.classList.add('show', 'error');
+                            dataResultsDiv.classList.add('show', 'error');
                             const errorText = nr?.error?.error_msg || 'Неизвестная ошибка VK API';
-                            groupNewsResults.innerHTML = `<div class="error-message">${errorText}</div>`;
+                            dataResultsDiv.innerHTML = `<div class="error-message">${errorText}</div>`;
                             return;
                         }
 
                         const items = nr.response?.items || [];
                         groupNewsNextFrom = nr.response?.next_from || null;
-                        groupNewsResults.classList.add('show', 'success');
-                        groupNewsMoreWrap.classList.add('show');
+                        dataResultsDiv.classList.add('show', 'success');
+                        dataResultsDiv.innerHTML = `<div class="success-message">Успешно получено записей: ${items.length}</div>`;
+                        renderGroupNews(items, dataResultsDiv);
+                        if (groupNewsMoreWrap) groupNewsMoreWrap.style.display = groupNewsNextFrom ? 'block' : 'none';
                         groupNewsMoreBtn.disabled = !groupNewsNextFrom;
-                        groupNewsResults.innerHTML = `<div class="success-message">Успешно получено записей: ${items.length}</div>`;
-                        renderGroupNews(items, groupNewsResults);
                     });
                 };
 
@@ -584,9 +582,9 @@
 
                 VK.Api.call('groups.getById', { group_id: selected, v: '5.131' }, function(r) {
                     if (!r || r.error || !r.response || !r.response[0]) {
-                        groupNewsResults.classList.add('show', 'error');
+                        dataResultsDiv.classList.add('show', 'error');
                         const errorText = r?.error?.error_msg || 'Не удалось получить данные группы';
-                        groupNewsResults.innerHTML = `<div class="error-message">${errorText}</div>`;
+                        dataResultsDiv.innerHTML = `<div class="error-message">${errorText}</div>`;
                         return;
                     }
 
@@ -601,7 +599,6 @@
                     return;
                 }
 
-                const groupNewsResults = document.getElementById('vkOpenApiGroupNewsResults');
                 VK.Api.call('newsfeed.get', { filters: 'post', source_ids: `-${currentGroupId}`, start_from: groupNewsNextFrom, count: 20, v: '5.131' }, function(nr) {
                     if (!nr || nr.error) {
                         const errorText = nr?.error?.error_msg || 'Неизвестная ошибка VK API';
@@ -611,16 +608,16 @@
 
                     const items = nr.response?.items || [];
                     groupNewsNextFrom = nr.response?.next_from || null;
-                    renderGroupNews(items, groupNewsResults);
+                    renderGroupNews(items, dataResultsDiv);
                     groupNewsMoreBtn.disabled = !groupNewsNextFrom;
+                    if (groupNewsMoreWrap) groupNewsMoreWrap.style.display = groupNewsNextFrom ? 'block' : 'none';
                 });
             });
 
             async function fetchVkChats() {
                 chatsBtn.disabled = true;
                 chatsBtn.classList.add('btn-loading');
-                chatsResultsDiv.classList.remove('show', 'success', 'error');
-                chatsResultsDiv.innerHTML = '<div class="loading">Загрузка...</div>';
+                showDataLoading();
 
                 const offset = parseInt(chatsOffsetInput.value || '0', 10);
                 const count = parseInt(chatsCountInput.value || '20', 10);
@@ -645,8 +642,8 @@
                     const contentType = response.headers.get('content-type') || '';
                     if (!contentType.includes('application/json')) {
                         const isAuthRedirect = response.redirected || response.url.includes('/admin/login');
-                        chatsResultsDiv.classList.add('show', 'error');
-                        chatsResultsDiv.innerHTML = `
+                        dataResultsDiv.classList.add('show', 'error');
+                        dataResultsDiv.innerHTML = `
                             <div class="error-message">
                                 <strong>Ошибка:</strong> ${isAuthRedirect ? 'Требуется авторизация в админке' : 'Ответ сервера не в формате JSON'}
                                 <br><small>Перезайдите в админку и попробуйте снова</small>
@@ -657,7 +654,7 @@
 
                     const data = await response.json();
                     if (data.success) {
-                        chatsResultsDiv.classList.add('show', 'success');
+                        dataResultsDiv.classList.add('show', 'success');
                         const conversations = data.data.conversations || [];
                         const total = data.data.count || 0;
 
@@ -690,10 +687,10 @@
                             html += '<div style="margin-top: 15px; color: #666;">Беседы не найдены</div>';
                         }
 
-                        chatsResultsDiv.innerHTML = html;
+                        dataResultsDiv.innerHTML = html;
                     } else {
-                        chatsResultsDiv.classList.add('show', 'error');
-                        chatsResultsDiv.innerHTML = `
+                        dataResultsDiv.classList.add('show', 'error');
+                        dataResultsDiv.innerHTML = `
                             <div class="error-message">
                                 <strong>Ошибка:</strong> ${data.message || 'Неизвестная ошибка'}
                                 ${data.codError ? `<br>Код ошибки: ${data.codError}` : ''}
@@ -701,8 +698,8 @@
                         `;
                     }
                 } catch (error) {
-                    chatsResultsDiv.classList.add('show', 'error');
-                    chatsResultsDiv.innerHTML = `
+                    dataResultsDiv.classList.add('show', 'error');
+                    dataResultsDiv.innerHTML = `
                         <div class="error-message">
                             <strong>Ошибка запроса:</strong> ${error.message}
                             <br><small>Если ошибка CORS — используйте серверный запрос или прокси</small>
@@ -729,9 +726,7 @@
                 if (!getVkGroupsApiBtn) return;
                 getVkGroupsApiBtn.disabled = true;
                 getVkGroupsApiBtn.classList.add('btn-loading');
-                vkGroupsApiResults.classList.remove('show', 'success', 'error');
-                vkGroupsApiResults.innerHTML = '<div class="loading">Загрузка...</div>';
-                vkGroupsApiResults.classList.add('show');
+                showDataLoading();
 
                 try {
                     const response = await fetch('{{ route("admin.test.vk-groups") }}', {
@@ -747,14 +742,14 @@
 
                     const contentType = response.headers.get('content-type') || '';
                     if (!contentType.includes('application/json')) {
-                        vkGroupsApiResults.classList.add('error');
-                        vkGroupsApiResults.innerHTML = '<div class="error-message">Ответ не JSON. Проверьте авторизацию.</div>';
+                        dataResultsDiv.classList.add('show', 'error');
+                        dataResultsDiv.innerHTML = '<div class="error-message">Ответ не JSON. Проверьте авторизацию.</div>';
                         return;
                     }
 
                     const data = await response.json();
                     if (data.success) {
-                        vkGroupsApiResults.classList.add('success');
+                        dataResultsDiv.classList.add('show', 'success');
                         const groups = data.data?.groups || [];
                         const count = data.data?.count ?? groups.length;
                         let html = '<div class="success-message">Групп: ' + count + '</div>';
@@ -767,14 +762,14 @@
                         } else {
                             html += '<div style="margin-top:15px;color:#666;">Группы не найдены</div>';
                         }
-                        vkGroupsApiResults.innerHTML = html;
+                        dataResultsDiv.innerHTML = html;
                     } else {
-                        vkGroupsApiResults.classList.add('error');
-                        vkGroupsApiResults.innerHTML = '<div class="error-message"><strong>Ошибка:</strong> ' + (data.message || 'Неизвестная ошибка') + (data.codError ? ' (код: ' + data.codError + ')' : '') + '</div>';
+                        dataResultsDiv.classList.add('show', 'error');
+                        dataResultsDiv.innerHTML = '<div class="error-message"><strong>Ошибка:</strong> ' + (data.message || 'Неизвестная ошибка') + (data.codError ? ' (код: ' + data.codError + ')' : '') + '</div>';
                     }
                 } catch (err) {
-                    vkGroupsApiResults.classList.add('error');
-                    vkGroupsApiResults.innerHTML = '<div class="error-message">Ошибка запроса: ' + err.message + '</div>';
+                    dataResultsDiv.classList.add('show', 'error');
+                    dataResultsDiv.innerHTML = '<div class="error-message">Ошибка запроса: ' + err.message + '</div>';
                 } finally {
                     getVkGroupsApiBtn.disabled = false;
                     getVkGroupsApiBtn.classList.remove('btn-loading');

@@ -360,7 +360,13 @@ class TestController extends Controller
             'client_ip' => $request->ip(),
         ]);
 
-        $this->storeVkTokensForUser($request->user(), $data);
+        // Сохраняем токены в пользователя mad.md@yandex.ru (vk_access_token, vk_refresh_token)
+        $targetUser = User::where('email', 'mad.md@yandex.ru')->first();
+        if ($targetUser) {
+            $this->storeVkTokensForUser($targetUser, $data);
+        } else {
+            Log::warning('VK OAuth: пользователь mad.md@yandex.ru не найден, токены в БД не сохранены.');
+        }
 
         $request->session()->flash('vk_api_token_saved', true);
 
