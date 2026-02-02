@@ -62,6 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [VkApiController::class, 'getUsers'])->name('api_vk_users');
         Route::get('/groups', [VkApiController::class, 'getGroups'])->name('api_vk_groups');
         Route::get('/user-groups', [VkApiController::class, 'getUserGroups'])->name('api_vk_user_groups');
+        Route::get('/posts', [VkApiController::class, 'getPosts'])->name('api_vk_posts');
         Route::post('/wall/post', [VkApiController::class, 'wallPost'])->name('api_vk_wall_post');
         Route::post('/execute', [VkApiController::class, 'executeMethod'])->name('api_vk_execute');
     });

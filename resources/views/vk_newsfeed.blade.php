@@ -91,6 +91,13 @@
 
         @if(isset($error) && $error)
             <div class="error-message">{{ $error }}</div>
+            @if(!empty($errorIsAccessDenied))
+                <div class="section" style="background: #fff3e0; border: 1px solid #ffb74d;">
+                    <p><strong>Почему так:</strong> Метод <code>newsfeed.get</code> (лента новостей) в VK API <strong>недоступен для веб-приложений</strong> — это ограничение ВКонтакте. Даже при запросе права <code>newsfeed</code> веб-приложения получают отказ.</p>
+                    <p>Используйте <strong>«Лента пользователя»</strong> — там посты со стены через <code>wall.get</code>, этот метод доступен.</p>
+                    <p><a href="{{ route('admin.vk-feed.index') }}" style="color: #1976d2; font-weight: 600;">Перейти в «Лента пользователя»</a></p>
+                </div>
+            @endif
         @elseif(session('error'))
             <div class="error-message">{{ session('error') }}</div>
         @endif

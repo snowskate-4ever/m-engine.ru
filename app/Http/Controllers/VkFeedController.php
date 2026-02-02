@@ -84,13 +84,16 @@ class VkFeedController extends Controller
         $result = $service->getNewsfeed($token, $count, $startFrom ?: null);
 
         if ($result['error']) {
-            // Не редиректим на ту же страницу — иначе цикл редиректов (ERR_TOO_MANY_REDIRECTS)
+            $errorMsg = $result['error_msg'] ?? 'Ошибка при загрузке ленты новостей.';
+            $isAccessDenied = (stripos($errorMsg, 'access denied') !== false)
+                || (stripos($errorMsg, 'current scopes') !== false);
             return view('vk_newsfeed', [
                 'items' => [],
                 'nextFrom' => null,
                 'profiles' => [],
                 'groups' => [],
-                'error' => $result['error_msg'] ?? 'Ошибка при загрузке ленты новостей.',
+                'error' => $errorMsg,
+                'errorIsAccessDenied' => $isAccessDenied,
             ]);
         }
 
@@ -106,6 +109,7 @@ class VkFeedController extends Controller
             'profiles' => $profiles,
             'groups' => $groups,
             'error' => null,
+            'errorIsAccessDenied' => false,
         ]);
     }
 }

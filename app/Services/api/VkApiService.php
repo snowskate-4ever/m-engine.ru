@@ -551,5 +551,40 @@ class VkApiService
             ],
         ];
     }
+
+    /**
+     * Получить группы пользователя (groups.get) для страницы «Группы».
+     * Токен из vk_settings.
+     *
+     * @param string|null $userToken Токен пользователя VK
+     * @param int $count Количество (макс. 1000)
+     * @param int $offset Смещение
+     * @return array { error: bool, response?: { items: [], count: int }, error_msg?: string }
+     */
+    public function getUsersGroupsList(
+        ?string $userToken,
+        int $count = 100,
+        int $offset = 0
+    ): array {
+        $params = [
+            'extended' => 1,
+            'count' => min(max(1, $count), 1000),
+            'offset' => max(0, $offset),
+        ];
+        $result = $this->makeRequest('groups.get', $params, $userToken);
+        if ($result['error']) {
+            return $result;
+        }
+        $res = $result['response'];
+        $items = $res['items'] ?? [];
+        $totalCount = $res['count'] ?? count($items);
+        return [
+            'error' => false,
+            'response' => [
+                'items' => $items,
+                'count' => (int) $totalCount,
+            ],
+        ];
+    }
 }
 

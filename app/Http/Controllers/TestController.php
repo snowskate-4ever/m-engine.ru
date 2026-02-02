@@ -278,7 +278,7 @@ class TestController extends Controller
         $query = http_build_query([
             'client_id' => $clientId,
             'redirect_uri' => $redirectUri,
-            'scope' => 'groups,offline', // offline — для долгоживущего токена и refresh_token (если VK вернёт)
+            'scope' => 'groups,offline,newsfeed', // offline — долгоживущий токен; newsfeed — лента новостей (newsfeed.get)
             'response_type' => 'code',
             'v' => config('services.vk.api_version', '5.131'),
             'display' => 'page',

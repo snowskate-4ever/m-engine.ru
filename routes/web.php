@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/vk-posts/debug', [App\Http\Controllers\VkPostsController::class, 'debugFetch'])->name('admin.vk-posts.debug');
     Route::get('/admin/vk-feed', [App\Http\Controllers\VkFeedController::class, 'index'])->name('admin.vk-feed.index');
     Route::get('/admin/vk-newsfeed', [App\Http\Controllers\VkFeedController::class, 'newsfeed'])->name('admin.vk-newsfeed.index');
+    Route::get('/admin/vk-groups', [App\Http\Controllers\VkGroupsController::class, 'index'])->name('admin.vk-groups.index');
+    Route::post('/admin/vk-groups/add-tracking', [App\Http\Controllers\VkGroupsController::class, 'addToTracking'])->name('admin.vk-groups.add-tracking');
 });
 
 // Заглушки для неавторизованных пользователей
