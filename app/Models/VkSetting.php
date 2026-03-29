@@ -30,6 +30,7 @@ class VkSetting extends Model
         if ($row !== null) {
             return $row;
         }
+
         return self::query()->create([]);
     }
 }

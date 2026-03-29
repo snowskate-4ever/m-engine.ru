@@ -21,6 +21,7 @@ class FetchVkGroupPostsJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
+
     public int $timeout = 120;
 
     public function __construct(
@@ -36,19 +37,21 @@ class FetchVkGroupPostsJob implements ShouldQueue
     public function handle(): void
     {
         $tracking = VkTracking::find($this->vkTrackingId);
-        if (!$tracking || !$tracking->group_id) {
+        if (! $tracking || ! $tracking->group_id) {
             Log::warning('FetchVkGroupPostsJob: tracking not found or no group_id', ['id' => $this->vkTrackingId]);
+
             return;
         }
 
         $settings = VkSetting::instance();
         $token = $settings->vk_access_token ?? null;
-        if (!$token) {
+        if (! $token) {
             Log::warning('FetchVkGroupPostsJob: vk_settings has no vk_access_token');
+
             return;
         }
 
-        $service = new VkApiService();
+        $service = new VkApiService;
         $result = $service->getWallPosts(
             (int) $tracking->group_id,
             $token,
@@ -62,6 +65,7 @@ class FetchVkGroupPostsJob implements ShouldQueue
                 'vk_tracking_id' => $this->vkTrackingId,
                 'error' => $result['error_msg'] ?? 'unknown',
             ]);
+
             return;
         }
 
@@ -113,7 +117,7 @@ class FetchVkGroupPostsJob implements ShouldQueue
                 $photo = $att['photo'];
                 $sizes = $photo['sizes'] ?? [];
                 $url = $this->getLargestPhotoUrl($sizes);
-                if (!$url && !empty($photo['url'])) {
+                if (! $url && ! empty($photo['url'])) {
                     $url = $photo['url'];
                 }
                 if ($url) {
@@ -146,12 +150,13 @@ class FetchVkGroupPostsJob implements ShouldQueue
         $prefer = ['w', 'z', 'y', 'r', 'q', 'p', 'o', 'x', 'm', 's'];
         foreach ($prefer as $t) {
             foreach ($sizes as $s) {
-                if (($s['type'] ?? '') === $t && !empty($s['url'])) {
+                if (($s['type'] ?? '') === $t && ! empty($s['url'])) {
                     return $s['url'];
                 }
             }
         }
-        return !empty($sizes) && !empty($sizes[count($sizes) - 1]['url'])
+
+        return ! empty($sizes) && ! empty($sizes[count($sizes) - 1]['url'])
             ? $sizes[count($sizes) - 1]['url']
             : null;
     }

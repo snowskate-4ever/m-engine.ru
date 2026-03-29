@@ -4,6 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -13,7 +16,7 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -57,6 +60,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'ai_trial_started_at' => 'datetime',
+            'ai_subscription_valid_until' => 'datetime',
             'password' => 'hashed',
             'registration_metadata' => 'array',
             'telegram_id' => 'integer',
@@ -95,5 +100,54 @@ class User extends Authenticatable
     public function getRegistrationMetadata(): array
     {
         return $this->registration_metadata ?? [];
+    }
+
+    public function conversations(): BelongsToMany
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_user')
+            ->using(ConversationUser::class)
+            ->withPivot([
+                'role',
+                'last_read_message_id',
+                'joined_at',
+                'notifications_muted',
+                'mute_until',
+            ])
+            ->withTimestamps();
+    }
+
+    public function messengerPreference(): HasOne
+    {
+        return $this->hasOne(MessengerUserPreference::class);
+    }
+
+    public function createdConversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class, 'created_by_user_id');
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function devicePushTokens(): HasMany
+    {
+        return $this->hasMany(DevicePushToken::class);
+    }
+
+    public function aiScheduledItems(): HasMany
+    {
+        return $this->hasMany(UserAiScheduledItem::class);
+    }
+
+    public function aiSubscriptions(): HasMany
+    {
+        return $this->hasMany(UserAiSubscription::class);
+    }
+
+    public function aiPreference(): HasOne
+    {
+        return $this->hasOne(UserAiPreference::class);
     }
 }

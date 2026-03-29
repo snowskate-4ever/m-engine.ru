@@ -26,7 +26,7 @@ class VkGroupsController extends Controller
                 ->with('error', 'Сначала получите VK-токен: страница «VK» → «Войти через OAuth».');
         }
 
-        $service = new VkApiService();
+        $service = new VkApiService;
         $result = $service->getUsersGroupsList($token, 1000, 0);
 
         if ($result['error']) {

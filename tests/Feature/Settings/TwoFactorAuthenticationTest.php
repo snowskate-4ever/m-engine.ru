@@ -32,7 +32,7 @@ class TwoFactorAuthenticationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['auth.password_confirmed_at' => time()])
-            ->get(route('two-factor.show'))
+            ->get(route('settings.two-factor.show'))
             ->assertOk()
             ->assertSee('Two Factor Authentication')
             ->assertSee('Disabled');
@@ -43,7 +43,7 @@ class TwoFactorAuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $response = $this->actingAs($user)
-            ->get(route('two-factor.show'));
+            ->get(route('settings.two-factor.show'));
 
         $response->assertRedirect(route('password.confirm'));
     }
@@ -56,7 +56,7 @@ class TwoFactorAuthenticationTest extends TestCase
 
         $response = $this->actingAs($user)
             ->withSession(['auth.password_confirmed_at' => time()])
-            ->get(route('two-factor.show'));
+            ->get(route('settings.two-factor.show'));
 
         $response->assertForbidden();
     }

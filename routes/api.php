@@ -1,20 +1,40 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\api\AiServerModelController;
+use App\Http\Controllers\api\AiSubscriptionController;
 use App\Http\Controllers\api\ApiAuthController;
-use App\Http\Controllers\api\ApiTaskController;
 use App\Http\Controllers\api\ApiEventController;
+use App\Http\Controllers\api\ApiFeaturesController;
 use App\Http\Controllers\api\ApiResourceController;
+use App\Http\Controllers\api\ApiTaskController;
 use App\Http\Controllers\api\ApiTypeController;
+use App\Http\Controllers\api\ApiUserController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\api\BillingWebhookController;
+use App\Http\Controllers\api\DevicePushTokenController;
+use App\Http\Controllers\api\MessengerAttachmentDownloadController;
+use App\Http\Controllers\api\MessengerController;
+use App\Http\Controllers\api\MessengerConversationSkillController;
+use App\Http\Controllers\api\UserAiConnectionController;
+use App\Http\Controllers\api\UserAiPreferenceController;
+use App\Http\Controllers\api\UserAiScheduledItemController;
 use App\Http\Controllers\api\VkApiController;
-use App\Http\Controllers\api\AuthController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/features', ApiFeaturesController::class)->name('api.features');
 
 // Устаревший маршрут для обратной совместимости
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
 
 // Новые маршруты мультиканальной авторизации
 Route::middleware(['detect.channel'])->group(function () {
+    // GET на /auth — явная ошибка (часто из-за редиректа HTTP→HTTPS, когда POST превращается в GET)
+    Route::get('/auth', fn () => response()->json([
+        'error' => 'Method Not Allowed',
+        'message' => 'Используйте POST. Убедитесь, что запрос идёт по HTTPS: https://m-engine.ru/api/auth',
+        'allowed_method' => 'POST',
+    ], 405)->header('Allow', 'POST'));
+
     // Основной endpoint для авторизации из любого канала
     Route::post('/auth', [AuthController::class, 'authenticate'])
         ->middleware(['throttle:5,1']) // 5 попыток в минуту
@@ -31,7 +51,26 @@ Route::post('/webhooks/n8n/auth', [AuthController::class, 'n8nWebhook'])
     ->middleware(['throttle:60,1']) // 60 попыток в минуту для N8N
     ->name('webhooks.n8n.auth');
 
+Route::post('/webhooks/billing/stub', [BillingWebhookController::class, 'stub'])
+    ->middleware(['throttle:30,1'])
+    ->name('webhooks.billing.stub');
+
+Route::post('/webhooks/billing/yookassa', [BillingWebhookController::class, 'yookassa'])
+    ->middleware(['throttle:60,1'])
+    ->name('webhooks.billing.yookassa');
+
+Route::get('/messenger/attachments/{attachment}/download', MessengerAttachmentDownloadController::class)
+    ->middleware(['signed', 'throttle:120,1'])
+    ->name('api.messenger.attachment.download');
+
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/devices/push-token', [DevicePushTokenController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('api_devices_push_token');
+
+    Route::get('/users', [ApiUserController::class, 'get_users'])->name('api_users');
+    Route::get('/users/{id}', [ApiUserController::class, 'get_user'])->name('api_user');
+
     Route::get('/tasks', [ApiTaskController::class, 'get_tasks'])->name('api_tasks');
     Route::post('/tasks', [ApiTaskController::class, 'create_tasks'])->name('api_create_tasks');
     Route::get('/tasks/{id}', [ApiTaskController::class, 'get_task'])->name('api_task');
@@ -55,6 +94,41 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/types/{id}', [ApiTypeController::class, 'get_type'])->name('api_type');
     Route::put('/types/{id}', [ApiTypeController::class, 'edit_type'])->name('api_edit_type');
     Route::delete('/types/{id}', [ApiTypeController::class, 'delete_type'])->name('api_delete_type');
+
+    Route::prefix('messenger')->group(function () {
+        Route::get('/preferences', [MessengerController::class, 'preferencesShow'])->name('api_messenger_preferences_show');
+        Route::patch('/preferences', [MessengerController::class, 'preferencesUpdate'])->name('api_messenger_preferences_update');
+
+        Route::get('/conversations', [MessengerController::class, 'index'])->name('api_messenger_conversations_index');
+        Route::post('/conversations', [MessengerController::class, 'store'])->name('api_messenger_conversations_store');
+        Route::get('/conversations/{conversation}', [MessengerController::class, 'show'])->name('api_messenger_conversations_show');
+        Route::patch('/conversations/{conversation}', [MessengerController::class, 'update'])->name('api_messenger_conversations_update');
+        Route::get('/conversations/{conversation}/messages', [MessengerController::class, 'messagesIndex'])->name('api_messenger_messages_index');
+        Route::post('/conversations/{conversation}/messages', [MessengerController::class, 'messagesStore'])->name('api_messenger_messages_store');
+        Route::post('/conversations/{conversation}/read', [MessengerController::class, 'read'])->name('api_messenger_read');
+        Route::post('/conversations/{conversation}/presence', [MessengerController::class, 'presence'])->name('api_messenger_presence');
+        Route::patch('/conversations/{conversation}/notifications', [MessengerController::class, 'updateNotifications'])->name('api_messenger_notifications');
+
+        Route::middleware('ai.enabled')->group(function () {
+            Route::get('/conversations/{conversation}/skills', [MessengerConversationSkillController::class, 'index'])->name('api_messenger_skills_index');
+            Route::post('/conversations/{conversation}/skills', [MessengerConversationSkillController::class, 'store'])->name('api_messenger_skills_store');
+            Route::patch('/conversations/{conversation}/skills/{skill}', [MessengerConversationSkillController::class, 'update'])->name('api_messenger_skills_update');
+            Route::delete('/conversations/{conversation}/skills/{skill}', [MessengerConversationSkillController::class, 'destroy'])->name('api_messenger_skills_destroy');
+        });
+    });
+
+    Route::middleware('ai.enabled')->prefix('ai')->group(function () {
+        Route::get('/subscription', [AiSubscriptionController::class, 'show'])->name('api_ai_subscription_show');
+        Route::patch('/preferences', [UserAiPreferenceController::class, 'update'])->name('api_ai_preferences_update');
+        Route::get('/server-models', [AiServerModelController::class, 'index'])->name('api_ai_server_models_index');
+        Route::get('/connections', [UserAiConnectionController::class, 'index'])->name('api_ai_connections_index');
+        Route::post('/connections', [UserAiConnectionController::class, 'store'])->name('api_ai_connections_store');
+        Route::patch('/connections/{connection}', [UserAiConnectionController::class, 'update'])->name('api_ai_connections_update');
+        Route::delete('/connections/{connection}', [UserAiConnectionController::class, 'destroy'])->name('api_ai_connections_destroy');
+
+        Route::get('/scheduled-items', [UserAiScheduledItemController::class, 'index'])->name('api_ai_scheduled_items_index');
+        Route::delete('/scheduled-items/{item}', [UserAiScheduledItemController::class, 'destroy'])->name('api_ai_scheduled_items_destroy');
+    });
 
     // VK API routes
     Route::prefix('vk')->group(function () {

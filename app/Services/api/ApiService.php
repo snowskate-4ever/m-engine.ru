@@ -3,8 +3,6 @@
 namespace App\Services\api;
 
 use Illuminate\Support\Facades\Response;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use App\Repositories\CatalogRepository;
 
 class ApiService
 {
@@ -29,6 +27,11 @@ class ApiService
     public const TYPE_NOT_FOUND = 1103;
 
     /**
+     *  Пользователь не найден
+     */
+    public const USER_NOT_FOUND = 1107;
+
+    /**
      *  Ошибка валидации данных
      */
     public const UNPROCESSABLE_CONTENT = 1104;
@@ -42,25 +45,25 @@ class ApiService
      *  VK API токен не настроен
      */
     public const VK_TOKEN_NOT_CONFIGURED = 1106;
-    
+
     public static function errorResponse(string $message, int $codError, $errors = [], int $code = 403)
     {
         $res = [
             'success' => false,
-            'errors' => is_array($errors) ? (object)$errors : $errors,
-            'data' => new \stdClass(),
+            'errors' => is_array($errors) ? (object) $errors : $errors,
+            'data' => new \stdClass,
             'codError' => $codError,
             'message' => $message,
         ];
 
-        return Response::json($res, $code);   
+        return Response::json($res, $code);
     }
-    
+
     public static function successResponse(string $message, $data = [])
     {
         $res = [
             'success' => true,
-            'errors' => new \stdClass(),
+            'errors' => new \stdClass,
             'data' => $data,
             'codError' => 0,
             'message' => $message,

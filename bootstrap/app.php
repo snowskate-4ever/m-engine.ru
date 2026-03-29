@@ -11,9 +11,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withBroadcasting(
+        channels: __DIR__.'/../routes/channels.php',
+        attributes: ['middleware' => ['web', 'auth:sanctum']],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'detect.channel' => \App\Http\Middleware\DetectAuthChannel::class,
+            'ai.enabled' => \App\Http\Middleware\EnsureAiMasterEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -22,6 +27,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
         // Очистка старых попыток авторизации каждый день в 2:00
         $schedule->command('auth:cleanup')->dailyAt('02:00');
+
+        $schedule->command('messenger:prune-retention')
+            ->dailyAt('03:30')
+            ->withoutOverlapping();
+
+        $schedule->command('ai:prune-request-logs')
+            ->dailyAt('04:00')
+            ->withoutOverlapping();
+
+        $schedule->command('ai:process-scheduled-items')
+            ->everyMinute()
+            ->withoutOverlapping();
 
         // Запуск очереди для обработки фоновых задач
         $schedule->command('queue:work --tries=3 --max-jobs=1000')

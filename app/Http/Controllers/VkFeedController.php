@@ -37,7 +37,7 @@ class VkFeedController extends Controller
         $offset = max(0, (int) $request->input('offset', 0));
         $startFrom = $request->input('start_from');
 
-        $service = new VkApiService();
+        $service = new VkApiService;
         $result = $service->getUserWallPosts($token, $userId, $count, $offset, $startFrom ?: null);
 
         if ($result['error']) {
@@ -80,13 +80,14 @@ class VkFeedController extends Controller
         $count = 15;
         $startFrom = $request->input('start_from');
 
-        $service = new VkApiService();
+        $service = new VkApiService;
         $result = $service->getNewsfeed($token, $count, $startFrom ?: null);
 
         if ($result['error']) {
             $errorMsg = $result['error_msg'] ?? 'Ошибка при загрузке ленты новостей.';
             $isAccessDenied = (stripos($errorMsg, 'access denied') !== false)
                 || (stripos($errorMsg, 'current scopes') !== false);
+
             return view('vk_newsfeed', [
                 'items' => [],
                 'nextFrom' => null,

@@ -70,7 +70,7 @@ class SettingsService
                 'seo_title' => '',
                 'seo_description' => '',
                 'seo_keywords' => '',
-                'component' => 'appearance',
+                'component' => 'two-factor',
                 'buttons' => $this->buttons,
             ]
         ]);
