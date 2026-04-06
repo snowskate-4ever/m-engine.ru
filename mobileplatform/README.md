@@ -17,11 +17,18 @@
 
 Первая синхронизация Gradle скачает зависимости. Сборка debug APK: **Build → Build APK(s)** или в терминале из `mobileplatform/android`:
 
-```bash
-.\gradlew.bat assembleDebug
+```powershell
+# Если gradlew ругается на JAVA_HOME (Windows), используйте обёртку:
+.\run-gradle.ps1 assembleStagingDebug
+# или prod:
+.\run-gradle.ps1 assembleProdDebug
 ```
 
-APK: `app/build/outputs/apk/debug/app-debug.apk`.
+Либо задайте `JAVA_HOME` и вызывайте `.\gradlew.bat` как обычно.
+
+APK: `app/build/outputs/apk/staging/debug/app-staging-debug.apk` или `.../prod/...`.
+
+Подробности по flavors и экрану входа: [android/README.md](android/README.md).
 
 ## Связь с сервером
 
