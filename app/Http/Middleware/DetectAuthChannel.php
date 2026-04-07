@@ -88,8 +88,11 @@ class DetectAuthChannel
         }
 
         if ($request->expectsJson() || $request->header('Accept') === 'application/json') {
-            // Дополнительная проверка для API
-            if ($request->header('X-API-Key') || $request->header('Authorization', '') !== 'Bearer ') {
+            if ($request->header('X-API-Key')) {
+                return 'api';
+            }
+            $bearer = $request->bearerToken();
+            if ($bearer !== null && $bearer !== '') {
                 return 'api';
             }
         }

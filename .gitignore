@@ -6,6 +6,8 @@
 /storage/*.key
 /storage/pail
 /vendor
+/composer.phar
+/composer-setup.php
 .env
 .env.backup
 .env.production
@@ -22,4 +24,14 @@ yarn-error.log
 /.vscode
 /.zed
 
+# Mobile — Android (Gradle / Studio)
+/mobileplatform/android/.gradle/
+/mobileplatform/android/**/build/
+/mobileplatform/android/local.properties
+/mobileplatform/android/*.iml
+/mobileplatform/android/.idea/
+/mobileplatform/android/captures/
+/mobileplatform/android/.kotlin/
+
 sync_config.jsonc
+/.cursor

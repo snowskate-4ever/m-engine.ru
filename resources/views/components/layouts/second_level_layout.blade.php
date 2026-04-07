@@ -5,10 +5,10 @@
     </head>
     <body class="flex min-h-screen bg-white dark:bg-zinc-800">
         @livewire('components.left-sidebar')
-        <div class="p-4 w-full min-h-screen">
+        <main class="p-4 w-full min-h-screen relative z-0">
             @include('partials.settings-heading', ['title' => $title])
             {{  $slot }}
-        </div>
+        </main>
         @fluxScripts
     </body>
 </html>

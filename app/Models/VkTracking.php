@@ -16,10 +16,16 @@ class VkTracking extends Model
         'group_id',
         'is_active',
         'description',
+        'next_from',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'group_id' => 'integer',
     ];
+
+    public function vkPosts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(VkPost::class, 'vk_tracking_id');
+    }
 }

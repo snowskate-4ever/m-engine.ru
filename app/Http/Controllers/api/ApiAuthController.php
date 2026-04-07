@@ -53,10 +53,11 @@ class ApiAuthController extends Controller
         $user = User::where('email', $credentials['email'])->first();
         $token = $request->user()->createToken($user->name);
 
-        $data =  [
+        $data = [
+            'user_id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'token' => $token->plainTextToken
+            'token' => $token->plainTextToken,
         ];
 
         return ApiService::successResponse('Успешно', $data);

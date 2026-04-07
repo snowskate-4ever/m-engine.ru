@@ -1,27 +1,42 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Livewire\Messenger\MessengerIndex;
+use App\Livewire\Messenger\MessengerNotificationSettings;
+use App\Livewire\Messenger\MessengerRoom;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
-use Livewire\Volt\Volt;
-use App\Livewire\Account\Profiles;
-use App\Livewire\Settings\UpdateProfileInformation;
-use MoonShine\Laravel\Http\Middleware\Authenticate as MoonShineAuthenticate;
 
 Route::get('/', function () {
     $menuItems = \App\Services\MenuService::getMenuItems();
+
     return view('welcome', ['menuItems' => $menuItems]);
 })->name('home');
 
-// Маршруты для тестов VK
-Route::get('/admin/vktest', [App\Http\Controllers\TestController::class, 'openApiIndex'])->name('admin.vktest');
+// VK: страница /admin/vk (токен, тесты), меню общее с /admin/vk-posts
+Route::get('/admin/vk', [App\Http\Controllers\TestController::class, 'openApiIndex'])->name('admin.vk');
+Route::get('/admin/token', [App\Http\Controllers\TestController::class, 'openApiIndex'])->name('admin.vk.token');
 Route::post('/admin/vktest/session', [App\Http\Controllers\TestController::class, 'saveVkOpenApiSession'])->name('admin.vktest.session');
-Route::redirect('/vktest', '/admin/vktest');
+Route::redirect('/admin/vktest', '/admin/vk');
+Route::redirect('/vktest', '/admin/vk');
 Route::get('/vk-oauth-start', [App\Http\Controllers\TestController::class, 'startVkOAuth'])->name('admin.test.vk-oauth-start');
 Route::post('/vk-groups', [App\Http\Controllers\TestController::class, 'getVkGroups'])->name('admin.test.vk-groups');
+Route::post('/vk-chats', [App\Http\Controllers\TestController::class, 'getVkChats'])->name('admin.test.vk-chats');
 Route::post('/vk-token', [App\Http\Controllers\TestController::class, 'saveVkToken'])->name('admin.test.vk-token');
 Route::get('/vk-oauth', [App\Http\Controllers\TestController::class, 'handleVkOAuth'])
     ->name('admin.test.vk-oauth');
+
+// Сбор постов из групп VK (очереди) и лента пользователя
+Route::middleware('auth')->group(function () {
+    Route::get('/admin/vk-posts', [App\Http\Controllers\VkPostsController::class, 'index'])->name('admin.vk-posts.index');
+    Route::get('/admin/vk-posts/log', [App\Http\Controllers\VkPostsController::class, 'log'])->name('admin.vk-posts.log');
+    Route::post('/admin/vk-posts/fetch', [App\Http\Controllers\VkPostsController::class, 'fetch'])->name('admin.vk-posts.fetch');
+    Route::post('/admin/vk-posts/debug', [App\Http\Controllers\VkPostsController::class, 'debugFetch'])->name('admin.vk-posts.debug');
+    Route::get('/admin/vk-feed', [App\Http\Controllers\VkFeedController::class, 'index'])->name('admin.vk-feed.index');
+    Route::get('/admin/vk-newsfeed', [App\Http\Controllers\VkFeedController::class, 'newsfeed'])->name('admin.vk-newsfeed.index');
+    Route::get('/admin/vk-groups', [App\Http\Controllers\VkGroupsController::class, 'index'])->name('admin.vk-groups.index');
+    Route::post('/admin/vk-groups/add-tracking', [App\Http\Controllers\VkGroupsController::class, 'addToTracking'])->name('admin.vk-groups.add-tracking');
+});
 
 // Заглушки для неавторизованных пользователей
 Route::get('/resources/type/{type_id}', function ($type_id) {
@@ -30,6 +45,7 @@ Route::get('/resources/type/{type_id}', function ($type_id) {
         return redirect()->route('resources.by_type', ['type_id' => $type_id]);
     }
     $type = \App\Models\Type::findOrFail($type_id);
+
     return view('resources.stub', ['type' => $type]);
 })->name('resources.stub');
 
@@ -37,7 +53,7 @@ Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'dashboard'])
-    ->name('dashboard');
+        ->name('dashboard');
 
     Route::group(['prefix' => '/resources'], function () {
         Route::get('/', [App\Http\Controllers\ResourceController::class, 'get_resources'])->name('resources');
@@ -51,7 +67,13 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [App\Http\Controllers\EventController::class, 'edit_event'])->name('edit_event');
         Route::delete('/{id}', [App\Http\Controllers\EventController::class, 'delete_event'])->name('delete_event');
     });
-    
+
+    Route::prefix('messenger')->group(function () {
+        Route::get('/', MessengerIndex::class)->name('messenger.index');
+        Route::get('/settings/notifications', MessengerNotificationSettings::class)->name('messenger.settings.notifications');
+        Route::get('/{conversation}', MessengerRoom::class)->name('messenger.show');
+    });
+
     Route::get('/settings/profile', [App\Http\Controllers\SettingsController::class, 'profile'])->name('settings.profile.edit');
     Route::get('/settings/password', [App\Http\Controllers\SettingsController::class, 'password'])->name('settings.password.edit');
     Route::get('/settings/appearance', [App\Http\Controllers\SettingsController::class, 'appearance'])->name('settings.appearance.edit');

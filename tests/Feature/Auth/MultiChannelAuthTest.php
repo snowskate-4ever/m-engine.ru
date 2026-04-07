@@ -118,8 +118,8 @@ class MultiChannelAuthTest extends TestCase
             'password' => 'password123',
         ]);
 
-        // Проверяем что middleware установил заголовки
-        $response->assertStatus(400); // Ошибка валидации, но middleware должен был отработать
+        // Middleware выставляет web; неверные учётные данные — 401 (не канал api / auto-register)
+        $response->assertStatus(401);
 
         $this->assertDatabaseHas('auth_attempts', [
             'channel_type' => 'web', // По умолчанию web
@@ -160,7 +160,7 @@ class MultiChannelAuthTest extends TestCase
             ]);
 
             if ($i < 5) {
-                $response->assertStatus(400); // Ошибка валидации, но не rate limit
+                $response->assertStatus(401);
             } else {
                 // 6-й запрос должен быть заблокирован rate limiter
                 $response->assertStatus(429); // Too Many Requests

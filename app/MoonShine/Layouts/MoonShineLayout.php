@@ -4,35 +4,42 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Layouts;
 
-use MoonShine\Laravel\Layouts\AppLayout;
-use MoonShine\ColorManager\Palettes\PurplePalette;
+use App\MoonShine\Resources\Address\AddressResource;
+use App\MoonShine\Resources\Ai\AiProviderResource;
+use App\MoonShine\Resources\Ai\AiRequestLogResource;
+use App\MoonShine\Resources\Ai\AiServerModelResource;
+use App\MoonShine\Resources\Ai\AiSubscriptionTierResource;
+use App\MoonShine\Resources\Ai\AgentToolInvocationResource;
+use App\MoonShine\Resources\Ai\AiUsageLedgerResource;
+use App\MoonShine\Resources\Ai\UserAiSubscriptionResource;
+use App\MoonShine\Resources\Category\CategoryResource;
+use App\MoonShine\Resources\City\CityResource;
+use App\MoonShine\Resources\Communication\CommunicationResource;
+use App\MoonShine\Resources\Country\CountryResource;
+use App\MoonShine\Resources\Event\EventResource;
+use App\MoonShine\Resources\Genre\GenreResource;
+use App\MoonShine\Resources\Good\GoodResource;
+use App\MoonShine\Resources\GoodCategory\GoodCategoryResource;
+use App\MoonShine\Resources\Hardware\HardwareResource;
+use App\MoonShine\Resources\Instrument\InstrumentResource;
+use App\MoonShine\Resources\Manufacturer\ManufacturerResource;
+use App\MoonShine\Resources\Messenger\MessengerConversationResource;
+use App\MoonShine\Resources\Messenger\MessengerMessageResource;
+use App\MoonShine\Resources\Region\RegionResource;
+use App\MoonShine\Resources\Resource\ResourceResource;
+use App\MoonShine\Resources\Room\RoomResource;
+use App\MoonShine\Resources\Social\SocialResource;
+use App\MoonShine\Resources\Type\TypeResource;
+use App\MoonShine\Resources\User\UserResource;
 use MoonShine\ColorManager\ColorManager;
+use MoonShine\ColorManager\Palettes\PurplePalette;
 use MoonShine\Contracts\ColorManager\ColorManagerContract;
 use MoonShine\Contracts\ColorManager\PaletteContract;
-use App\MoonShine\Resources\Type\TypeResource;
-use MoonShine\MenuManager\MenuItem;
-use MoonShine\MenuManager\MenuGroup;
+use MoonShine\Laravel\Layouts\AppLayout;
 use MoonShine\Laravel\Resources\MoonShineUserResource;
 use MoonShine\Laravel\Resources\MoonShineUserRoleResource;
-use App\MoonShine\Resources\Resource\ResourceResource;
-use App\MoonShine\Resources\Communication\CommunicationResource;
-use App\MoonShine\Resources\User\UserResource;
-use App\MoonShine\Resources\Social\SocialResource;
-use App\MoonShine\Resources\Event\EventResource;
-use App\MoonShine\Resources\Place\PlaceResource;
-use App\MoonShine\Resources\Dood\DoodResource;
-use App\MoonShine\Resources\Manufacturer\ManufacturerResource;
-use App\MoonShine\Resources\Room\RoomResource;
-use App\MoonShine\Resources\Hardware\HardwareResource;
-use App\MoonShine\Resources\Good\GoodResource;
-use App\MoonShine\Resources\Category\CategoryResource;
-use App\MoonShine\Resources\GoodCategory\GoodCategoryResource;
-use App\MoonShine\Resources\Country\CountryResource;
-use App\MoonShine\Resources\Region\RegionResource;
-use App\MoonShine\Resources\City\CityResource;
-use App\MoonShine\Resources\Address\AddressResource;
-use App\MoonShine\Resources\Instrument\InstrumentResource;
-use App\MoonShine\Resources\Genre\GenreResource;
+use MoonShine\MenuManager\MenuGroup;
+use MoonShine\MenuManager\MenuItem;
 
 final class MoonShineLayout extends AppLayout
 {
@@ -62,7 +69,7 @@ final class MoonShineLayout extends AppLayout
                 MenuItem::make(CountryResource::class)->icon('adjustments-horizontal'),
                 MenuItem::make(RegionResource::class)->icon('adjustments-horizontal'),
                 MenuItem::make(CityResource::class)->icon('adjustments-horizontal'),
-                MenuItem::make(AddressResource::class)->icon('adjustments-horizontal')
+                MenuItem::make(AddressResource::class)->icon('adjustments-horizontal'),
             ])->icon('adjustments-horizontal'),
             MenuGroup::make(static fn () => __('moonshine.system.catalog'), [
                 MenuItem::make(GoodResource::class),
@@ -81,9 +88,22 @@ final class MoonShineLayout extends AppLayout
                 MenuItem::make(InstrumentResource::class)->icon('musical-note'),
                 MenuItem::make(GenreResource::class)->icon('musical-note'),
             ])->icon('musical-note'),
+            MenuGroup::make(static fn () => __('moonshine.messenger.menu_group'), [
+                MenuItem::make(MessengerConversationResource::class)->icon('chat-bubble-left-right'),
+                MenuItem::make(MessengerMessageResource::class)->icon('inbox'),
+            ])->icon('chat-bubble-left-right'),
+            MenuGroup::make(static fn () => __('moonshine.ai.menu_group'), [
+                MenuItem::make(AiProviderResource::class)->icon('server'),
+                MenuItem::make(AiServerModelResource::class)->icon('cube'),
+                MenuItem::make(AiSubscriptionTierResource::class)->icon('rectangle-stack'),
+                MenuItem::make(UserAiSubscriptionResource::class)->icon('credit-card'),
+                MenuItem::make(AiRequestLogResource::class)->icon('cpu-chip'),
+                MenuItem::make(AiUsageLedgerResource::class)->icon('chart-bar'),
+                MenuItem::make(AgentToolInvocationResource::class)->icon('command-line'),
+            ])->icon('cpu-chip'),
         ];
     }
-    
+
     public static function dashboard(): array
     {
         return [
@@ -92,36 +112,36 @@ final class MoonShineLayout extends AppLayout
                 ->blocks([
                     DashboardBlock::make([
                         ValueMetric::make('Всего стран')
-                            ->value(fn() => \App\Models\Country::count())
-                            ->progress(fn() => \App\Models\Country::where('is_active', true)->count())
+                            ->value(fn () => \App\Models\Country::count())
+                            ->progress(fn () => \App\Models\Country::where('is_active', true)->count())
                             ->columnSpan(6),
-                        
+
                         ValueMetric::make('Всего регионов')
-                            ->value(fn() => \App\Models\Region::count())
-                            ->progress(fn() => \App\Models\Region::where('is_active', true)->count())
+                            ->value(fn () => \App\Models\Region::count())
+                            ->progress(fn () => \App\Models\Region::where('is_active', true)->count())
                             ->columnSpan(6),
-                        
+
                         ValueMetric::make('Всего городов')
-                            ->value(fn() => \App\Models\City::count())
-                            ->progress(fn() => \App\Models\City::where('is_active', true)->count())
+                            ->value(fn () => \App\Models\City::count())
+                            ->progress(fn () => \App\Models\City::where('is_active', true)->count())
                             ->columnSpan(6),
-                        
+
                         ValueMetric::make('Столицы')
-                            ->value(fn() => \App\Models\City::where('is_capital', true)->count())
+                            ->value(fn () => \App\Models\City::where('is_capital', true)->count())
                             ->columnSpan(6),
                     ]),
-                    
+
                     DashboardBlock::make([
                         ResourcePreview::make(
-                            new CountryResource(),
+                            new CountryResource,
                             'Последние добавленные страны',
                             \App\Models\Country::latest()->limit(5)
                         )->columnSpan(12),
                     ]),
-                    
+
                     DashboardBlock::make([
                         ResourcePreview::make(
-                            new CityResource(),
+                            new CityResource,
                             'Крупнейшие города по населению',
                             \App\Models\City::whereNotNull('population')->orderBy('population', 'desc')->limit(10)
                         )->columnSpan(12),
@@ -131,7 +151,7 @@ final class MoonShineLayout extends AppLayout
     }
 
     /**
-     * @param ColorManager $colorManager
+     * @param  ColorManager  $colorManager
      */
     protected function colors(ColorManagerContract $colorManager): void
     {

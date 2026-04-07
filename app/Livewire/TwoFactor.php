@@ -180,4 +180,9 @@ class TwoFactor extends Component
             'buttonText' => __('Continue'),
         ];
     }
+
+    public function render()
+    {
+        return view('profile.update-two-factor');
+    }
 }

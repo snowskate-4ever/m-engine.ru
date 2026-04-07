@@ -1,0 +1,9 @@
+VK: группы пользователя, API постов, scope newsfeed, исправление редиректов ленты
+
+- Страница «Группы пользователя»: список групп (groups.get), кнопка «Добавить в отслеживаемые»
+- VkGroupsController, маршруты /admin/vk-groups, POST add-tracking
+- VkApiService getUsersGroupsList, шаблон vk_groups.blade.php, пункт меню «Группы»
+- API GET /api/vk/posts: по 100 постов из vk_posts для авторизованного пользователя (auth:sanctum)
+- Scope newsfeed в OAuth; при ошибке доступа к newsfeed.get — пояснение и ссылка на ленту пользователя
+- Исправление цикла редиректов на ленте новостей и ленте пользователя (ошибка API без редиректа)
+- Токен из vk_settings в джобе App\Jobs\FetchVkGroupPostsJob
