@@ -145,8 +145,11 @@ return [
     ],
 
     'messenger' => [
+        'open_full' => 'Full screen',
         'title' => 'Messages',
+        'notifications_short' => 'Alerts',
         'notifications_title' => 'Notification settings',
+        'chat_menu_title' => 'More actions',
         'new_chat' => 'New chat',
         'type' => 'Chat type',
         'direct' => 'Direct',
@@ -155,6 +158,8 @@ return [
         'group_title' => 'Group name',
         'member_ids' => 'Member user IDs (comma or space separated)',
         'chats' => 'Chats',
+        'pick_chat' => 'Select a chat from the list',
+        'you_label' => 'You',
         'no_chats' => 'No chats yet',
         'chat' => 'Chat',
         'direct_chat' => 'Direct chat',

@@ -188,7 +188,9 @@ return [
     ],
 
     'messenger' => [
+        'open_full' => 'На весь экран',
         'title' => 'Сообщения',
+        'notifications_short' => 'Уведомления',
         'notifications_title' => 'Настройки уведомлений',
         'new_chat' => 'Новый чат',
         'type' => 'Тип чата',
@@ -198,6 +200,8 @@ return [
         'group_title' => 'Название группы',
         'member_ids' => 'ID участников через запятую или пробел',
         'chats' => 'Чаты',
+        'pick_chat' => 'Выберите чат из списка',
+        'you_label' => 'Вы',
         'no_chats' => 'Пока нет чатов',
         'chat' => 'Чат',
         'direct_chat' => 'Личный чат',

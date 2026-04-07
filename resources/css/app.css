@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+
+[x-cloak] {
+    display: none !important;
+}
 /* @import '../../vendor/livewire/flux/dist/flux.css'; */
 
 @source '../views';
@@ -162,6 +166,13 @@ select:focus[data-flux-control] {
 }
 .layout-menu._is-minimized .menu-icon {
   margin: 0;
+}
+.layout-menu._is-minimized .menu-brand-text {
+  display: none;
+}
+.layout-menu._is-minimized .menu-brand {
+  justify-content: center;
+  gap: 0;
 }
 
 .layout-menu .menu {

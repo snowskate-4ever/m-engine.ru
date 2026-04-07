@@ -16,7 +16,7 @@
             </button>
 
             {{-- Logo --}}
-        <a href="{{ route('home') }}" class="flex items-center gap-2 py-2 pr-8 lg:pr-0 rtl:space-x-reverse" wire:navigate>
+        <a href="{{ route('home') }}" class="menu-brand flex items-center gap-2 py-2 pr-8 lg:pr-0 rtl:space-x-reverse" wire:navigate>
             <x-app-logo />
         </a>
 
