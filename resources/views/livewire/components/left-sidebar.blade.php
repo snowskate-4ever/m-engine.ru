@@ -1,4 +1,4 @@
-<div class="sidebar-wrapper shrink-0 w-[264px] min-w-[264px] max-lg:w-0 max-lg:min-w-0 overflow-visible" x-data="{ minimizedMenu: $persist(false), sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
+<div class="sidebar-wrapper shrink-0 h-full min-h-0 w-[264px] min-w-[264px] max-lg:w-0 max-lg:min-w-0 overflow-visible" x-data="{ minimizedMenu: $persist(false), sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
     {{-- Mobile overlay --}}
     <div class="sidebar-overlay" :class="{ '_is-visible': sidebarOpen }" @click="sidebarOpen = false" x-show="sidebarOpen" x-transition.opacity></div>
 
@@ -57,6 +57,80 @@
                     <a href="{{ route('events') }}" class="menu-link" wire:navigate>
                         <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
                         <span class="menu-text">{{ __('ui.leftside.events') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-divider"><span>{{ __('ui.sections.music') }}</span></li>
+
+                <li class="menu-item {{ request()->routeIs('music.discover') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.discover') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_discover') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.musician') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.musician') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-9c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_musician') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.teacher') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.teacher') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_teacher') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.performers.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.performers.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_performers') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.studios.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.studios.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_studios') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.rehearsals.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.rehearsals.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_rehearsals') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.schools.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.schools.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_schools') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-divider"><span>{{ __('ui.sections.planning') }}</span></li>
+
+                <li class="menu-item {{ request()->routeIs('calendar') ? 'is_active' : '' }}">
+                    <a href="{{ route('calendar') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.calendar.title') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('kanban') && ! request()->routeIs('kanban.logs') ? 'is_active' : '' }}">
+                    <a href="{{ route('kanban') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.kanban.title') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('kanban.logs') ? 'is_active' : '' }}">
+                    <a href="{{ route('kanban.logs') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.kanban.logs') }}</span>
                     </a>
                 </li>
 

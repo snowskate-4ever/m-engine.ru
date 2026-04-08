@@ -35,26 +35,8 @@
                         </div>
                     @endif
                 </div>
-                {{-- Панель действий справа (кнопки + ⋮ меню, как в CRM) --}}
+                {{-- Действия только в меню ⋮ (без отдельных кнопок в шапке) --}}
                 <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
-                    <flux:button
-                        size="sm"
-                        variant="ghost"
-                        :href="route('messenger.settings.notifications')"
-                        wire:navigate
-                        icon="bell"
-                    >
-                        {{ __('ui.messenger.notifications_short') }}
-                    </flux:button>
-                    <flux:button
-                        size="sm"
-                        variant="ghost"
-                        wire:click="toggleMute"
-                        type="button"
-                        icon="{{ $muted ? 'bell-slash' : 'bell-alert' }}"
-                    >
-                        {{ $muted ? __('ui.messenger.unmute_chat') : __('ui.messenger.mute_chat') }}
-                    </flux:button>
                     <flux:dropdown position="bottom" align="end">
                         <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" :title="__('ui.messenger.chat_menu_title')" />
                         <flux:menu class="min-w-[14rem]">
@@ -209,17 +191,28 @@
 
     <form wire:submit="send" class="shrink-0 space-y-3 border-t border-zinc-200 p-4 dark:border-zinc-700">
         <flux:textarea wire:model="body" rows="{{ $embedded ? 2 : 3 }}" :placeholder="__('ui.messenger.message_placeholder')" />
-        <div class="flex flex-wrap items-end gap-3">
+        <div class="flex flex-wrap items-end justify-end gap-3">
             @if (! $isAiChat)
-                <div class="min-w-[200px] flex-1">
-                    <input type="file" wire:model="attachment" class="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-2 dark:text-zinc-300 dark:file:bg-zinc-700" />
-                    <div wire:loading wire:target="attachment" class="mt-1 text-xs text-zinc-500">{{ __('ui.loading') }}</div>
-                </div>
+                <label
+                    class="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-zinc-600 outline-none transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-900"
+                    title="{{ __('ui.messenger.attach_file') }}"
+                >
+                    <span class="sr-only">{{ __('ui.messenger.attach_file') }}</span>
+                    <input type="file" wire:model="attachment" class="sr-only" />
+                    <flux:icon.paper-clip variant="outline" class="size-5" />
+                </label>
             @endif
-            <flux:button variant="primary" type="submit" wire:loading.attr="disabled">
-                {{ __('ui.messenger.send') }}
-            </flux:button>
+            <flux:button
+                variant="primary"
+                type="submit"
+                icon="paper-airplane"
+                wire:loading.attr="disabled"
+                :title="__('ui.messenger.send')"
+            />
         </div>
+        @if (! $isAiChat)
+            <div wire:loading wire:target="attachment" class="text-end text-xs text-zinc-500 dark:text-zinc-400">{{ __('ui.loading') }}</div>
+        @endif
     </form>
 
     @script

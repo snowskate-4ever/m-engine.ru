@@ -1,0 +1,162 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Music;
+
+use App\Enums\PerformerMembershipStatus;
+use App\Models\Musician;
+use App\Models\Peformer;
+use App\Models\User;
+use App\Notifications\Music\PerformerLineupInvitationNotification;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
+
+class PerformerMembershipService
+{
+    public function invite(Peformer $peformer, Musician $musician, User $inviter): void
+    {
+        Gate::authorize('manageMembers', $peformer);
+        if ($musician->user_id === null) {
+            throw ValidationException::withMessages([
+                'musician_id' => __('ui.music.lineup_invite_no_account'),
+            ]);
+        }
+
+        $existing = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($existing !== null) {
+            $status = PerformerMembershipStatus::tryFrom((string) $existing->pivot->status);
+            if ($status === PerformerMembershipStatus::Accepted) {
+                throw ValidationException::withMessages([
+                    'musician_id' => __('ui.music.lineup_already_member'),
+                ]);
+            }
+            if ($status === PerformerMembershipStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'musician_id' => __('ui.music.lineup_invite_pending'),
+                ]);
+            }
+            $peformer->musicians()->updateExistingPivot($musician->id, [
+                'status' => PerformerMembershipStatus::Pending->value,
+                'invited_by_user_id' => $inviter->id,
+                'responded_at' => null,
+            ]);
+        } else {
+            $peformer->musicians()->attach($musician->id, [
+                'status' => PerformerMembershipStatus::Pending->value,
+                'show_on_musician_profile' => false,
+                'invited_by_user_id' => $inviter->id,
+            ]);
+        }
+
+        $musician->user?->notify(new PerformerLineupInvitationNotification(
+            peformerId: $peformer->id,
+            musicianId: $musician->id,
+            peformerName: $peformer->name,
+            inviterName: $inviter->name,
+        ));
+    }
+
+    public function cancelPending(Peformer $peformer, Musician $musician, User $actor): void
+    {
+        Gate::authorize('manageMembers', $peformer);
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null) {
+            return;
+        }
+        if (PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Pending) {
+            return;
+        }
+        $peformer->musicians()->detach($musician->id);
+        if ($musician->user) {
+            $this->markInvitationNotificationsReadForPeformer($musician->user, $peformer->id);
+        }
+    }
+
+    public function setAcceptedLeft(Peformer $peformer, Musician $musician, User $actor): void
+    {
+        Gate::authorize('manageMembers', $peformer);
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null) {
+            return;
+        }
+        if (PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Accepted) {
+            return;
+        }
+        $peformer->musicians()->updateExistingPivot($musician->id, [
+            'status' => PerformerMembershipStatus::Left->value,
+            'responded_at' => now(),
+        ]);
+    }
+
+    public function accept(Peformer $peformer, Musician $musician, User $user): void
+    {
+        $this->assertMusicianOwner($musician, $user);
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Pending) {
+            throw ValidationException::withMessages([
+                'lineup' => __('ui.music.lineup_no_pending'),
+            ]);
+        }
+        $peformer->musicians()->updateExistingPivot($musician->id, [
+            'status' => PerformerMembershipStatus::Accepted->value,
+            'responded_at' => now(),
+        ]);
+        $this->markInvitationNotificationsReadForPeformer($user, $peformer->id);
+    }
+
+    public function decline(Peformer $peformer, Musician $musician, User $user): void
+    {
+        $this->assertMusicianOwner($musician, $user);
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Pending) {
+            return;
+        }
+        $peformer->musicians()->updateExistingPivot($musician->id, [
+            'status' => PerformerMembershipStatus::Declined->value,
+            'responded_at' => now(),
+        ]);
+        $this->markInvitationNotificationsReadForPeformer($user, $peformer->id);
+    }
+
+    public function leave(Peformer $peformer, Musician $musician, User $user): void
+    {
+        $this->assertMusicianOwner($musician, $user);
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Accepted) {
+            return;
+        }
+        $peformer->musicians()->updateExistingPivot($musician->id, [
+            'status' => PerformerMembershipStatus::Left->value,
+            'responded_at' => now(),
+        ]);
+    }
+
+    public function setShowOnMusicianProfile(Peformer $peformer, Musician $musician, User $user, bool $show): void
+    {
+        $this->assertMusicianOwner($musician, $user);
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Accepted) {
+            throw ValidationException::withMessages([
+                'lineup' => __('ui.music.lineup_not_accepted'),
+            ]);
+        }
+        $peformer->musicians()->updateExistingPivot($musician->id, ['show_on_musician_profile' => $show]);
+    }
+
+    private function assertMusicianOwner(Musician $musician, User $user): void
+    {
+        if ((int) $musician->user_id !== (int) $user->id) {
+            throw new AuthorizationException;
+        }
+    }
+
+    private function markInvitationNotificationsReadForPeformer(User $user, int $peformerId): void
+    {
+        $user->unreadNotifications
+            ->filter(fn ($n) => $n->type === PerformerLineupInvitationNotification::class)
+            ->filter(fn ($n) => (int) data_get($n->data, 'peformer_id') === $peformerId)
+            ->each->markAsRead();
+    }
+}

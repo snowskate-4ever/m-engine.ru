@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicPageLayouts;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Musician extends Model
 {
+    use HasPublicPageLayouts;
     use SoftDeletes;
 
     protected $fillable = [
@@ -28,14 +30,21 @@ class Musician extends Model
         'is_session',
         'notes',
         'metadata',
+        'slug',
+        'public_page_enabled',
+        'layout_draft',
+        'layout_published',
     ];
 
     protected $casts = [
         'active' => 'boolean',
         'available_for_booking' => 'boolean',
         'is_session' => 'boolean',
+        'public_page_enabled' => 'boolean',
         'availability' => 'array',
         'metadata' => 'array',
+        'layout_draft' => 'array',
+        'layout_published' => 'array',
         'birth_date' => 'date',
     ];
 
@@ -73,5 +82,26 @@ class Musician extends Model
     public function socials(): MorphMany
     {
         return $this->morphMany(Social::class, 'socialable');
+    }
+
+    /**
+     * @return BelongsToMany<Peformer, Musician>
+     */
+    public function peformers(): BelongsToMany
+    {
+        return $this->belongsToMany(Peformer::class, 'peformer_musician')
+            ->using(PeformerMusician::class)
+            ->withPivot([
+                'status',
+                'show_on_musician_profile',
+                'invited_by_user_id',
+                'responded_at',
+            ])
+            ->withTimestamps();
+    }
+
+    public function addresses(): MorphMany
+    {
+        return $this->morphMany(Address::class, 'addressable');
     }
 }

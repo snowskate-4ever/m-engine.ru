@@ -3,11 +3,11 @@
     <head>
         @include('partials.head', $data)
     </head>
-    <body class="flex min-h-screen min-w-0 bg-white dark:bg-zinc-800">
+    <body class="flex h-[100dvh] max-h-[100dvh] min-h-0 min-w-0 overflow-hidden bg-white dark:bg-zinc-800">
         @livewire('components.left-sidebar')
         <main
             id="app-second-level-main"
-            class="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col p-4 lg:pr-20"
+            class="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4 lg:pr-20"
             x-data="messengerFloatPanel()"
             @toggle-messenger-float.window="toggle()"
             @messenger-float-open-chat.window="

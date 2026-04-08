@@ -121,8 +121,10 @@ select:focus[data-flux-control] {
   width: var(--ms-menu-width);
   min-width: var(--ms-menu-width);
   padding: 1rem;
-  height: 100vh;
-  overflow-y: auto;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
   overflow-x: hidden;
   border-right: 1px solid var(--color-zinc-200);
   background: var(--color-zinc-50);
@@ -138,6 +140,10 @@ select:focus[data-flux-control] {
     inset: 0;
     left: 0;
     z-index: 50;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
     transform: translateX(-100%);
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.15);
   }
@@ -189,6 +195,7 @@ select:focus[data-flux-control] {
   list-style: none;
   padding: 0;
   margin: 0;
+  min-height: 0;
 }
 .layout-menu .menu-item {
   position: relative;
@@ -305,9 +312,11 @@ select:focus[data-flux-control] {
 /* Обёртка сайдбара: кнопка collapse вне aside, чтобы не обрезалась overflow-x */
 .layout-menu-outer {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
+  min-height: 0;
 }
 .layout-collapse {
   position: absolute;
