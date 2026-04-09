@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Music;
 
 use App\Enums\LegalEntityType;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
@@ -45,13 +48,13 @@ class VenueEditPage extends Component
 
     public function mount(string $kind, ?int $recordId = null): void
     {
-        if (! in_array($kind, ['studio', 'rehearsal', 'school'], true)) {
+        if (! in_array($kind, ['studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'], true)) {
             abort(404);
         }
         $this->kind = $kind;
         $this->recordId = $recordId;
 
-        $catalog = PublicProfileBlocks::venueCatalog();
+        $catalog = $this->venueBlockCatalog();
         foreach ($catalog as $row) {
             $this->layoutBlockEnabled[$row['id']] = true;
         }
@@ -176,16 +179,23 @@ class VenueEditPage extends Component
     public function render(): View
     {
         return view('livewire.music.venue-edit-page', [
-            'blockCatalog' => PublicProfileBlocks::venueCatalog(),
+            'kind' => $this->kind,
+            'blockCatalog' => $this->venueBlockCatalog(),
             'routePrefix' => match ($this->kind) {
                 'studio' => 'studios',
                 'rehearsal' => 'rehearsals',
                 'school' => 'schools',
+                'record_label' => 'labels',
+                'producer_center' => 'producer-centers',
+                'shop' => 'shops',
             },
             'publicUrlPrefix' => match ($this->kind) {
                 'studio' => 'studios',
                 'rehearsal' => 'rehearsals',
                 'school' => 'schools',
+                'record_label' => 'labels',
+                'producer_center' => 'producer-centers',
+                'shop' => 'shops',
             },
         ]);
     }
@@ -197,6 +207,9 @@ class VenueEditPage extends Component
             'studio' => Studio::class,
             'rehearsal' => Rehersal::class,
             'school' => School::class,
+            'record_label' => RecordLabel::class,
+            'producer_center' => ProducerCenter::class,
+            'shop' => Shop::class,
         };
     }
 
@@ -206,6 +219,9 @@ class VenueEditPage extends Component
             'studio' => 'studios',
             'rehearsal' => 'rehearsals',
             'school' => 'schools',
+            'record_label' => 'record_labels',
+            'producer_center' => 'producer_centers',
+            'shop' => 'shops',
         };
     }
 
@@ -225,15 +241,28 @@ class VenueEditPage extends Component
             'studio' => route('music.studios.edit', $model),
             'rehearsal' => route('music.rehearsals.edit', $model),
             'school' => route('music.schools.edit', $model),
+            'record_label' => route('music.labels.edit', $model),
+            'producer_center' => route('music.producer-centers.edit', $model),
+            'shop' => route('music.shops.edit', $model),
         };
     }
 
     /**
      * @return list<array{id: string, enabled: bool, order: int}>
      */
+    /**
+     * @return list<array{id: string, label_key: string}>
+     */
+    private function venueBlockCatalog(): array
+    {
+        return $this->kind === 'shop'
+            ? PublicProfileBlocks::shopCatalog()
+            : PublicProfileBlocks::venueCatalog();
+    }
+
     private function buildLayoutBlocks(): array
     {
-        $catalog = PublicProfileBlocks::venueCatalog();
+        $catalog = $this->venueBlockCatalog();
         $out = [];
         foreach (array_values($catalog) as $order => $row) {
             $id = $row['id'];

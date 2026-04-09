@@ -6,17 +6,43 @@ namespace App\Services\Music;
 
 use App\Models\Musician;
 use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\Teacher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 final class MusicPublicSearchService
 {
     public const CATEGORY_ALL = 'all';
+
+    private const PUBLIC_CATALOG_COUNTS_CACHE_KEY = 'music.public_catalog_counts.v1';
+
+    private const PUBLIC_CATALOG_COUNTS_TTL_SECONDS = 120;
+
+    /**
+     * Категории для отдельных публичных URL /discover/{category} (без «all»).
+     *
+     * @return list<string>
+     */
+    public static function scopedDiscoverRouteCategories(): array
+    {
+        return array_values(array_filter(
+            self::categories(),
+            static fn (string $c) => $c !== self::CATEGORY_ALL,
+        ));
+    }
+
+    public static function forgetPublicCatalogCountsCache(): void
+    {
+        Cache::forget(self::PUBLIC_CATALOG_COUNTS_CACHE_KEY);
+    }
 
     /**
      * @return list<string>
@@ -31,6 +57,9 @@ final class MusicPublicSearchService
             'studio',
             'rehearsal',
             'school',
+            'record_label',
+            'producer_center',
+            'shop',
         ];
     }
 
@@ -70,6 +99,15 @@ final class MusicPublicSearchService
         }
         if ($category === self::CATEGORY_ALL || $category === 'school') {
             $rows = $rows->merge($this->searchSchools($like, $perType));
+        }
+        if ($category === self::CATEGORY_ALL || $category === 'record_label') {
+            $rows = $rows->merge($this->searchRecordLabels($like, $perType));
+        }
+        if ($category === self::CATEGORY_ALL || $category === 'producer_center') {
+            $rows = $rows->merge($this->searchProducerCenters($like, $perType));
+        }
+        if ($category === self::CATEGORY_ALL || $category === 'shop') {
+            $rows = $rows->merge($this->searchShops($like, $perType));
         }
 
         return $rows
@@ -143,6 +181,39 @@ final class MusicPublicSearchService
         return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'school', 'public.schools.show');
     }
 
+    /**
+     * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
+     */
+    private function searchRecordLabels(string $like, int $limit): Collection
+    {
+        $q = $this->recordLabelPublic();
+        $this->applyTextMatch($q, $like, false);
+
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'record_label', 'public.labels.show');
+    }
+
+    /**
+     * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
+     */
+    private function searchProducerCenters(string $like, int $limit): Collection
+    {
+        $q = $this->producerCenterPublic();
+        $this->applyTextMatch($q, $like, false);
+
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'producer_center', 'public.producer-centers.show');
+    }
+
+    /**
+     * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
+     */
+    private function searchShops(string $like, int $limit): Collection
+    {
+        $q = $this->shopPublic();
+        $this->applyTextMatch($q, $like, false);
+
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'shop', 'public.shops.show');
+    }
+
     private function escapeLike(string $value): string
     {
         return addcslashes($value, '%_\\');
@@ -196,6 +267,54 @@ final class MusicPublicSearchService
             ->where('slug', '!=', '');
     }
 
+    private function recordLabelPublic(): Builder
+    {
+        return RecordLabel::query()
+            ->where('public_page_enabled', true)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '');
+    }
+
+    private function producerCenterPublic(): Builder
+    {
+        return ProducerCenter::query()
+            ->where('public_page_enabled', true)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '');
+    }
+
+    private function shopPublic(): Builder
+    {
+        return Shop::query()
+            ->where('public_page_enabled', true)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '');
+    }
+
+    /**
+     * Количество профилей, участвующих в публичном поиске по каталогу (включена публичная страница и slug).
+     *
+     * @return array{musician: int, teacher: int, performer: int, studio: int, rehearsal: int, school: int, record_label: int, producer_center: int, shop: int}
+     */
+    public function publicCatalogCounts(): array
+    {
+        return Cache::remember(
+            self::PUBLIC_CATALOG_COUNTS_CACHE_KEY,
+            self::PUBLIC_CATALOG_COUNTS_TTL_SECONDS,
+            fn (): array => [
+                'musician' => $this->musicianPublic()->count(),
+                'teacher' => $this->teacherPublic()->count(),
+                'performer' => $this->peformerPublic()->count(),
+                'studio' => $this->studioPublic()->count(),
+                'rehearsal' => $this->rehearsalPublic()->count(),
+                'school' => $this->schoolPublic()->count(),
+                'record_label' => $this->recordLabelPublic()->count(),
+                'producer_center' => $this->producerCenterPublic()->count(),
+                'shop' => $this->shopPublic()->count(),
+            ],
+        );
+    }
+
     private function applyTextMatch(Builder $query, string $like, bool $includeBio): void
     {
         $query->where(function (Builder $q) use ($like, $includeBio) {
@@ -222,7 +341,7 @@ final class MusicPublicSearchService
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Teacher|Peformer|Studio|Rehersal|School>  $items
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Teacher|Peformer|Studio|Rehersal|School|RecordLabel|ProducerCenter|Shop>  $items
      * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
      */
     private function mapSimple($items, string $type, string $routeName): Collection

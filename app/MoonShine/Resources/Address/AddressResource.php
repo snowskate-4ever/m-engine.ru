@@ -4,25 +4,23 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Resources\Address;
 
-use Illuminate\Database\Eloquent\Model;
 use App\Models\Address;
-use App\MoonShine\Resources\Address\Pages\AddressIndexPage;
-use App\MoonShine\Resources\Address\Pages\AddressFormPage;
 use App\MoonShine\Resources\Address\Pages\AddressDetailPage;
+use App\MoonShine\Resources\Address\Pages\AddressFormPage;
+use App\MoonShine\Resources\Address\Pages\AddressIndexPage;
+use App\MoonShine\Resources\City\CityResource;
 use App\MoonShine\Resources\Country\CountryResource;
 use App\MoonShine\Resources\Region\RegionResource;
-use App\MoonShine\Resources\City\CityResource;
-
-use MoonShine\Laravel\Resources\ModelResource;
-use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Actions\FiltersAction;
+use MoonShine\Contracts\Core\PageContract;
+use MoonShine\Laravel\Fields\Relationships\BelongsTo;
+use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\UI\Fields\ID;
 use MoonShine\UI\Fields\MorphTo;
 use MoonShine\UI\Fields\Number;
 use MoonShine\UI\Fields\Select;
 use MoonShine\UI\Fields\Switcher;
 use MoonShine\UI\Fields\Text;
-use MoonShine\Laravel\Fields\Relationships\BelongsTo;
 
 /**
  * @extends ModelResource<Address, AddressIndexPage, AddressFormPage, AddressDetailPage>
@@ -32,112 +30,122 @@ class AddressResource extends ModelResource
     protected string $model = Address::class;
 
     public string $title = 'Адреса';
+
     public static string $subTitle = 'Управление адресами';
 
     public function fields(): array
     {
         return [
             ID::make()->sortable()->showOnExport(),
-            
+
             MorphTo::make('Владелец', 'addressable')
                 ->types([
                     \App\Models\User::class => 'Пользователь',
                     \App\Models\Company::class => 'Компания',
                     \App\Models\Warehouse::class => 'Склад',
+                    \App\Models\Musician::class => 'Музыкант',
+                    \App\Models\Teacher::class => 'Преподаватель',
+                    \App\Models\Peformer::class => 'Исполнитель / коллектив',
+                    \App\Models\Studio::class => 'Студия (музыка)',
+                    \App\Models\Rehersal::class => 'Репточка',
+                    \App\Models\School::class => 'Школа',
+                    \App\Models\Shop::class => 'Магазин (музыка)',
+                    \App\Models\RecordLabel::class => 'Лейбл',
+                    \App\Models\ProducerCenter::class => 'Продюсерский центр',
                 ])
                 ->nullable()
                 ->searchable()
                 ->showOnExport(),
-            
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: CountryResource::class)
+
+            BelongsTo::make('Страна', 'country', fn ($item) => $item->name, resource: CountryResource::class)
                 ->required()
                 ->searchable()
                 ->showOnExport(),
-            
-            BelongsTo::make('Регион', 'region', fn($item) => $item->name, resource: RegionResource::class)
+
+            BelongsTo::make('Регион', 'region', fn ($item) => $item->name, resource: RegionResource::class)
                 ->nullable()
                 ->searchable()
                 ->showOnExport(),
-            
-            BelongsTo::make('Город', 'city', fn($item) => $item->name, resource: CityResource::class)
+
+            BelongsTo::make('Город', 'city', fn ($item) => $item->name, resource: CityResource::class)
                 ->nullable()
                 ->searchable()
                 ->showOnExport(),
-            
+
             Text::make('Улица', 'street')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Text::make('Дом', 'house')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Text::make('Корпус/строение', 'building')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Text::make('Квартира/офис', 'apartment')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Text::make('Этаж', 'floor')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Text::make('Подъезд', 'entrance')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Text::make('Почтовый индекс', 'postal_code')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Number::make('Широта', 'latitude')
                 ->nullable()
                 ->step(0.000001)
                 ->showOnExport(),
-            
+
             Number::make('Долгота', 'longitude')
                 ->nullable()
                 ->step(0.000001)
                 ->showOnExport(),
-            
+
             Text::make('Дополнительная информация', 'additional_info')
                 ->nullable()
                 ->hideOnIndex()
                 ->showOnExport(),
-            
+
             Text::make('Ориентир', 'landmark')
                 ->nullable()
                 ->showOnExport(),
-            
+
             Select::make('Тип адреса', 'address_type')
                 ->options(Address::TYPES)
                 ->default('home')
                 ->showOnExport(),
-            
+
             Text::make('Название', 'name')
                 ->nullable()
                 ->showOnExport()
                 ->hint('Например: "Мой дом", "Офис"'),
-            
+
             Text::make('Описание', 'description')
                 ->nullable()
                 ->hideOnIndex()
                 ->showOnExport(),
-            
+
             Switcher::make('Основной', 'is_primary')
                 ->default(false)
                 ->showOnExport(),
-            
+
             Switcher::make('Активен', 'is_active')
                 ->default(true)
                 ->showOnExport(),
-            
+
             Switcher::make('Подтвержден', 'is_verified')
                 ->default(false)
                 ->showOnExport(),
-            
+
             Switcher::make('Публичный', 'is_public')
                 ->default(true)
                 ->showOnExport(),
@@ -163,7 +171,7 @@ class AddressResource extends ModelResource
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'additional_info' => ['nullable', 'string'],
             'landmark' => ['nullable', 'string', 'max:255'],
-            'address_type' => ['required', 'in:' . implode(',', array_keys(Address::TYPES))],
+            'address_type' => ['required', 'in:'.implode(',', array_keys(Address::TYPES))],
             'name' => ['nullable', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'is_primary' => ['boolean'],
@@ -187,18 +195,18 @@ class AddressResource extends ModelResource
     public function filters(): array
     {
         return [
-            BelongsTo::make('Страна', 'country', fn($item) => $item->name, resource: CountryResource::class)
+            BelongsTo::make('Страна', 'country', fn ($item) => $item->name, resource: CountryResource::class)
                 ->nullable()
                 ->searchable(),
-            
-            BelongsTo::make('Город', 'city', fn($item) => $item->name, resource: CityResource::class)
+
+            BelongsTo::make('Город', 'city', fn ($item) => $item->name, resource: CityResource::class)
                 ->nullable()
                 ->searchable(),
-            
+
             Select::make('Тип адреса', 'address_type')
                 ->options(Address::TYPES)
                 ->nullable(),
-            
+
             Switcher::make('Основной', 'is_primary'),
             Switcher::make('Активен', 'is_active'),
             Switcher::make('Подтвержден', 'is_verified'),
@@ -216,46 +224,55 @@ class AddressResource extends ModelResource
     {
         return [
             ID::make()->sortable(),
-            
+
             Text::make('Владелец', function ($item) {
-                if (!$item->addressable) {
+                if (! $item->addressable) {
                     return '-';
                 }
-                
+
                 $type = match ($item->addressable_type) {
                     \App\Models\User::class => '👤',
                     \App\Models\Company::class => '🏢',
                     \App\Models\Warehouse::class => '📦',
+                    \App\Models\Musician::class => '🎵',
+                    \App\Models\Teacher::class => '📚',
+                    \App\Models\Peformer::class => '🎤',
+                    \App\Models\Studio::class => '🎙',
+                    \App\Models\Rehersal::class => '🥁',
+                    \App\Models\School::class => '🏫',
+                    \App\Models\Shop::class => '🛒',
+                    \App\Models\RecordLabel::class => '💿',
+                    \App\Models\ProducerCenter::class => '🎛',
                     default => '📝',
                 };
-                
-                return $type . ' ' . ($item->addressable->name ?? $item->addressable->id);
+
+                return $type.' '.($item->addressable->name ?? $item->addressable->id);
             }),
-            
+
             Text::make('Адрес', function ($item) {
                 return $item->short_address;
             })->searchable(),
-            
+
             Text::make('Тип', 'address_type')
-                ->badge(fn($value) => match ($value) {
+                ->badge(fn ($value) => match ($value) {
                     'home' => 'blue',
                     'work' => 'green',
                     'shipping' => 'orange',
                     'billing' => 'purple',
                     default => 'gray',
                 }),
-            
+
             Text::make('Город', function ($item) {
                 return $item->city?->name ?? '-';
             }),
-            
+
             Switcher::make('Основной', 'is_primary')
                 ->updateOnPreview()
-                ->badge(fn($status, $field) => $status ? 'green' : 'gray'),
-            
+                ->badge(fn ($status, $field) => $status ? 'green' : 'gray'),
+
             Switcher::make('Активен', 'is_active')
                 ->updateOnPreview()
-                ->badge(fn($status, $field) => $status ? 'green' : 'red'),
+                ->badge(fn ($status, $field) => $status ? 'green' : 'red'),
         ];
     }
 
@@ -268,7 +285,7 @@ class AddressResource extends ModelResource
     {
         return 'Адреса';
     }
-    
+
     /**
      * @return list<class-string<PageContract>>
      */

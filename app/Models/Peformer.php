@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PerformerKind;
 use App\Models\Concerns\HasPublicPageLayouts;
+use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Peformer extends Model
 {
     use HasPublicPageLayouts;
+    use ModeratablePublicProfile;
 
     protected $fillable = [
         'name',
@@ -22,6 +24,9 @@ class Peformer extends Model
         'performer_kind',
         'layout_draft',
         'layout_published',
+        'moderation_hidden_at',
+        'moderation_reason',
+        'moderation_review_requested_at',
     ];
 
     protected $casts = [
@@ -29,6 +34,8 @@ class Peformer extends Model
         'layout_draft' => 'array',
         'layout_published' => 'array',
         'performer_kind' => PerformerKind::class,
+        'moderation_hidden_at' => 'datetime',
+        'moderation_review_requested_at' => 'datetime',
     ];
 
     public function owner(): BelongsTo

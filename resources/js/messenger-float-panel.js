@@ -25,6 +25,18 @@ document.addEventListener('alpine:init', () => {
             return this.$root.getBoundingClientRect();
         },
 
+        /**
+         * Нижняя граница верхней панели (уведомления и т.д.), чтобы плавающий мессенджер не заезжал под неё.
+         */
+        topMinY(m) {
+            const el = document.getElementById('app-second-level-top-bar');
+            if (el) {
+                return el.getBoundingClientRect().bottom + GAP;
+            }
+            // fallback: отступ main + высота стандартной шапки (h-14 ≈ 56px)
+            return m.top + PAD + 56;
+        },
+
         toggle() {
             this.open = !this.open;
             if (this.open) {
@@ -36,22 +48,24 @@ document.addEventListener('alpine:init', () => {
             this.w = DEF_W;
             this.h = DEF_H;
             const m = this.mainBounds();
+            const minTop = this.topMinY(m);
             const rail = document.getElementById('app-messenger-right-rail');
             const railRect = rail
                 ? rail.getBoundingClientRect()
                 : { left: window.innerWidth };
             const anchorRight = railRect.left - GAP;
             this.left = anchorRight - this.w;
-            this.top = m.top + PAD;
+            this.top = minTop;
             this.clampFixed();
         },
 
         clampFixed() {
             const m = this.mainBounds();
+            const minTop = this.topMinY(m);
             this.w = Math.max(MIN_W, Math.min(this.w, m.width - 2 * PAD));
-            this.h = Math.max(MIN_H, Math.min(this.h, m.height - 2 * PAD));
+            this.h = Math.max(MIN_H, Math.min(this.h, m.bottom - PAD - minTop));
+            this.top = Math.min(Math.max(this.top, minTop), m.bottom - PAD - this.h);
             this.left = Math.min(Math.max(this.left, m.left + PAD), m.right - PAD - this.w);
-            this.top = Math.min(Math.max(this.top, m.top + PAD), m.bottom - PAD - this.h);
         },
 
         startDrag(e) {

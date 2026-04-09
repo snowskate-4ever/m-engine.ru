@@ -69,17 +69,10 @@
                     </a>
                 </li>
 
-                <li class="menu-item {{ request()->routeIs('music.musician') ? 'is_active' : '' }}">
-                    <a href="{{ route('music.musician') }}" class="menu-link" wire:navigate>
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-9c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg></span>
-                        <span class="menu-text">{{ __('ui.music.sidebar_musician') }}</span>
-                    </a>
-                </li>
-
-                <li class="menu-item {{ request()->routeIs('music.teacher') ? 'is_active' : '' }}">
-                    <a href="{{ route('music.teacher') }}" class="menu-link" wire:navigate>
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg></span>
-                        <span class="menu-text">{{ __('ui.music.sidebar_teacher') }}</span>
+                <li class="menu-item {{ request()->routeIs('music.profiles') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.profiles') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_profiles') }}</span>
                     </a>
                 </li>
 
@@ -111,6 +104,40 @@
                     </a>
                 </li>
 
+                <li class="menu-item {{ request()->routeIs('music.labels.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.labels.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_labels') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.producer-centers.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.producer-centers.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.582.217m0 0h-6.24m6.24 0v-.832c0-.287-.055-.57-.163-.841m.163.841l-.41 1.024a3 3 0 01-2.296 1.825m0 0l-1.022.328a2 2 0 01-1.847-1.086l-.919-1.538a2 2 0 01.308-2.273m2.45.455l2.32-1.64M12 6.75V4.5m0 2.25a1.5 1.5 0 110-3 1.5 1.5 0 010 3z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_producer_centers') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.shops.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.shops.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_shops') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.shop.cart') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.shop.cart') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_cart') }}</span>
+                    </a>
+                </li>
+                <li class="menu-item {{ request()->routeIs('music.shop.orders') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.shop.orders') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_my_orders') }}</span>
+                    </a>
+                </li>
+
                 <li class="menu-divider"><span>{{ __('ui.sections.planning') }}</span></li>
 
                 <li class="menu-item {{ request()->routeIs('calendar') ? 'is_active' : '' }}">
@@ -134,6 +161,15 @@
                     </a>
                 </li>
 
+                <li class="menu-divider"><span>{{ __('ui.sections.notifications') }}</span></li>
+
+                <li class="menu-item {{ request()->routeIs('notifications.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('notifications.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></span>
+                        <span class="menu-text">{{ __('ui.notifications.sidebar_nav') }}</span>
+                    </a>
+                </li>
+
                 <li class="menu-divider"><span>{{ __('ui.sections.messenger') }}</span></li>
 
                 <li class="menu-item {{ request()->routeIs('messenger.*') ? 'is_active' : '' }}">
@@ -143,36 +179,6 @@
                     </a>
                 </li>
             </ul>
-
-            {{-- User block (footer) --}}
-            <div class="menu-footer">
-                <div class="flex items-center gap-3 p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 mb-2">
-                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-200 text-sm font-medium">
-                        {{ auth()->user()->initials() }}
-                    </span>
-                    <div class="min-w-0 flex-1 hidden lg:block" :class="{ 'lg:hidden': minimizedMenu }">
-                        <div class="truncate text-sm font-medium text-zinc-900 dark:text-white">{{ auth()->user()->name }}</div>
-                        <div class="truncate text-xs text-zinc-500 dark:text-zinc-400">{{ auth()->user()->email }}</div>
-                    </div>
-                </div>
-                <ul class="menu-list">
-                    <li class="menu-item">
-                        <a href="{{ route('settings.profile.edit') }}" class="menu-link" wire:navigate>
-                            <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>
-                            <span class="menu-text">{{ __('Settings') }}</span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <form method="POST" action="{{ route('logout') }}" class="contents">
-                            @csrf
-                            <button type="submit" class="menu-link w-full">
-                                <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg></span>
-                                <span class="menu-text">{{ __('ui.auth.logout.log_out') }}</span>
-                            </button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
         </aside>
         {{-- Collapse (desktop): вне aside, чтобы не обрезался overflow-x и был поверх контента --}}
         <div class="layout-collapse hidden lg:block">

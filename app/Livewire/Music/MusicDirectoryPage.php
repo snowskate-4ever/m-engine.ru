@@ -14,6 +14,8 @@ class MusicDirectoryPage extends Component
 
     public string $category = MusicPublicSearchService::CATEGORY_ALL;
 
+    public bool $spaNavigate = true;
+
     public function render(): View
     {
         $category = in_array($this->category, MusicPublicSearchService::categories(), true)
@@ -25,6 +27,7 @@ class MusicDirectoryPage extends Component
         return view('livewire.music.music-directory-page', [
             'results' => $results,
             'activeCategory' => $category,
+            'spaNavigate' => $this->spaNavigate,
         ]);
     }
 }

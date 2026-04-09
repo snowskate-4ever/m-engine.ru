@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LegalEntityType;
 use App\Models\Concerns\HasPublicPageLayouts;
+use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Teacher extends Model
 {
     use HasPublicPageLayouts;
+    use ModeratablePublicProfile;
 
     protected $fillable = [
         'name',
@@ -26,6 +28,9 @@ class Teacher extends Model
         'company_name',
         'inn',
         'ogrn',
+        'moderation_hidden_at',
+        'moderation_reason',
+        'moderation_review_requested_at',
     ];
 
     protected $casts = [
@@ -34,6 +39,8 @@ class Teacher extends Model
         'layout_draft' => 'array',
         'layout_published' => 'array',
         'legal_entity_type' => LegalEntityType::class,
+        'moderation_hidden_at' => 'datetime',
+        'moderation_review_requested_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

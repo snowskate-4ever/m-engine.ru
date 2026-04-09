@@ -107,6 +107,12 @@ select:focus[data-flux-control] {
   position: relative;
   z-index: 30;
 }
+@media (min-width: 1024px) {
+  /* На десктопе меню и main в ряд; иначе z-30 сайдбара загоняет весь main (выпадашки, popover) под левую колонку. */
+  .sidebar-wrapper {
+    z-index: auto;
+  }
+}
 .dark .sidebar-wrapper {
   --ms-menu-item-hover-bg: rgb(255 255 255 / 0.08);
   --ms-menu-item-active-bg: rgb(255 255 255 / 0.12);

@@ -64,6 +64,22 @@ final class PublicProfileBlocks
     }
 
     /**
+     * Магазин: те же блоки, что у площадки, плюс витрина позиций.
+     *
+     * @return list<array{id: string, label_key: string}>
+     */
+    public static function shopCatalog(): array
+    {
+        return [
+            ['id' => 'header', 'label_key' => 'ui.music.blocks.header'],
+            ['id' => 'description', 'label_key' => 'ui.music.blocks.description'],
+            ['id' => 'listings', 'label_key' => 'ui.music.blocks.listings'],
+            ['id' => 'legal', 'label_key' => 'ui.music.blocks.legal'],
+            ['id' => 'addresses', 'label_key' => 'ui.music.blocks.addresses'],
+        ];
+    }
+
+    /**
      * @param  list<array{id: string, enabled: bool, order: int}>  $blocks
      * @return array{version: int, blocks: list<array{id: string, enabled: bool, order: int}>}
      */

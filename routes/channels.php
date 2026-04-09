@@ -5,6 +5,10 @@ declare(strict_types=1);
 use App\Models\Conversation;
 use Illuminate\Support\Facades\Broadcast;
 
+Broadcast::channel('user.{userId}', function ($user, string $userId) {
+    return (int) $userId === (int) $user->id;
+});
+
 Broadcast::channel('messenger.conversation.{conversationId}', function ($user, string $conversationId) {
     return Conversation::query()
         ->whereKey((int) $conversationId)

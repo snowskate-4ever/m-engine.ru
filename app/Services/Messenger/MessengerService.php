@@ -99,6 +99,9 @@ final class MessengerService
                 array_map('intval', $data['user_ids'] ?? []),
             ),
             ConversationType::Ai => $this->createAiConversation($user, $data),
+            ConversationType::Notice => throw ValidationException::withMessages([
+                'type' => ['Notice conversations are created automatically.'],
+            ]),
         };
     }
 
@@ -445,6 +448,51 @@ final class MessengerService
         return $m;
     }
 
+    public function getOrCreateNoticeFeed(User $user): Conversation
+    {
+        $existing = Conversation::query()
+            ->where('type', ConversationType::Notice)
+            ->where('created_by_user_id', $user->id)
+            ->first();
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        return DB::transaction(function () use ($user): Conversation {
+            $conversation = Conversation::query()->create([
+                'type' => ConversationType::Notice,
+                'title' => __('ui.messenger.notice_feed_title'),
+                'created_by_user_id' => $user->id,
+            ]);
+            $conversation->participants()->attach($user->id, [
+                'role' => ConversationRole::Owner->value,
+                'joined_at' => now(),
+            ]);
+
+            return $conversation;
+        });
+    }
+
+    public function postSystemMessage(Conversation $conversation, string $body, bool $broadcastNow = true): Message
+    {
+        return DB::transaction(function () use ($conversation, $body, $broadcastNow): Message {
+            $message = Message::query()->create([
+                'conversation_id' => $conversation->id,
+                'user_id' => null,
+                'kind' => MessageKind::System,
+                'body' => $body,
+                'is_forward' => false,
+            ]);
+            $conversation->touch();
+            $message->load(['user:id,name', 'attachments']);
+            DB::afterCommit(static function () use ($message, $broadcastNow): void {
+                broadcast(new MessageSent($message, $broadcastNow));
+            });
+
+            return $message;
+        });
+    }
+
     private function createDirectConversation(User $user, int $otherUserId): Conversation
     {
         abort_if($otherUserId === $user->id, 422, 'Cannot start a direct chat with yourself.');
@@ -652,8 +700,8 @@ final class MessengerService
         if ($conversation->type === ConversationType::Direct) {
             return;
         }
-        if ($conversation->type === ConversationType::Ai) {
-            throw ValidationException::withMessages(['retention_days' => ['Retention for AI chats is not supported yet.']]);
+        if ($conversation->type === ConversationType::Ai || $conversation->type === ConversationType::Notice) {
+            throw ValidationException::withMessages(['retention_days' => ['Retention is not supported for this conversation type.']]);
         }
     }
 

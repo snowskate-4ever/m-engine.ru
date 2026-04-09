@@ -247,4 +247,44 @@ class User extends Authenticatable
     {
         return $this->hasMany(School::class, 'owner_user_id');
     }
+
+    /**
+     * @return HasMany<RecordLabel, User>
+     */
+    public function ownedRecordLabels(): HasMany
+    {
+        return $this->hasMany(RecordLabel::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<ProducerCenter, User>
+     */
+    public function ownedProducerCenters(): HasMany
+    {
+        return $this->hasMany(ProducerCenter::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<Shop, User>
+     */
+    public function ownedShops(): HasMany
+    {
+        return $this->hasMany(Shop::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<ShopCartItem, User>
+     */
+    public function shopCartItems(): HasMany
+    {
+        return $this->hasMany(ShopCartItem::class);
+    }
+
+    /**
+     * @return HasMany<ShopOrder, User>
+     */
+    public function shopOrdersAsBuyer(): HasMany
+    {
+        return $this->hasMany(ShopOrder::class, 'buyer_user_id');
+    }
 }

@@ -76,7 +76,7 @@
     </div>
 
     @if ($record)
-        <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
+        <div id="music-musician-lineup" class="scroll-mt-24 space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('ui.music.lineup_musician_section') }}</flux:heading>
             <flux:description>{{ __('ui.music.lineup_musician_section_hint') }}</flux:description>
 

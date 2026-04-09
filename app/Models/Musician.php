@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasPublicPageLayouts;
+use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Musician extends Model
 {
     use HasPublicPageLayouts;
+    use ModeratablePublicProfile;
     use SoftDeletes;
 
     protected $fillable = [
@@ -34,6 +36,9 @@ class Musician extends Model
         'public_page_enabled',
         'layout_draft',
         'layout_published',
+        'moderation_hidden_at',
+        'moderation_reason',
+        'moderation_review_requested_at',
     ];
 
     protected $casts = [
@@ -46,6 +51,8 @@ class Musician extends Model
         'layout_draft' => 'array',
         'layout_published' => 'array',
         'birth_date' => 'date',
+        'moderation_hidden_at' => 'datetime',
+        'moderation_review_requested_at' => 'datetime',
     ];
 
     /**

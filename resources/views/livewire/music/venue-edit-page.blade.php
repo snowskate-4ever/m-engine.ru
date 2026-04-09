@@ -36,6 +36,17 @@
                 </flux:callout>
             @endif
 
+            @if ($kind === 'shop' && $record)
+                <flux:callout variant="secondary" inline class="flex flex-wrap gap-x-4 gap-y-1">
+                    <a href="{{ route('music.shops.inventory', $record) }}" class="font-medium underline underline-offset-2" wire:navigate>
+                        {{ __('ui.music.shop_open_inventory') }}
+                    </a>
+                    <a href="{{ route('music.shops.orders', $record) }}" class="font-medium underline underline-offset-2" wire:navigate>
+                        {{ __('ui.music.shop_open_orders') }}
+                    </a>
+                </flux:callout>
+            @endif
+
             <flux:separator />
 
             <flux:heading size="md">{{ __('ui.music.legal_section') }}</flux:heading>

@@ -32,7 +32,7 @@ class PerformerLineupInvitationNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = route('music.musician', [], true);
+        $url = route('music.profiles', ['tab' => 'musician'], true).'#music-musician-lineup';
 
         return (new MailMessage)
             ->subject(__('mail.lineup_invitation.subject', ['performer' => $this->peformerName]))

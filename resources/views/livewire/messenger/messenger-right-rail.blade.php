@@ -2,7 +2,7 @@
     class="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col bg-zinc-50 dark:bg-zinc-900"
     wire:poll.keep-alive.40s="refreshList"
 >
-    <div class="flex w-full flex-col items-center gap-1 border-b border-zinc-200 py-2 dark:border-zinc-700">
+    <div class="flex h-14 w-full shrink-0 flex-col items-center gap-1 border-b border-zinc-200 py-2 dark:border-zinc-700">
         @if (request()->routeIs(['messenger.index', 'messenger.show']))
             <flux:button
                 :href="route('messenger.index')"
@@ -24,18 +24,9 @@
                 @click="$dispatch('toggle-messenger-float')"
             />
         @endif
-        <flux:button
-            :href="route('messenger.settings.notifications')"
-            wire:navigate
-            size="sm"
-            variant="subtle"
-            class="w-11 justify-center px-0"
-            icon="bell"
-            :title="__('ui.messenger.notifications_title')"
-        />
     </div>
 
-    <div class="flex flex-1 flex-col items-center gap-2 overflow-y-auto py-2 pe-1 ps-1">
+    <div class="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-y-auto overscroll-contain py-2 pe-1 ps-1">
         @foreach ($chats as $chat)
             @php
                 $active = request()->routeIs('messenger.show')

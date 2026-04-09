@@ -1,7 +1,7 @@
 @auth
     <aside
         id="app-messenger-right-rail"
-        class="fixed top-0 right-0 z-20 hidden h-screen w-16 min-w-16 max-w-16 flex flex-col overflow-hidden border-s border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 lg:flex"
+        class="fixed top-0 right-0 z-20 hidden h-[100dvh] max-h-[100dvh] w-16 min-h-0 min-w-16 max-w-16 flex flex-col overflow-hidden border-s border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 lg:flex"
     >
         @livewire('messenger.messenger-right-rail')
     </aside>

@@ -20,6 +20,7 @@
         "livewire/volt": "^1.7.0",
         "moonshine/moonshine": "^4.0",
         "moonshine/ru": "^1.0",
+        "phpoffice/phpspreadsheet": "^5.5",
         "rlanvin/php-rrule": "^2.6",
         "spatie/laravel-medialibrary": "^11.17"
     },

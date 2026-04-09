@@ -9,9 +9,12 @@ use App\Models\City;
 use App\Models\Country;
 use App\Models\Musician;
 use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Region;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\Teacher;
 use Illuminate\Contracts\View\View;
@@ -229,7 +232,7 @@ class AddressBookPanel extends Component
      */
     private function allowedKinds(): array
     {
-        return ['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'school'];
+        return ['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'];
     }
 
     private function resolveModelClass(): string
@@ -241,6 +244,9 @@ class AddressBookPanel extends Component
             'studio' => Studio::class,
             'rehearsal' => Rehersal::class,
             'school' => School::class,
+            'record_label' => RecordLabel::class,
+            'producer_center' => ProducerCenter::class,
+            'shop' => Shop::class,
             default => abort(404),
         };
     }
@@ -277,7 +283,7 @@ class AddressBookPanel extends Component
         $this->form_additional_info = '';
         $this->form_name = '';
         $this->form_address_type = match ($this->ownerKind) {
-            'studio', 'rehearsal', 'school', 'performer' => 'office',
+            'studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop', 'performer' => 'office',
             default => 'home',
         };
         $this->form_is_primary = $owner->addresses()->count() === 0;

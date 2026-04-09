@@ -10,7 +10,7 @@
         {{-- lg:pr-20 = p-4 справа (1rem) + место под рейку w-16 (4rem); рейка fixed и не смещается при скролле --}}
         <main
             id="app-second-level-main"
-            class="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4 lg:pr-20"
+            class="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain"
             x-data="messengerFloatPanel()"
             @toggle-messenger-float.window="toggle()"
             @messenger-float-open-chat.window="
@@ -22,9 +22,14 @@
             "
             @keydown.escape.window="if (open) { open = false }"
         >
-            @include('partials.settings-heading', ['title' => $title])
-            <div class="flex min-h-0 min-w-0 flex-1 flex-col">
-                {{ $slot }}
+            @auth
+                @livewire('components.app-top-bar')
+            @endauth
+            <div class="flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-4 pt-4 lg:pr-20">
+                @include('partials.settings-heading', ['title' => $title])
+                <div class="flex min-h-0 min-w-0 flex-1 flex-col">
+                    {{ $slot }}
+                </div>
             </div>
             @include('partials.messenger-rail-dock')
         </main>

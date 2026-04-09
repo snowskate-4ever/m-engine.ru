@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\MoonShine\Layouts;
 
 use App\MoonShine\Resources\Address\AddressResource;
+use App\MoonShine\Resources\Ai\AgentToolInvocationResource;
 use App\MoonShine\Resources\Ai\AiProviderResource;
 use App\MoonShine\Resources\Ai\AiRequestLogResource;
 use App\MoonShine\Resources\Ai\AiServerModelResource;
 use App\MoonShine\Resources\Ai\AiSubscriptionTierResource;
-use App\MoonShine\Resources\Ai\AgentToolInvocationResource;
 use App\MoonShine\Resources\Ai\AiUsageLedgerResource;
 use App\MoonShine\Resources\Ai\UserAiSubscriptionResource;
 use App\MoonShine\Resources\Category\CategoryResource;
@@ -25,9 +25,20 @@ use App\MoonShine\Resources\Instrument\InstrumentResource;
 use App\MoonShine\Resources\Manufacturer\ManufacturerResource;
 use App\MoonShine\Resources\Messenger\MessengerConversationResource;
 use App\MoonShine\Resources\Messenger\MessengerMessageResource;
+use App\MoonShine\Resources\MusicEcosystem\MusicianResource;
+use App\MoonShine\Resources\MusicEcosystem\MusicSchoolResource;
+use App\MoonShine\Resources\MusicEcosystem\MusicStudioResource;
+use App\MoonShine\Resources\MusicEcosystem\PeformerResource as MusicPeformerMoonShineResource;
+use App\MoonShine\Resources\MusicEcosystem\ProducerCenterResource as MusicProducerCenterMoonShineResource;
+use App\MoonShine\Resources\MusicEcosystem\RecordLabelResource as MusicRecordLabelMoonShineResource;
+use App\MoonShine\Resources\MusicEcosystem\RehersalResource;
+use App\MoonShine\Resources\MusicEcosystem\TeacherResource as MusicTeacherMoonShineResource;
 use App\MoonShine\Resources\Region\RegionResource;
 use App\MoonShine\Resources\Resource\ResourceResource;
 use App\MoonShine\Resources\Room\RoomResource;
+use App\MoonShine\Resources\Shop\ShopItemResource;
+use App\MoonShine\Resources\Shop\ShopOrderResource;
+use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Social\SocialResource;
 use App\MoonShine\Resources\Type\TypeResource;
 use App\MoonShine\Resources\User\UserResource;
@@ -84,10 +95,25 @@ final class MoonShineLayout extends AppLayout
             ]),
             MenuItem::make(ResourceResource::class),
             MenuItem::make(CommunicationResource::class),
-            MenuGroup::make('Музыка', [
+            MenuGroup::make('Музыка · справочники', [
                 MenuItem::make(InstrumentResource::class)->icon('musical-note'),
                 MenuItem::make(GenreResource::class)->icon('musical-note'),
             ])->icon('musical-note'),
+            MenuGroup::make('Музыка · магазины', [
+                MenuItem::make(ShopOrderResource::class)->icon('shopping-bag'),
+                MenuItem::make(ShopResource::class)->icon('building-storefront'),
+                MenuItem::make(ShopItemResource::class)->icon('cube'),
+            ])->icon('shopping-cart'),
+            MenuGroup::make('Музыка · публичные профили', [
+                MenuItem::make(MusicianResource::class)->icon('user'),
+                MenuItem::make(MusicTeacherMoonShineResource::class)->icon('academic-cap'),
+                MenuItem::make(MusicPeformerMoonShineResource::class)->icon('users'),
+                MenuItem::make(MusicStudioResource::class)->icon('microphone'),
+                MenuItem::make(RehersalResource::class)->icon('map-pin'),
+                MenuItem::make(MusicSchoolResource::class)->icon('building-library'),
+                MenuItem::make(MusicRecordLabelMoonShineResource::class)->icon('musical-note'),
+                MenuItem::make(MusicProducerCenterMoonShineResource::class)->icon('adjustments-vertical'),
+            ])->icon('globe-alt'),
             MenuGroup::make(static fn () => __('moonshine.messenger.menu_group'), [
                 MenuItem::make(MessengerConversationResource::class)->icon('chat-bubble-left-right'),
                 MenuItem::make(MessengerMessageResource::class)->icon('inbox'),

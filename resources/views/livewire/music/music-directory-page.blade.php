@@ -35,8 +35,8 @@
                         <div class="min-w-0">
                             <a
                                 href="{{ $row['url'] }}"
+                                @if ($spaNavigate) wire:navigate @endif
                                 class="font-medium text-zinc-900 underline-offset-2 hover:underline dark:text-zinc-100"
-                                wire:navigate
                             >
                                 {{ $row['name'] }}
                             </a>

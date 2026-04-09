@@ -72,5 +72,7 @@
                 </ul>
             </section>
         @endif
+
+        @include('public.profiles.partials.report-profile-form', ['model' => $model])
     </article>
 </x-layouts.public-minimal>

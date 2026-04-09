@@ -9,12 +9,19 @@ use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\User;
 use App\Notifications\Music\PerformerLineupInvitationNotification;
+use App\Services\Notifications\InAppNotificationSyncBroadcaster;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class PerformerMembershipService
 {
+    public function __construct(
+        private readonly InAppNotificationSyncBroadcaster $inAppNotificationSyncBroadcaster,
+        private readonly LineupInvitationMessengerNotifier $lineupInvitationMessengerNotifier,
+    ) {}
+
     public function invite(Peformer $peformer, Musician $musician, User $inviter): void
     {
         Gate::authorize('manageMembers', $peformer);
@@ -26,7 +33,7 @@ class PerformerMembershipService
 
         $existing = $peformer->musicians()->whereKey($musician->id)->first();
         if ($existing !== null) {
-            $status = PerformerMembershipStatus::tryFrom((string) $existing->pivot->status);
+            $status = $this->pivotMembershipStatus($existing->pivot->status);
             if ($status === PerformerMembershipStatus::Accepted) {
                 throw ValidationException::withMessages([
                     'musician_id' => __('ui.music.lineup_already_member'),
@@ -50,12 +57,23 @@ class PerformerMembershipService
             ]);
         }
 
-        $musician->user?->notify(new PerformerLineupInvitationNotification(
+        $invitee = $musician->user;
+        if ($invitee === null) {
+            return;
+        }
+
+        $invitee->notify(new PerformerLineupInvitationNotification(
             peformerId: $peformer->id,
             musicianId: $musician->id,
             peformerName: $peformer->name,
             inviterName: $inviter->name,
         ));
+        $this->lineupInvitationMessengerNotifier->notifyInvited($invitee, $peformer->name, $inviter->name);
+
+        Log::info('music.lineup_invite.sent', [
+            'peformer_id' => $peformer->id,
+            'invited_user_id' => $invitee->id,
+        ]);
     }
 
     public function cancelPending(Peformer $peformer, Musician $musician, User $actor): void
@@ -65,7 +83,7 @@ class PerformerMembershipService
         if ($row === null) {
             return;
         }
-        if (PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Pending) {
+        if ($this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Pending) {
             return;
         }
         $peformer->musicians()->detach($musician->id);
@@ -81,7 +99,7 @@ class PerformerMembershipService
         if ($row === null) {
             return;
         }
-        if (PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Accepted) {
+        if ($this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Accepted) {
             return;
         }
         $peformer->musicians()->updateExistingPivot($musician->id, [
@@ -94,7 +112,7 @@ class PerformerMembershipService
     {
         $this->assertMusicianOwner($musician, $user);
         $row = $peformer->musicians()->whereKey($musician->id)->first();
-        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Pending) {
+        if ($row === null || $this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Pending) {
             throw ValidationException::withMessages([
                 'lineup' => __('ui.music.lineup_no_pending'),
             ]);
@@ -110,7 +128,7 @@ class PerformerMembershipService
     {
         $this->assertMusicianOwner($musician, $user);
         $row = $peformer->musicians()->whereKey($musician->id)->first();
-        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Pending) {
+        if ($row === null || $this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Pending) {
             return;
         }
         $peformer->musicians()->updateExistingPivot($musician->id, [
@@ -124,7 +142,7 @@ class PerformerMembershipService
     {
         $this->assertMusicianOwner($musician, $user);
         $row = $peformer->musicians()->whereKey($musician->id)->first();
-        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Accepted) {
+        if ($row === null || $this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Accepted) {
             return;
         }
         $peformer->musicians()->updateExistingPivot($musician->id, [
@@ -137,12 +155,21 @@ class PerformerMembershipService
     {
         $this->assertMusicianOwner($musician, $user);
         $row = $peformer->musicians()->whereKey($musician->id)->first();
-        if ($row === null || PerformerMembershipStatus::tryFrom((string) $row->pivot->status) !== PerformerMembershipStatus::Accepted) {
+        if ($row === null || $this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Accepted) {
             throw ValidationException::withMessages([
                 'lineup' => __('ui.music.lineup_not_accepted'),
             ]);
         }
         $peformer->musicians()->updateExistingPivot($musician->id, ['show_on_musician_profile' => $show]);
+    }
+
+    private function pivotMembershipStatus(mixed $raw): ?PerformerMembershipStatus
+    {
+        if ($raw instanceof PerformerMembershipStatus) {
+            return $raw;
+        }
+
+        return PerformerMembershipStatus::tryFrom((string) $raw);
     }
 
     private function assertMusicianOwner(Musician $musician, User $user): void
@@ -158,5 +185,7 @@ class PerformerMembershipService
             ->filter(fn ($n) => $n->type === PerformerLineupInvitationNotification::class)
             ->filter(fn ($n) => (int) data_get($n->data, 'peformer_id') === $peformerId)
             ->each->markAsRead();
+
+        $this->inAppNotificationSyncBroadcaster->sync($user, true);
     }
 }
