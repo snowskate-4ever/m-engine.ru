@@ -31,6 +31,7 @@ use App\MoonShine\Resources\MusicEcosystem\MusicStudioResource;
 use App\MoonShine\Resources\MusicEcosystem\PeformerResource as MusicPeformerMoonShineResource;
 use App\MoonShine\Resources\MusicEcosystem\ProducerCenterResource as MusicProducerCenterMoonShineResource;
 use App\MoonShine\Resources\MusicEcosystem\RecordLabelResource as MusicRecordLabelMoonShineResource;
+use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
 use App\MoonShine\Resources\MusicEcosystem\RehersalResource;
 use App\MoonShine\Resources\MusicEcosystem\TeacherResource as MusicTeacherMoonShineResource;
 use App\MoonShine\Resources\Region\RegionResource;
@@ -110,6 +111,7 @@ final class MoonShineLayout extends AppLayout
                 MenuItem::make(MusicPeformerMoonShineResource::class)->icon('users'),
                 MenuItem::make(MusicStudioResource::class)->icon('microphone'),
                 MenuItem::make(RehersalResource::class)->icon('map-pin'),
+                MenuItem::make(ConcertVenueResource::class)->icon('ticket'),
                 MenuItem::make(MusicSchoolResource::class)->icon('building-library'),
                 MenuItem::make(MusicRecordLabelMoonShineResource::class)->icon('musical-note'),
                 MenuItem::make(MusicProducerCenterMoonShineResource::class)->icon('adjustments-vertical'),

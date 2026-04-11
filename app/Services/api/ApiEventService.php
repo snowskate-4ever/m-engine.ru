@@ -4,7 +4,9 @@ namespace App\Services\api;
 
 use App\Models\Event;
 use App\Services\BookingService;
+use App\Services\Music\MusicCalendarFeedService;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -24,6 +26,10 @@ class ApiEventService
             'date_to' => 'sometimes|date',
             'bookings_only' => 'sometimes|boolean', // Только бронирования
             'room_bookings_only' => 'sometimes|boolean', // Только бронирования с комнатами
+            'event_kind' => 'sometimes|in:all,event,booking,room_booking,resource_booking',
+            'owner_entity_type' => 'sometimes|string',
+            'owner_entity_id' => 'sometimes|integer|min:1',
+            'include_related_entities' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -37,40 +43,43 @@ class ApiEventService
 
         $filters = $validator->validated();
 
-        $query = Event::query()->orderByDesc('start_at')->orderByDesc('created_at');
-
-        if (array_key_exists('active', $filters)) {
-            $query->where('active', $filters['active']);
-        }
-        if (isset($filters['booked_resource_id'])) {
-            $query->where('booked_resource_id', $filters['booked_resource_id']);
-        }
-        if (isset($filters['booking_resource_id'])) {
-            $query->where('booking_resource_id', $filters['booking_resource_id']);
-        }
-        if (isset($filters['room_id'])) {
-            $query->where('room_id', $filters['room_id']);
-        }
-        if (isset($filters['user_id'])) {
-            $query->where('user_id', $filters['user_id']);
-        }
-        if (isset($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-        if (isset($filters['date_from'])) {
-            $query->whereDate('start_at', '>=', Carbon::parse($filters['date_from'])->toDateString());
-        }
-        if (isset($filters['date_to'])) {
-            $query->whereDate('end_at', '<=', Carbon::parse($filters['date_to'])->toDateString());
-        }
-        if (isset($filters['bookings_only']) && $filters['bookings_only']) {
-            $query->bookings();
-        }
-        if (isset($filters['room_bookings_only']) && $filters['room_bookings_only']) {
-            $query->roomBookings();
+        $user = $request->user();
+        if ($user === null) {
+            return ApiService::errorResponse(
+                'Требуется авторизация.',
+                ApiService::PERMISSION_DENIED,
+                [],
+                401
+            );
         }
 
-        $events = $query->with(['bookedResource', 'bookingResource', 'room', 'user'])->get()->map(fn (Event $event) => self::formatEvent($event));
+        $tz = (string) config('app.timezone');
+        $startUtc = isset($filters['date_from'])
+            ? CarbonImmutable::parse((string) $filters['date_from'], $tz)->startOfDay()->utc()
+            : CarbonImmutable::now($tz)->startOfMonth()->subMonth()->startOfDay()->utc();
+        $endUtc = isset($filters['date_to'])
+            ? CarbonImmutable::parse((string) $filters['date_to'], $tz)->endOfDay()->utc()
+            : CarbonImmutable::now($tz)->endOfMonth()->addMonth()->endOfDay()->utc();
+
+        $ownerEntity = null;
+        if (isset($filters['owner_entity_type'], $filters['owner_entity_id'])) {
+            $ownerEntity = (string) $filters['owner_entity_type'].'#'.(int) $filters['owner_entity_id'];
+        }
+
+        $serviceFilters = [
+            'event_kind' => $filters['event_kind'] ?? MusicCalendarFeedService::EVENT_KIND_ALL,
+            'owner_entity' => $ownerEntity ?? 'all_linked',
+            'include_related_entities' => $filters['include_related_entities'] ?? true,
+        ];
+        foreach (['active', 'booked_resource_id', 'booking_resource_id', 'room_id', 'user_id', 'status', 'bookings_only', 'room_bookings_only'] as $legacyKey) {
+            if (array_key_exists($legacyKey, $filters)) {
+                $serviceFilters[$legacyKey] = $filters[$legacyKey];
+            }
+        }
+
+        $events = app(MusicCalendarFeedService::class)
+            ->eventsForRange($user, $startUtc, $endUtc, $serviceFilters)
+            ->map(fn (Event $event) => self::formatEvent($event));
 
         return ApiService::successResponse('Список событий получен', ['events' => $events]);
     }
@@ -326,6 +335,79 @@ class ApiEventService
         return ApiService::successResponse('Событие удалено');
     }
 
+    public static function confirm_matching_booking(int $id, Request $request)
+    {
+        $event = Event::find($id);
+        if (! $event) {
+            return ApiService::errorResponse(
+                'Событие не найдено.',
+                ApiService::EVENT_NOT_FOUND,
+                [],
+                404
+            );
+        }
+
+        $userId = (int) ($request->user()?->id ?? 0);
+        $isOwner = (int) ($event->user_id ?? 0) === $userId;
+        $isMusicOrganizer = (int) ($event->music_organizer_user_id ?? 0) === $userId;
+        if (! $isOwner && ! $isMusicOrganizer) {
+            return ApiService::errorResponse(
+                'Недостаточно прав для подтверждения бронирования.',
+                ApiService::PERMISSION_DENIED,
+                [],
+                403
+            );
+        }
+
+        $validator = Validator::make($request->all(), [
+            'booked_resource_id' => ['required', 'integer', 'exists:resources,id'],
+            'room_id' => ['nullable', 'integer', 'exists:rooms,id'],
+            'booking_resource_id' => ['nullable', 'integer', 'exists:resources,id'],
+        ], [
+            'booked_resource_id.required' => 'Необходимо указать ресурс для бронирования.',
+            'booked_resource_id.exists' => 'Выбранный ресурс не существует.',
+            'room_id.exists' => 'Выбранная комната не существует.',
+            'booking_resource_id.exists' => 'Ресурс инициатора бронирования не существует.',
+        ]);
+
+        if ($validator->fails()) {
+            return ApiService::errorResponse(
+                'Проверьте корректность введённых данных.',
+                ApiService::UNPROCESSABLE_CONTENT,
+                $validator->errors()->messages(),
+                422
+            );
+        }
+
+        $data = $validator->validated();
+
+        try {
+            $bookingService = new BookingService();
+            $confirmed = $bookingService->confirmMatchingBooking(
+                $event->id,
+                (int) $data['booked_resource_id'],
+                isset($data['room_id']) ? (int) $data['room_id'] : null,
+                isset($data['booking_resource_id']) ? (int) $data['booking_resource_id'] : null,
+            );
+
+            return ApiService::successResponse('Бронирование подтверждено', self::formatEvent($confirmed));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiService::errorResponse(
+                $e->getMessage(),
+                ApiService::UNPROCESSABLE_CONTENT,
+                $e->errors(),
+                422
+            );
+        } catch (\Exception $e) {
+            return ApiService::errorResponse(
+                'Ошибка подтверждения бронирования: '.$e->getMessage(),
+                ApiService::UNPROCESSABLE_CONTENT,
+                [],
+                422
+            );
+        }
+    }
+
     protected static function formatEvent(Event $event): array
     {
         // Загружаем связи, если они не загружены
@@ -372,6 +454,11 @@ class ApiEventService
             ] : null,
             'start_at' => $event->start_at?->toISOString(),
             'end_at' => $event->end_at?->toISOString(),
+            'matching_space_type' => $event->matching_space_type,
+            'matching_space_id' => $event->matching_space_id,
+            'matching_proposed_start_at' => $event->matching_proposed_start_at?->toISOString(),
+            'matching_proposed_end_at' => $event->matching_proposed_end_at?->toISOString(),
+            'matching_booking_confirmed_at' => $event->matching_booking_confirmed_at?->toISOString(),
             'notes' => $event->notes,
             'price' => $event->price ? (float)$event->price : null,
             'is_booking' => $event->isBooking(),

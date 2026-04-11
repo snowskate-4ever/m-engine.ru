@@ -32,5 +32,10 @@ class ApiEventController extends Controller
     {
         return ApiEventService::delete_event($id);
     }
+
+    public function confirm_matching_booking(int $id, Request $request)
+    {
+        return ApiEventService::confirm_matching_booking($id, $request);
+    }
 }
 

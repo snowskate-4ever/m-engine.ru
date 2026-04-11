@@ -16,6 +16,8 @@ class MusicDirectoryPage extends Component
 
     public bool $spaNavigate = true;
 
+    public bool $showHeading = true;
+
     public function render(): View
     {
         $category = in_array($this->category, MusicPublicSearchService::categories(), true)
@@ -28,6 +30,7 @@ class MusicDirectoryPage extends Component
             'results' => $results,
             'activeCategory' => $category,
             'spaNavigate' => $this->spaNavigate,
+            'showHeading' => $this->showHeading,
         ]);
     }
 }

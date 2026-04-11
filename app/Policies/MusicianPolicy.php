@@ -33,4 +33,13 @@ class MusicianPolicy
     {
         return $this->update($user, $musician);
     }
+
+    public function canManageSearchRequests(User $user, Musician $musician): bool
+    {
+        if ($this->update($user, $musician)) {
+            return true;
+        }
+
+        return $user->hasAcceptedMusicMembershipFor($musician, 'manager');
+    }
 }

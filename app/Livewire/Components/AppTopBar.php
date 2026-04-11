@@ -11,6 +11,11 @@ use Livewire\Component;
 
 class AppTopBar extends Component
 {
+    public ?string $title = null;
+
+    /** @var array<string, mixed>|null */
+    public ?array $titleButton = null;
+
     public int $unreadCount = 0;
 
     /** @var list<array<string, mixed>> */

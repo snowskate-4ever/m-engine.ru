@@ -7,6 +7,7 @@ use App\Models\Concerns\HasPublicPageLayouts;
 use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Studio extends Model
@@ -53,5 +54,10 @@ class Studio extends Model
     public function addresses(): MorphMany
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+    public function organizerInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerStudioInvite::class);
     }
 }

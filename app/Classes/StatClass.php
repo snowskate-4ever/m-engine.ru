@@ -2,6 +2,7 @@
 
 namespace App\Classes;
 
+use App\Models\ConcertVenue;
 use App\Models\Event;
 use App\Models\Musician;
 use App\Models\Peformer;
@@ -104,6 +105,7 @@ class StatClass
             ->count();
         $myStudios = Studio::query()->where('owner_user_id', $user->id)->count();
         $myRehearsals = Rehersal::query()->where('owner_user_id', $user->id)->count();
+        $myConcertVenues = ConcertVenue::query()->where('owner_user_id', $user->id)->count();
         $mySchools = School::query()->where('owner_user_id', $user->id)->count();
         $myRecordLabels = RecordLabel::query()->where('owner_user_id', $user->id)->count();
         $myProducerCenters = ProducerCenter::query()->where('owner_user_id', $user->id)->count();
@@ -115,13 +117,14 @@ class StatClass
             'performer' => $myPerformers,
             'studio' => $myStudios,
             'rehearsal' => $myRehearsals,
+            'concert_venue' => $myConcertVenues,
             'school' => $mySchools,
             'record_label' => $myRecordLabels,
             'producer_center' => $myProducerCenters,
             'shop' => $myShops,
         ];
 
-        foreach (['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'] as $key) {
+        foreach (['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'concert_venue', 'school', 'record_label', 'producer_center', 'shop'] as $key) {
             $cards[] = [
                 'id' => 'catalog-'.$key,
                 'title' => __('ui.music.discover_category.'.$key),

@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\MusicEventAssemblyStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -25,13 +29,25 @@ class Event extends Model
         'end_at',
         'notes',
         'price',
+        'music_organizer_user_id',
+        'concert_venue_id',
+        'matching_space_type',
+        'matching_space_id',
+        'matching_proposed_start_at',
+        'matching_proposed_end_at',
+        'matching_booking_confirmed_at',
+        'assembly_status',
     ];
 
     protected $casts = [
         'active' => 'boolean',
         'start_at' => 'datetime',
         'end_at' => 'datetime',
+        'matching_proposed_start_at' => 'datetime',
+        'matching_proposed_end_at' => 'datetime',
+        'matching_booking_confirmed_at' => 'datetime',
         'price' => 'decimal:2',
+        'assembly_status' => MusicEventAssemblyStatus::class,
     ];
     
     public function bookingResource(): BelongsTo
@@ -57,6 +73,53 @@ class Event extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function musicOrganizer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'music_organizer_user_id');
+    }
+
+    public function concertVenue(): BelongsTo
+    {
+        return $this->belongsTo(ConcertVenue::class);
+    }
+
+    public function matchingSpace(): MorphTo
+    {
+        return $this->morphTo(__FUNCTION__, 'matching_space_type', 'matching_space_id');
+    }
+
+    public function peformers(): BelongsToMany
+    {
+        return $this->belongsToMany(Peformer::class, 'event_peformer')
+            ->withPivot('added_via_search_request_id')
+            ->withTimestamps();
+    }
+
+    public function organizerPerformerInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerPerformerInvite::class);
+    }
+
+    public function organizerVenueInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerVenueInvite::class);
+    }
+
+    public function organizerStudioInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerStudioInvite::class);
+    }
+
+    public function organizerRehersalInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerRehersalInvite::class);
+    }
+
+    public function organizerSchoolInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerSchoolInvite::class);
     }
 
     /**

@@ -8,4 +8,5 @@ enum PerformerMembershipStatus: string
     case Accepted = 'accepted';
     case Declined = 'declined';
     case Left = 'left';
+    case Revoked = 'revoked';
 }

@@ -6,6 +6,17 @@
     <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:heading size="lg">{{ $recordId ? __('ui.music.'.$routePrefix.'_edit') : __('ui.music.'.$routePrefix.'_create') }}</flux:heading>
 
+        @if ($record && in_array($kind, ['concert_venue', 'studio', 'rehearsal', 'school'], true))
+            <flux:callout variant="secondary">
+                <div class="text-sm">
+                    {{ __('ui.music.matching_progress') }}:
+                    {{ __('ui.music.matching_open_requests') }} — {{ $matchingProgress['open_requests'] }},
+                    {{ __('ui.music.matching_incomplete_events') }} — {{ $matchingProgress['incomplete_events'] }},
+                    {{ __('ui.music.matching_ready_events') }} — {{ $matchingProgress['ready_events'] }}.
+                </div>
+            </flux:callout>
+        @endif
+
         <form wire:submit="save" class="space-y-4">
             <flux:field>
                 <flux:label>{{ __('ui.music.fields.name') }}</flux:label>
@@ -99,6 +110,10 @@
     </div>
 
     @if ($record)
+        @if ($kind === 'concert_venue' && (int) ($record->owner_user_id ?? 0) === (int) auth()->id())
+            <livewire:music.venue-representatives-panel :venue-id="$record->id" :key="'venue-representatives-'.$record->id" />
+        @endif
+        <livewire:music.social-links-panel :owner-kind="$kind" :owner-id="$record->id" :key="'socials-venue-'.$kind.'-'.$record->id" />
         <livewire:music.address-book-panel :owner-kind="$kind" :owner-id="$record->id" :key="'addresses-venue-'.$kind.'-'.$record->id" />
     @endif
 </div>

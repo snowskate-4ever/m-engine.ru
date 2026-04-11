@@ -7,6 +7,7 @@ use App\Listeners\LogNotificationFailed;
 use App\Listeners\Notifications\BroadcastDatabaseNotification;
 use App\Models\Event;
 use App\Models\Musician;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\PublicProfileReport;
@@ -23,6 +24,7 @@ use App\Observers\PublicMusicCatalogCacheObserver;
 use App\Observers\PublicProfileReportAuditObserver;
 use App\Observers\ShopOrderObserver;
 use App\Policies\MusicianPolicy;
+use App\Policies\ConcertVenuePolicy;
 use App\Policies\PeformerPolicy;
 use App\Policies\ProducerCenterPolicy;
 use App\Policies\RecordLabelPolicy;
@@ -73,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
             Peformer::class,
             Studio::class,
             Rehersal::class,
+            ConcertVenue::class,
             School::class,
             RecordLabel::class,
             ProducerCenter::class,
@@ -89,6 +92,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Peformer::class, PeformerPolicy::class);
         Gate::policy(Studio::class, StudioPolicy::class);
         Gate::policy(Rehersal::class, RehersalPolicy::class);
+        Gate::policy(ConcertVenue::class, ConcertVenuePolicy::class);
         Gate::policy(School::class, SchoolPolicy::class);
         Gate::policy(RecordLabel::class, RecordLabelPolicy::class);
         Gate::policy(ProducerCenter::class, ProducerCenterPolicy::class);

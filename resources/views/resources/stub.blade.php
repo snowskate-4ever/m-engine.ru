@@ -18,6 +18,10 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] antialiased">
+        @php
+            $inviteToken = request()->query('invite');
+            $canShowRegister = is_string($inviteToken) && app(\App\Services\Auth\RegistrationInviteService::class)->isActiveToken($inviteToken);
+        @endphp
         <div class="min-h-screen flex flex-col items-center justify-center p-6">
             <div class="w-full max-w-md text-center">
                 <h1 class="text-3xl font-semibold mb-4 text-[#1b1b18] dark:text-[#EDEDEC]">
@@ -39,9 +43,9 @@
                             </a>
                         @endif
 
-                        @if (Route::has('register'))
+                        @if (Route::has('register') && $canShowRegister)
                             <a
-                                href="{{ route('register') }}"
+                                href="{{ route('register', ['invite' => $inviteToken]) }}"
                                 class="inline-block px-6 py-2.5 border border-[#19140035] dark:border-[#3E3E3A] text-[#1b1b18] dark:text-[#EDEDEC] rounded-sm text-sm font-medium hover:bg-zinc-800/5 dark:hover:bg-white/[7%] transition-colors"
                             >
                                 {{ __('ui.auth.register.button') }}

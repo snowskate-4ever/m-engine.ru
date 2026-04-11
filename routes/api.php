@@ -15,6 +15,8 @@ use App\Http\Controllers\api\DevicePushTokenController;
 use App\Http\Controllers\api\MessengerAttachmentDownloadController;
 use App\Http\Controllers\api\MessengerController;
 use App\Http\Controllers\api\MessengerConversationSkillController;
+use App\Http\Controllers\api\MusicActorContextController;
+use App\Http\Controllers\api\MusicProfileMembershipController;
 use App\Http\Controllers\api\UserAiConnectionController;
 use App\Http\Controllers\api\UserAiPreferenceController;
 use App\Http\Controllers\api\UserAiScheduledItemController;
@@ -81,6 +83,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/events', [ApiEventController::class, 'create_event'])->name('api_create_event');
     Route::get('/events/{id}', [ApiEventController::class, 'get_event'])->name('api_event');
     Route::put('/events/{id}', [ApiEventController::class, 'edit_event'])->name('api_edit_event_event');
+    Route::post('/events/{id}/confirm-matching-booking', [ApiEventController::class, 'confirm_matching_booking'])
+        ->name('api_events_confirm_matching_booking');
     Route::delete('/events/{id}', [ApiEventController::class, 'delete_event'])->name('api_delete_event');
 
     Route::get('/resources', [ApiResourceController::class, 'get_resources'])->name('api_resources');
@@ -115,6 +119,16 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch('/conversations/{conversation}/skills/{skill}', [MessengerConversationSkillController::class, 'update'])->name('api_messenger_skills_update');
             Route::delete('/conversations/{conversation}/skills/{skill}', [MessengerConversationSkillController::class, 'destroy'])->name('api_messenger_skills_destroy');
         });
+    });
+
+    Route::prefix('music')->group(function () {
+        Route::get('/actor-context', [MusicActorContextController::class, 'index'])->name('api_music_actor_context_index');
+        Route::patch('/actor-context', [MusicActorContextController::class, 'update'])->name('api_music_actor_context_update');
+
+        Route::get('/memberships', [MusicProfileMembershipController::class, 'index'])->name('api_music_memberships_index');
+        Route::post('/memberships', [MusicProfileMembershipController::class, 'store'])->name('api_music_memberships_store');
+        Route::patch('/memberships/{membership}/respond', [MusicProfileMembershipController::class, 'respond'])->name('api_music_memberships_respond');
+        Route::patch('/memberships/{membership}/revoke', [MusicProfileMembershipController::class, 'revoke'])->name('api_music_memberships_revoke');
     });
 
     Route::middleware('ai.enabled')->prefix('ai')->group(function () {

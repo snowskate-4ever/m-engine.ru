@@ -1,6 +1,7 @@
 {{-- Публичная страница с поддержкой блоков layout_published (teacher, performer, studio, …) --}}
 @php
     use App\Enums\LegalEntityType;
+    use App\Models\ConcertVenue;
     use App\Models\Peformer;
     use App\Models\ProducerCenter;
     use App\Models\RecordLabel;
@@ -12,7 +13,7 @@
 
     $canLayout = method_exists($model, 'shouldShowPublicBlock');
     $show = fn (string $id): bool => ! $canLayout || $model->shouldShowPublicBlock($id);
-    $hasLegal = $model instanceof Teacher || $model instanceof Studio || $model instanceof Rehersal || $model instanceof School || $model instanceof RecordLabel || $model instanceof ProducerCenter || $model instanceof Shop;
+    $hasLegal = $model instanceof Teacher || $model instanceof Studio || $model instanceof Rehersal || $model instanceof ConcertVenue || $model instanceof School || $model instanceof RecordLabel || $model instanceof ProducerCenter || $model instanceof Shop;
 @endphp
 <x-layouts.public-minimal :title="$model->name">
     <article class="mx-auto max-w-2xl px-6 py-12">
@@ -140,6 +141,25 @@
                                 <span class="text-zinc-500"> — </span>
                             @endif
                             {{ $addr->full_address }}
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+        @if($show('links') && $model->socials->isNotEmpty())
+            <section class="mt-8">
+                <h2 class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('ui.music.blocks.links') }}</h2>
+                <ul class="mt-3 space-y-2 text-sm">
+                    @foreach($model->socials as $social)
+                        <li>
+                            <a
+                                href="{{ $social->link }}"
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                class="font-medium text-zinc-800 underline underline-offset-2 dark:text-zinc-200"
+                            >
+                                {{ $social->name ?: __('ui.social.types.'.($social->type ?: 'other')) }}
+                            </a>
                         </li>
                     @endforeach
                 </ul>

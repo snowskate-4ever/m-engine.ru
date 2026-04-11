@@ -6,6 +6,17 @@
     <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:heading size="lg">{{ $recordId ? __('ui.music.performer_edit') : __('ui.music.performer_create') }}</flux:heading>
 
+        @if ($record)
+            <flux:callout variant="secondary">
+                <div class="text-sm">
+                    {{ __('ui.music.matching_progress') }}:
+                    {{ __('ui.music.matching_open_requests') }} — {{ $matchingProgress['open_requests'] }},
+                    {{ __('ui.music.matching_incomplete_events') }} — {{ $matchingProgress['incomplete_events'] }},
+                    {{ __('ui.music.matching_ready_events') }} — {{ $matchingProgress['ready_events'] }}.
+                </div>
+            </flux:callout>
+        @endif
+
         <form wire:submit="save" class="space-y-4">
             <flux:field>
                 <flux:label>{{ __('ui.music.fields.name') }}</flux:label>
@@ -70,6 +81,7 @@
 
     @if ($record)
         <livewire:music.performer-lineup-panel :peformer-id="$record->id" :key="'lineup-'.$record->id" />
+        <livewire:music.social-links-panel owner-kind="performer" :owner-id="$record->id" :key="'socials-performer-'.$record->id" />
         <livewire:music.address-book-panel owner-kind="performer" :owner-id="$record->id" :key="'addresses-performer-'.$record->id" />
     @endif
 </div>

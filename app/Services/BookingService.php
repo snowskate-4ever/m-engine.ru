@@ -151,6 +151,47 @@ class BookingService
     }
 
     /**
+     * Подтвердить бронирование из matching-контекста события.
+     *
+     * @throws ValidationException
+     */
+    public function confirmMatchingBooking(
+        int $eventId,
+        int $bookedResourceId,
+        ?int $roomId = null,
+        ?int $bookingResourceId = null,
+    ): Event {
+        $event = Event::findOrFail($eventId);
+        $startAt = $event->matching_proposed_start_at ?? $event->start_at;
+        $endAt = $event->matching_proposed_end_at ?? $event->end_at;
+
+        if ($startAt === null || $endAt === null) {
+            throw ValidationException::withMessages([
+                'event_id' => ['Для подтверждения брони нужен согласованный слот в matching-контексте.'],
+            ]);
+        }
+
+        if (! $this->checkAvailability($bookedResourceId, $startAt, $endAt, $roomId, $event->id)) {
+            throw ValidationException::withMessages([
+                'time' => ['Выбранный слот уже занят. Выберите другой ресурс, комнату или время.'],
+            ]);
+        }
+
+        $event->booked_resource_id = $bookedResourceId;
+        $event->room_id = $roomId;
+        if ($bookingResourceId !== null) {
+            $event->booking_resource_id = $bookingResourceId;
+        }
+        $event->start_at = $startAt;
+        $event->end_at = $endAt;
+        $event->status = 'confirmed';
+        $event->matching_booking_confirmed_at = now();
+        $event->save();
+
+        return $event->load(['bookedResource', 'bookingResource', 'room', 'user']);
+    }
+
+    /**
      * Проверить доступность ресурса/комнаты в указанное время
      *
      * @param int $resourceId ID ресурса

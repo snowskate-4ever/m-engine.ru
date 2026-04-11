@@ -17,8 +17,9 @@ return new class extends Migration
             $table->boolean('is_public')->default(false);
             $table->string('title');
             $table->text('description')->nullable();
-            $table->timestampTz('starts_at');
-            $table->timestampTz('ends_at');
+            // MySQL: two TIMESTAMP NOT NULL columns without defaults → 1067; DATETIME avoids that.
+            $table->dateTimeTz('starts_at');
+            $table->dateTimeTz('ends_at');
             $table->boolean('all_day')->default(false);
             $table->unsignedTinyInteger('reminder_minutes')->nullable();
             $table->string('color', 7)->nullable();

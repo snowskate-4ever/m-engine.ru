@@ -54,6 +54,25 @@
                 </ul>
             </section>
         @endif
+        @if($model->shouldShowPublicBlock('links') && $model->socials->isNotEmpty())
+            <section class="mt-8">
+                <h2 class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('ui.music.blocks.links') }}</h2>
+                <ul class="mt-3 space-y-2 text-sm">
+                    @foreach($model->socials as $social)
+                        <li>
+                            <a
+                                href="{{ $social->link }}"
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                class="font-medium text-zinc-800 underline underline-offset-2 dark:text-zinc-200"
+                            >
+                                {{ $social->name ?: __('ui.social.types.'.($social->type ?: 'other')) }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
         @if($model->shouldShowPublicBlock('performers') && $model->peformers->isNotEmpty())
             <section class="mt-8">
                 <h2 class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('ui.public_profile.musician_performers') }}</h2>

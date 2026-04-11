@@ -3,6 +3,10 @@
     :meta-description="__('ui.music.discover_meta_description')"
     :canonical-url="url()->route('discover')"
 >
+    @php
+        $inviteToken = request()->query('invite');
+        $canShowRegister = is_string($inviteToken) && app(\App\Services\Auth\RegistrationInviteService::class)->isActiveToken($inviteToken);
+    @endphp
     <header class="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <div class="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-3">
             <a
@@ -34,9 +38,9 @@
                     >
                         {{ __('ui.auth.login.button') }}
                     </a>
-                    @if (Route::has('register'))
+                    @if (Route::has('register') && $canShowRegister)
                         <a
-                            href="{{ route('register') }}"
+                            href="{{ route('register', ['invite' => $inviteToken]) }}"
                             class="text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
                         >
                             {{ __('ui.auth.register.button') }}

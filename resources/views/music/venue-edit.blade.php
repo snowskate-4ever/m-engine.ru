@@ -2,6 +2,7 @@
     $titles = [
     'studio' => $recordId ? __('ui.music.studios_edit') : __('ui.music.studios_create'),
     'rehearsal' => $recordId ? __('ui.music.rehearsals_edit') : __('ui.music.rehearsals_create'),
+    'concert_venue' => $recordId ? __('ui.music.concert-venues_edit') : __('ui.music.concert-venues_create'),
     'school' => $recordId ? __('ui.music.schools_edit') : __('ui.music.schools_create'),
     'record_label' => $recordId ? __('ui.music.labels_edit') : __('ui.music.labels_create'),
     'producer_center' => $recordId ? __('ui.music.producer-centers_edit') : __('ui.music.producer-centers_create'),

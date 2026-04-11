@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Music;
 
 use App\Http\Controllers\Controller;
 use App\Models\Musician;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -40,6 +41,7 @@ final class MusicSitemapController extends Controller
         $this->appendPublicProfiles($push, Peformer::class, 'public.performers.show');
         $this->appendPublicProfiles($push, Studio::class, 'public.studios.show');
         $this->appendPublicProfiles($push, Rehersal::class, 'public.rehearsals.show');
+        $this->appendPublicProfiles($push, ConcertVenue::class, 'public.concert-venues.show');
         $this->appendPublicProfiles($push, School::class, 'public.schools.show');
         $this->appendPublicProfiles($push, RecordLabel::class, 'public.labels.show');
         $this->appendPublicProfiles($push, ProducerCenter::class, 'public.producer-centers.show');

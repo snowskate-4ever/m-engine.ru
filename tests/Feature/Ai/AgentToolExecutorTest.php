@@ -7,8 +7,14 @@ namespace Tests\Feature\Ai;
 use App\Enums\AiScheduledItemKind;
 use App\Enums\AiScheduledItemStatus;
 use App\Enums\ConversationType;
+use App\Models\ConcertVenue;
 use App\Models\Conversation;
 use App\Models\ConversationUser;
+use App\Models\Event;
+use App\Models\Peformer;
+use App\Models\Resource;
+use App\Models\Studio;
+use App\Models\Type;
 use App\Models\User;
 use App\Models\UserAiScheduledItem;
 use App\Services\Agent\AgentToolExecutor;
@@ -82,5 +88,220 @@ class AgentToolExecutorTest extends TestCase
         $this->getJson('/api/ai/scheduled-items')
             ->assertOk()
             ->assertJsonPath('data.0.title', 'T');
+    }
+
+    public function test_create_music_search_request_tool_checks_ownership(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['venue_representative'],
+        ]);
+        $other = User::factory()->create();
+        $performer = Peformer::query()->create([
+            'name' => 'Tool Band',
+            'owner_user_id' => $other->id,
+            'performer_kind' => 'band',
+        ]);
+        $ownVenue = ConcertVenue::query()->create([
+            'name' => 'Tool Venue',
+            'owner_user_id' => $user->id,
+        ]);
+        $ownStudio = Studio::query()->create([
+            'name' => 'Tool Studio',
+            'owner_user_id' => $user->id,
+        ]);
+
+        $conv = Conversation::query()->create([
+            'type' => ConversationType::Ai,
+            'title' => 'AI',
+            'retention_days' => null,
+            'created_by_user_id' => $user->id,
+            'ai_server_model_id' => null,
+            'user_ai_connection_id' => null,
+        ]);
+        ConversationUser::query()->create([
+            'conversation_id' => $conv->id,
+            'user_id' => $user->id,
+            'role' => \App\Enums\ConversationRole::Owner,
+        ]);
+
+        $executor = app(AgentToolExecutor::class);
+        $failJson = $executor->execute(
+            $user,
+            $conv,
+            'create_music_search_request',
+            json_encode([
+                'initiator_type' => 'performer',
+                'initiator_id' => $performer->id,
+                'search_goal' => 'find_organizer_for_performer',
+            ], JSON_THROW_ON_ERROR),
+        );
+        $this->assertFalse((bool) (json_decode($failJson, true)['ok'] ?? true));
+
+        $okJson = $executor->execute(
+            $user,
+            $conv,
+            'create_music_search_request',
+            json_encode([
+                'search_goal' => 'find_organizer_for_venue',
+                'actor_context' => [
+                    'type' => ConcertVenue::class,
+                    'id' => $ownVenue->id,
+                ],
+            ], JSON_THROW_ON_ERROR),
+        );
+        $decoded = json_decode($okJson, true);
+        $this->assertTrue($decoded['ok'] ?? false);
+        $this->assertDatabaseHas('search_requests', [
+            'id' => $decoded['search_request_id'] ?? 0,
+            'initiator_type' => ConcertVenue::class,
+            'initiator_id' => $ownVenue->id,
+        ]);
+
+        $studioJson = $executor->execute(
+            $user,
+            $conv,
+            'create_music_search_request',
+            json_encode([
+                'initiator_type' => 'studio',
+                'initiator_id' => $ownStudio->id,
+                'search_goal' => 'find_organizer_for_studio',
+            ], JSON_THROW_ON_ERROR),
+        );
+        $studioDecoded = json_decode($studioJson, true);
+        $this->assertTrue($studioDecoded['ok'] ?? false);
+        $this->assertDatabaseHas('search_requests', [
+            'id' => $studioDecoded['search_request_id'] ?? 0,
+            'initiator_type' => Studio::class,
+            'initiator_id' => $ownStudio->id,
+        ]);
+    }
+
+    public function test_confirm_matching_booking_tool_requires_access_and_confirms_booking(): void
+    {
+        $owner = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+        $other = User::factory()->create();
+
+        $type = Type::query()->create([
+            'name' => 'Tool Resource Type',
+            'resource_type' => 'space',
+            'description' => 'for tests',
+        ]);
+        $resource = Resource::query()->create([
+            'active' => true,
+            'type_id' => $type->id,
+            'start_at' => now()->toDateString(),
+            'end_at' => now()->addMonth()->toDateString(),
+        ]);
+
+        $event = Event::query()->create([
+            'name' => 'matching-event-tool-'.$owner->id,
+            'description' => 'Event from matching context',
+            'active' => true,
+            'status' => 'pending',
+            'music_organizer_user_id' => $owner->id,
+            'matching_proposed_start_at' => now()->addDays(2),
+            'matching_proposed_end_at' => now()->addDays(2)->addHours(2),
+        ]);
+
+        $conv = Conversation::query()->create([
+            'type' => ConversationType::Ai,
+            'title' => 'AI',
+            'retention_days' => null,
+            'created_by_user_id' => $owner->id,
+            'ai_server_model_id' => null,
+            'user_ai_connection_id' => null,
+        ]);
+        ConversationUser::query()->create([
+            'conversation_id' => $conv->id,
+            'user_id' => $owner->id,
+            'role' => \App\Enums\ConversationRole::Owner,
+        ]);
+
+        $executor = app(AgentToolExecutor::class);
+
+        $failJson = $executor->execute(
+            $other,
+            $conv,
+            'confirm_matching_booking',
+            json_encode([
+                'event_id' => $event->id,
+                'booked_resource_id' => $resource->id,
+            ], JSON_THROW_ON_ERROR),
+        );
+        $this->assertFalse((bool) (json_decode($failJson, true)['ok'] ?? true));
+
+        $okJson = $executor->execute(
+            $owner,
+            $conv,
+            'confirm_matching_booking',
+            json_encode([
+                'event_id' => $event->id,
+                'booked_resource_id' => $resource->id,
+            ], JSON_THROW_ON_ERROR),
+        );
+        $decoded = json_decode($okJson, true);
+        $this->assertTrue($decoded['ok'] ?? false);
+        $this->assertDatabaseHas('events', [
+            'id' => $event->id,
+            'booked_resource_id' => $resource->id,
+            'status' => 'confirmed',
+        ]);
+    }
+
+    public function test_list_music_calendar_entries_tool_returns_user_linked_events(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+        $other = User::factory()->create();
+        $linkedEvent = Event::query()->create([
+            'name' => 'Linked event',
+            'description' => 'd',
+            'active' => true,
+            'music_organizer_user_id' => $user->id,
+            'start_at' => now()->addDay(),
+            'end_at' => now()->addDay()->addHour(),
+        ]);
+        Event::query()->create([
+            'name' => 'Other event',
+            'description' => 'd',
+            'active' => true,
+            'music_organizer_user_id' => $other->id,
+            'start_at' => now()->addDay(),
+            'end_at' => now()->addDay()->addHour(),
+        ]);
+
+        $conv = Conversation::query()->create([
+            'type' => ConversationType::Ai,
+            'title' => 'AI',
+            'retention_days' => null,
+            'created_by_user_id' => $user->id,
+            'ai_server_model_id' => null,
+            'user_ai_connection_id' => null,
+        ]);
+        ConversationUser::query()->create([
+            'conversation_id' => $conv->id,
+            'user_id' => $user->id,
+            'role' => \App\Enums\ConversationRole::Owner,
+        ]);
+
+        $executor = app(AgentToolExecutor::class);
+        $json = $executor->execute(
+            $user,
+            $conv,
+            'list_music_calendar_entries',
+            json_encode([
+                'date_from' => now()->toDateString(),
+                'date_to' => now()->addDays(2)->toDateString(),
+                'event_kind' => 'event',
+            ], JSON_THROW_ON_ERROR),
+        );
+
+        $decoded = json_decode($json, true);
+        $this->assertTrue($decoded['ok'] ?? false);
+        $ids = collect($decoded['events'] ?? [])->pluck('id')->all();
+        $this->assertSame([$linkedEvent->id], $ids);
     }
 }

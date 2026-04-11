@@ -3,8 +3,11 @@
 namespace App\Actions\Fortify;
 
 use App\Models\User;
+use App\Services\Auth\RegistrationInviteService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
 class CreateNewUser implements CreatesNewUsers
@@ -18,7 +21,18 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $inviteService = app(RegistrationInviteService::class);
+
         Validator::make($input, [
+            'invite' => [
+                'required',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) use ($inviteService): void {
+                    if (! is_string($value) || ! $inviteService->isActiveToken($value)) {
+                        $fail(__('ui.auth.register.invalid_invite'));
+                    }
+                },
+            ],
             'name' => ['required', 'string', 'max:255'],
             'email' => [
                 'required',
@@ -30,10 +44,21 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return User::create([
-            'name' => $input['name'],
-            'email' => $input['email'],
-            'password' => $input['password'],
-        ]);
+        return DB::transaction(function () use ($input, $inviteService): User {
+            $user = User::create([
+                'name' => $input['name'],
+                'email' => $input['email'],
+                'password' => $input['password'],
+            ]);
+
+            $consumed = $inviteService->consumeToken($input['invite'], $user);
+            if (! $consumed) {
+                throw ValidationException::withMessages([
+                    'invite' => __('ui.auth.register.invalid_invite'),
+                ]);
+            }
+
+            return $user;
+        });
     }
 }

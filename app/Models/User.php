@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\UserMusicProfile;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -35,6 +38,9 @@ class User extends Authenticatable
         'vk_refresh_token',
         'vk_token_expires_at',
         'vk_user_id',
+        'music_profiles',
+        'active_music_actor_type',
+        'active_music_actor_id',
     ];
 
     /**
@@ -68,7 +74,58 @@ class User extends Authenticatable
             'vk_token_expires_at' => 'datetime',
             'vk_user_id' => 'integer',
             'notification_preferences' => 'array',
+            'music_profiles' => 'array',
         ];
+    }
+
+    public function hasMusicProfile(UserMusicProfile|string $profile): bool
+    {
+        $value = $profile instanceof UserMusicProfile ? $profile->value : (string) $profile;
+        $profiles = $this->music_profiles ?? [];
+
+        return in_array($value, $profiles, true);
+    }
+
+    public function canActAsEventOrganizer(): bool
+    {
+        return $this->hasMusicProfile(UserMusicProfile::EventOrganizer);
+    }
+
+    public function canActAsVenueRepresentative(): bool
+    {
+        return $this->hasMusicProfile(UserMusicProfile::VenueRepresentative);
+    }
+
+    public function canActAsManager(): bool
+    {
+        return $this->hasMusicProfile(UserMusicProfile::Manager);
+    }
+
+    public function setActiveMusicActor(?string $type, ?int $id): void
+    {
+        $this->active_music_actor_type = $type;
+        $this->active_music_actor_id = $id;
+        $this->save();
+    }
+
+    public function musicProfileMemberships(): HasMany
+    {
+        return $this->hasMany(MusicProfileMembership::class, 'member_user_id');
+    }
+
+    public function invitedMusicProfileMemberships(): HasMany
+    {
+        return $this->hasMany(MusicProfileMembership::class, 'invited_by_user_id');
+    }
+
+    public function hasAcceptedMusicMembershipFor(Model $entity, string $role): bool
+    {
+        return $this->musicProfileMemberships()
+            ->where('entity_type', $entity::class)
+            ->where('entity_id', $entity->getKey())
+            ->where('role', $role)
+            ->where('status', 'accepted')
+            ->exists();
     }
 
     public function wantsMusicLineupInvitationEmail(): bool
@@ -238,6 +295,64 @@ class User extends Authenticatable
     public function ownedRehearsals(): HasMany
     {
         return $this->hasMany(Rehersal::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<ConcertVenue, User>
+     */
+    public function ownedConcertVenues(): HasMany
+    {
+        return $this->hasMany(ConcertVenue::class, 'owner_user_id');
+    }
+
+    public function organizedMusicEvents(): HasMany
+    {
+        return $this->hasMany(Event::class, 'music_organizer_user_id');
+    }
+
+    public function searchRequests(): HasMany
+    {
+        return $this->hasMany(SearchRequest::class, 'created_by_user_id');
+    }
+
+    public function createdRegistrationInvites(): HasMany
+    {
+        return $this->hasMany(RegistrationInvite::class, 'created_by_user_id');
+    }
+
+    public function usedRegistrationInvites(): HasMany
+    {
+        return $this->hasMany(RegistrationInvite::class, 'used_by_user_id');
+    }
+
+    public function socials(): MorphMany
+    {
+        return $this->morphMany(Social::class, 'socialable');
+    }
+
+    public function organizerPerformerInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerPerformerInvite::class, 'organizer_user_id');
+    }
+
+    public function organizerVenueInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerVenueInvite::class, 'organizer_user_id');
+    }
+
+    public function organizerStudioInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerStudioInvite::class, 'organizer_user_id');
+    }
+
+    public function organizerRehersalInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerRehersalInvite::class, 'organizer_user_id');
+    }
+
+    public function organizerSchoolInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerSchoolInvite::class, 'organizer_user_id');
     }
 
     /**

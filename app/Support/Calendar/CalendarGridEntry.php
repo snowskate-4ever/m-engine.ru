@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Calendar;
 
 use App\Models\CalendarEvent;
+use App\Models\Event;
 use Carbon\CarbonImmutable;
 
 final readonly class CalendarGridEntry
@@ -75,5 +76,49 @@ final readonly class CalendarGridEntry
             kanbanKind: $kind,
             allDay: false,
         );
+    }
+
+    public static function fromDomainEvent(Event $event): self
+    {
+        $title = is_string($event->name) && $event->name !== ''
+            ? $event->name
+            : __('ui.calendar.event_untitled');
+        $status = (string) ($event->status ?? 'pending');
+        $kindLabel = match (true) {
+            $event->isRoomBooking() => __('ui.calendar.kind_room_booking'),
+            $event->isResourceBooking() => __('ui.calendar.kind_resource_booking'),
+            $event->isBooking() => __('ui.calendar.kind_booking'),
+            default => __('ui.calendar.kind_event'),
+        };
+
+        $tooltip = implode("\n", array_filter([
+            $title,
+            __('ui.status').': '.$status,
+            __('ui.calendar.filter_kind_label').': '.$kindLabel,
+            $event->description !== null && $event->description !== '' ? (string) $event->description : null,
+        ]));
+
+        return new self(
+            sortKey: 'evt-'.$event->id.'-'.(int) $event->start_at?->timestamp,
+            startsAtUtc: CarbonImmutable::parse($event->start_at)->utc(),
+            endsAtUtc: CarbonImmutable::parse($event->end_at)->utc(),
+            title: $title,
+            tooltip: $tooltip,
+            isKanban: false,
+            canEditCalendarEvent: false,
+            calendarEventId: $event->id,
+            allDay: false,
+            colorHex: self::eventStatusColor($status),
+        );
+    }
+
+    private static function eventStatusColor(string $status): string
+    {
+        return match ($status) {
+            'confirmed' => '#059669',
+            'cancelled' => '#DC2626',
+            'completed' => '#2563EB',
+            default => '#D97706',
+        };
     }
 }

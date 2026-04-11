@@ -6,6 +6,7 @@ use App\Enums\PerformerMembershipStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Musician;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -35,6 +36,7 @@ class PublicMusicProfileController extends Controller
                     ->wherePivot('show_on_musician_profile', true)
                     ->orderBy('name'),
                 'addresses' => $this->eagerPublicAddresses(),
+                'socials' => $this->eagerPublicSocials(),
             ])
             ->firstOrFail();
 
@@ -45,7 +47,7 @@ class PublicMusicProfileController extends Controller
     {
         $model = Teacher::query()
             ->where('slug', $slug)
-            ->with(['cities', 'addresses' => $this->eagerPublicAddresses()])
+            ->with(['cities', 'addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
             ->firstOrFail();
 
         return $this->renderPublic($model, 'ui.public_profile.type_teacher', 'public.profiles.simple-entity');
@@ -58,6 +60,7 @@ class PublicMusicProfileController extends Controller
             ->with([
                 'musicians' => fn ($q) => $q->wherePivot('status', PerformerMembershipStatus::Accepted->value),
                 'addresses' => $this->eagerPublicAddresses(),
+                'socials' => $this->eagerPublicSocials(),
             ])
             ->firstOrFail();
 
@@ -68,7 +71,7 @@ class PublicMusicProfileController extends Controller
     {
         $model = Studio::query()
             ->where('slug', $slug)
-            ->with(['addresses' => $this->eagerPublicAddresses()])
+            ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
             ->firstOrFail();
 
         return $this->renderPublic($model, 'ui.public_profile.type_studio', 'public.profiles.simple-entity');
@@ -78,17 +81,27 @@ class PublicMusicProfileController extends Controller
     {
         $model = Rehersal::query()
             ->where('slug', $slug)
-            ->with(['addresses' => $this->eagerPublicAddresses()])
+            ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
             ->firstOrFail();
 
         return $this->renderPublic($model, 'ui.public_profile.type_rehearsal', 'public.profiles.simple-entity');
+    }
+
+    public function concertVenue(string $slug): View|Response
+    {
+        $model = ConcertVenue::query()
+            ->where('slug', $slug)
+            ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
+            ->firstOrFail();
+
+        return $this->renderPublic($model, 'ui.public_profile.type_concert_venue', 'public.profiles.simple-entity');
     }
 
     public function school(string $slug): View|Response
     {
         $model = School::query()
             ->where('slug', $slug)
-            ->with(['addresses' => $this->eagerPublicAddresses()])
+            ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
             ->firstOrFail();
 
         return $this->renderPublic($model, 'ui.public_profile.type_school', 'public.profiles.simple-entity');
@@ -98,7 +111,7 @@ class PublicMusicProfileController extends Controller
     {
         $model = RecordLabel::query()
             ->where('slug', $slug)
-            ->with(['addresses' => $this->eagerPublicAddresses()])
+            ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
             ->firstOrFail();
 
         return $this->renderPublic($model, 'ui.public_profile.type_record_label', 'public.profiles.simple-entity');
@@ -108,7 +121,7 @@ class PublicMusicProfileController extends Controller
     {
         $model = ProducerCenter::query()
             ->where('slug', $slug)
-            ->with(['addresses' => $this->eagerPublicAddresses()])
+            ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
             ->firstOrFail();
 
         return $this->renderPublic($model, 'ui.public_profile.type_producer_center', 'public.profiles.simple-entity');
@@ -131,6 +144,7 @@ class PublicMusicProfileController extends Controller
 
         $model->load([
             'addresses' => $this->eagerPublicAddresses(),
+            'socials' => $this->eagerPublicSocials(),
             'items' => fn ($q) => $q
                 ->when(
                     $listingCategoryId > 0,
@@ -182,6 +196,18 @@ class PublicMusicProfileController extends Controller
                 ->where('is_public', true)
                 ->with(['country', 'region', 'city'])
                 ->orderByDesc('is_primary')
+                ->orderBy('id');
+        };
+    }
+
+    /**
+     * @return Closure(Relation): void
+     */
+    private function eagerPublicSocials(): Closure
+    {
+        return function (Relation $relation): void {
+            $relation->where('active', true)
+                ->orderBy('sort_order')
                 ->orderBy('id');
         };
     }

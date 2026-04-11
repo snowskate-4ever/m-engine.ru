@@ -7,6 +7,7 @@ use App\Models\Concerns\HasPublicPageLayouts;
 use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Rehersal extends Model
@@ -55,5 +56,10 @@ class Rehersal extends Model
     public function addresses(): MorphMany
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+    public function organizerInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerRehersalInvite::class);
     }
 }

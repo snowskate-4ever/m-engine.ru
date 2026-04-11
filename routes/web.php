@@ -8,6 +8,7 @@ use App\Http\Controllers\Music\PublicProfileReportController;
 use App\Livewire\Messenger\MessengerNotificationSettings;
 use App\Livewire\Messenger\MessengerWorkspace;
 use App\Livewire\Notifications\NotificationsIndexPage;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -22,11 +23,16 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
-Route::get('/', function () {
-    $menuItems = \App\Services\MenuService::getMenuItems();
+$renderMusicLanding = function () {
+    $service = app(MusicPublicSearchService::class);
 
-    return view('welcome', ['menuItems' => $menuItems]);
-})->name('home');
+    return view('music.landing', [
+        'discoverCategories' => MusicPublicSearchService::scopedDiscoverRouteCategories(),
+        'catalogCounts' => $service->publicCatalogCounts(),
+    ]);
+};
+
+Route::get('/', $renderMusicLanding)->name('home');
 
 Route::get('/robots.txt', function () {
     $base = rtrim((string) config('app.url'), '/');
@@ -61,6 +67,10 @@ Route::prefix('rehearsals')->group(function () {
     Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'rehearsal'])
         ->name('public.rehearsals.show');
 });
+Route::prefix('concert-venues')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'concertVenue'])
+        ->name('public.concert-venues.show');
+});
 Route::prefix('schools')->group(function () {
     Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'school'])
         ->name('public.schools.show');
@@ -87,6 +97,8 @@ Route::get('/discover/{category}', function (string $category) {
 })->name('discover.category');
 
 Route::view('discover', 'music.discover-public')->name('discover');
+
+Route::get('/music/landing', $renderMusicLanding)->name('music.landing');
 
 // VK: страница /admin/vk (токен, тесты), меню общее с /admin/vk-posts
 Route::get('/admin/vk', [App\Http\Controllers\TestController::class, 'openApiIndex'])->name('admin.vk');
@@ -156,6 +168,7 @@ Route::middleware(['auth'])->group(function () {
     Route::view('music/profiles', 'music.profiles')->name('music.profiles');
     Route::get('music/musician', fn () => redirect()->route('music.profiles', ['tab' => 'musician']))->name('music.musician');
     Route::get('music/teacher', fn () => redirect()->route('music.profiles', ['tab' => 'teacher']))->name('music.teacher');
+    Route::view('music/search-requests', 'music.search-requests')->name('music.search-requests.index');
     Route::view('music/discover', 'music.discover')->name('music.discover');
 
     Route::post('music/report-profile', [PublicProfileReportController::class, 'store'])
@@ -185,6 +198,14 @@ Route::middleware(['auth'])->group(function () {
 
         return view('music.venue-edit', ['kind' => 'rehearsal', 'recordId' => $rehersal->id]);
     })->name('music.rehearsals.edit');
+
+    Route::view('music/concert-venues', 'music.venue-index', ['kind' => 'concert_venue'])->name('music.concert-venues.index');
+    Route::view('music/concert-venues/create', 'music.venue-edit', ['kind' => 'concert_venue', 'recordId' => null])->name('music.concert-venues.create');
+    Route::get('music/concert-venues/{concertVenue}/edit', function (ConcertVenue $concertVenue) {
+        Gate::authorize('update', $concertVenue);
+
+        return view('music.venue-edit', ['kind' => 'concert_venue', 'recordId' => $concertVenue->id]);
+    })->name('music.concert-venues.edit');
 
     Route::view('music/schools', 'music.venue-index', ['kind' => 'school'])->name('music.schools.index');
     Route::view('music/schools/create', 'music.venue-edit', ['kind' => 'school', 'recordId' => null])->name('music.schools.create');
@@ -249,6 +270,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('kanban.attachments.download');
 
     Route::get('/settings/profile', [App\Http\Controllers\SettingsController::class, 'profile'])->name('settings.profile.edit');
+    Route::view('/settings/registration-invites', 'music.registration-invites')->name('settings.registration-invites.index');
     Route::get('/settings/password', [App\Http\Controllers\SettingsController::class, 'password'])->name('settings.password.edit');
     Route::get('/settings/appearance', [App\Http\Controllers\SettingsController::class, 'appearance'])->name('settings.appearance.edit');
     Route::get('/settings/two-factor', [App\Http\Controllers\SettingsController::class, 'two_factor'])

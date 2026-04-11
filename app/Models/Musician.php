@@ -111,4 +111,9 @@ class Musician extends Model
     {
         return $this->morphMany(Address::class, 'addressable');
     }
+
+    public function memberships(): MorphMany
+    {
+        return $this->morphMany(MusicProfileMembership::class, 'entity');
+    }
 }

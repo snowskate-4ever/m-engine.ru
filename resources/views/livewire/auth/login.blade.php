@@ -1,4 +1,8 @@
 <x-layouts.auth>
+    @php
+        $inviteToken = request()->query('invite');
+        $canShowRegister = is_string($inviteToken) && app(\App\Services\Auth\RegistrationInviteService::class)->isActiveToken($inviteToken);
+    @endphp
     <div class="flex flex-col gap-6">
         <x-auth-header :title="__('ui.auth.login.title')" :description="__('ui.auth.login.description')" />
 
@@ -49,10 +53,10 @@
             </div>
         </form>
 
-        @if (Route::has('register'))
+        @if (Route::has('register') && $canShowRegister)
             <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
                 <span>{{ __('ui.auth.login.no_account') }}</span>
-                <flux:link :href="route('register')" wire:navigate>{{ __('ui.auth.login.sign_up') }}</flux:link>
+                <flux:link :href="route('register', ['invite' => $inviteToken])" wire:navigate>{{ __('ui.auth.login.sign_up') }}</flux:link>
             </div>
         @endif
     </div>

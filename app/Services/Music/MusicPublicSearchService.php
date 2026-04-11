@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Music;
 
 use App\Models\Musician;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -56,6 +57,7 @@ final class MusicPublicSearchService
             'performer',
             'studio',
             'rehearsal',
+            'concert_venue',
             'school',
             'record_label',
             'producer_center',
@@ -96,6 +98,9 @@ final class MusicPublicSearchService
         }
         if ($category === self::CATEGORY_ALL || $category === 'rehearsal') {
             $rows = $rows->merge($this->searchRehearsals($like, $perType));
+        }
+        if ($category === self::CATEGORY_ALL || $category === 'concert_venue') {
+            $rows = $rows->merge($this->searchConcertVenues($like, $perType));
         }
         if ($category === self::CATEGORY_ALL || $category === 'school') {
             $rows = $rows->merge($this->searchSchools($like, $perType));
@@ -168,6 +173,17 @@ final class MusicPublicSearchService
         $this->applyTextMatch($q, $like, false);
 
         return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'rehearsal', 'public.rehearsals.show');
+    }
+
+    /**
+     * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
+     */
+    private function searchConcertVenues(string $like, int $limit): Collection
+    {
+        $q = $this->concertVenuePublic();
+        $this->applyTextMatch($q, $like, false);
+
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'concert_venue', 'public.concert-venues.show');
     }
 
     /**
@@ -259,6 +275,14 @@ final class MusicPublicSearchService
             ->where('slug', '!=', '');
     }
 
+    private function concertVenuePublic(): Builder
+    {
+        return ConcertVenue::query()
+            ->where('public_page_enabled', true)
+            ->whereNotNull('slug')
+            ->where('slug', '!=', '');
+    }
+
     private function schoolPublic(): Builder
     {
         return School::query()
@@ -294,7 +318,7 @@ final class MusicPublicSearchService
     /**
      * Количество профилей, участвующих в публичном поиске по каталогу (включена публичная страница и slug).
      *
-     * @return array{musician: int, teacher: int, performer: int, studio: int, rehearsal: int, school: int, record_label: int, producer_center: int, shop: int}
+     * @return array{musician: int, teacher: int, performer: int, studio: int, rehearsal: int, concert_venue: int, school: int, record_label: int, producer_center: int, shop: int}
      */
     public function publicCatalogCounts(): array
     {
@@ -307,6 +331,7 @@ final class MusicPublicSearchService
                 'performer' => $this->peformerPublic()->count(),
                 'studio' => $this->studioPublic()->count(),
                 'rehearsal' => $this->rehearsalPublic()->count(),
+                'concert_venue' => $this->concertVenuePublic()->count(),
                 'school' => $this->schoolPublic()->count(),
                 'record_label' => $this->recordLabelPublic()->count(),
                 'producer_center' => $this->producerCenterPublic()->count(),
@@ -341,7 +366,7 @@ final class MusicPublicSearchService
     }
 
     /**
-     * @param  \Illuminate\Database\Eloquent\Collection<int, Teacher|Peformer|Studio|Rehersal|School|RecordLabel|ProducerCenter|Shop>  $items
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Teacher|Peformer|Studio|Rehersal|ConcertVenue|School|RecordLabel|ProducerCenter|Shop>  $items
      * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
      */
     private function mapSimple($items, string $type, string $routeName): Collection

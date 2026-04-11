@@ -39,6 +39,7 @@ use App\MoonShine\Resources\MusicEcosystem\PeformerResource as MusicPeformerReso
 use App\MoonShine\Resources\MusicEcosystem\ProducerCenterResource as MusicProducerCenterResource;
 use App\MoonShine\Resources\MusicEcosystem\PublicProfileReportResource;
 use App\MoonShine\Resources\MusicEcosystem\RecordLabelResource as MusicRecordLabelResource;
+use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
 use App\MoonShine\Resources\MusicEcosystem\RehersalResource;
 use App\MoonShine\Resources\MusicEcosystem\TeacherResource as MusicTeacherResource;
 use App\MoonShine\Resources\Region\RegionResource;
@@ -108,6 +109,7 @@ class MoonShineServiceProvider extends ServiceProvider
                 MusicPeformerResource::class,
                 MusicStudioResource::class,
                 RehersalResource::class,
+                ConcertVenueResource::class,
                 MusicSchoolResource::class,
                 MusicRecordLabelResource::class,
                 MusicProducerCenterResource::class,

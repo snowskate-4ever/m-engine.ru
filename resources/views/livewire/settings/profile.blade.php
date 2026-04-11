@@ -109,6 +109,10 @@ new class extends Component {
             </div>
         </form>
 
+        @if (auth()->check())
+            <livewire:music.social-links-panel owner-kind="user" :owner-id="auth()->id()" :key="'socials-account-'.auth()->id()" />
+        @endif
+
         <livewire:settings.delete-user-form />
     </x-settings.layout>
 </section>

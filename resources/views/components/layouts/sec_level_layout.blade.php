@@ -7,7 +7,7 @@
         @livewire('components.left-sidebar')
         <main
             id="app-second-level-main"
-            class="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain p-4 lg:pr-20"
+            class="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-4 lg:pr-20"
             x-data="messengerFloatPanel()"
             @toggle-messenger-float.window="toggle()"
             @messenger-float-open-chat.window="

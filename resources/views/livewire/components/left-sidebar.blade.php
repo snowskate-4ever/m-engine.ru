@@ -9,7 +9,7 @@
 
     {{-- Sidebar + collapse button (collapse вне aside, чтобы не обрезался overflow) --}}
     <div class="layout-menu-outer">
-        <aside class="layout-menu relative" :class="{ '_is-minimized': minimizedMenu, '_is-opened': sidebarOpen }">
+        <aside class="layout-menu relative h-full min-h-0 overflow-hidden" :class="{ '_is-minimized': minimizedMenu, '_is-opened': sidebarOpen }">
             {{-- Mobile close --}}
             <button type="button" class="lg:hidden absolute top-3 right-3 p-1.5 rounded-md text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700" @click="sidebarOpen = false" aria-label="{{ __('ui.menu.close') }}">
                 <svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -21,7 +21,7 @@
         </a>
 
         {{-- Navigation --}}
-        <nav class="menu flex-1 flex flex-col min-h-0">
+        <nav class="menu flex flex-1 min-h-0 flex-col overflow-hidden">
             <ul class="menu-list flex-1 overflow-y-auto">
                 <li class="menu-item {{ request()->routeIs('dashboard') ? 'is_active' : '' }}">
                     <a href="{{ route('dashboard') }}" class="menu-link" wire:navigate>
@@ -76,6 +76,13 @@
                     </a>
                 </li>
 
+                <li class="menu-item {{ request()->routeIs('music.search-requests.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.search-requests.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_search_requests') }}</span>
+                    </a>
+                </li>
+
                 <li class="menu-item {{ request()->routeIs('music.performers.*') ? 'is_active' : '' }}">
                     <a href="{{ route('music.performers.index') }}" class="menu-link" wire:navigate>
                         <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></span>
@@ -94,6 +101,13 @@
                     <a href="{{ route('music.rehearsals.index') }}" class="menu-link" wire:navigate>
                         <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"/></svg></span>
                         <span class="menu-text">{{ __('ui.music.sidebar_rehearsals') }}</span>
+                    </a>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('music.concert-venues.*') ? 'is_active' : '' }}">
+                    <a href="{{ route('music.concert-venues.index') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></span>
+                        <span class="menu-text">{{ __('ui.music.sidebar_concert_venues') }}</span>
                     </a>
                 </li>
 

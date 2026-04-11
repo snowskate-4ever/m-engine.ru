@@ -8,6 +8,7 @@ use App\Models\Address;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Musician;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -232,7 +233,7 @@ class AddressBookPanel extends Component
      */
     private function allowedKinds(): array
     {
-        return ['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'];
+        return ['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'concert_venue', 'school', 'record_label', 'producer_center', 'shop'];
     }
 
     private function resolveModelClass(): string
@@ -243,6 +244,7 @@ class AddressBookPanel extends Component
             'performer' => Peformer::class,
             'studio' => Studio::class,
             'rehearsal' => Rehersal::class,
+            'concert_venue' => ConcertVenue::class,
             'school' => School::class,
             'record_label' => RecordLabel::class,
             'producer_center' => ProducerCenter::class,
@@ -283,7 +285,7 @@ class AddressBookPanel extends Component
         $this->form_additional_info = '';
         $this->form_name = '';
         $this->form_address_type = match ($this->ownerKind) {
-            'studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop', 'performer' => 'office',
+            'studio', 'rehearsal', 'concert_venue', 'school', 'record_label', 'producer_center', 'shop', 'performer' => 'office',
             default => 'home',
         };
         $this->form_is_primary = $owner->addresses()->count() === 0;

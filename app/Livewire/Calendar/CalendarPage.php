@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Calendar;
 
 use App\Models\CalendarEvent;
+use App\Models\Event;
 use App\Models\KanbanColumn;
 use App\Models\UserKanbanCalendarSetting;
 use App\Services\Kanban\KanbanCalendarEventService;
+use App\Services\Music\MusicCalendarFeedService;
 use App\Support\Calendar\CalendarGridEntry;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -82,6 +84,19 @@ class CalendarPage extends Component
      */
     public array $yearDayModalItems = [];
 
+    public string $eventKind = MusicCalendarFeedService::EVENT_KIND_ALL;
+
+    public string $ownerEntity = 'all_linked';
+
+    public string $filterDateFrom = '';
+
+    public string $filterDateTo = '';
+
+    /**
+     * @var list<array{value:string,label:string}>
+     */
+    public array $ownerOptions = [];
+
     private function appTz(): string
     {
         return (string) config('app.timezone');
@@ -92,6 +107,10 @@ class CalendarPage extends Component
         $this->cursorDate = CarbonImmutable::now($this->appTz())->toDateString();
         $this->formColor = CalendarEvent::DEFAULT_EVENT_COLOR;
         $this->authorize('viewAny', CalendarEvent::class);
+        $user = auth()->user();
+        if ($user !== null) {
+            $this->ownerOptions = app(MusicCalendarFeedService::class)->ownerFilterOptions($user);
+        }
     }
 
     public function previousPeriod(): void
@@ -442,6 +461,13 @@ class CalendarPage extends Component
             'eventColorPresets' => CalendarEvent::COLOR_PRESETS,
             'todayDate' => CarbonImmutable::now($this->appTz())->toDateString(),
             'appTimezone' => $this->appTz(),
+            'eventKindOptions' => [
+                ['value' => MusicCalendarFeedService::EVENT_KIND_ALL, 'label' => __('ui.calendar.kind_all')],
+                ['value' => MusicCalendarFeedService::EVENT_KIND_EVENT, 'label' => __('ui.calendar.kind_event')],
+                ['value' => MusicCalendarFeedService::EVENT_KIND_BOOKING, 'label' => __('ui.calendar.kind_booking')],
+                ['value' => MusicCalendarFeedService::EVENT_KIND_ROOM_BOOKING, 'label' => __('ui.calendar.kind_room_booking')],
+                ['value' => MusicCalendarFeedService::EVENT_KIND_RESOURCE_BOOKING, 'label' => __('ui.calendar.kind_resource_booking')],
+            ],
         ]);
     }
 
@@ -483,16 +509,31 @@ class CalendarPage extends Component
             return app(KanbanCalendarEventService::class)->collect($user, $startUtc, $endUtc);
         }
 
-        return $this->baseQuery()
-            ->where('starts_at', '<=', $endUtc)
-            ->where('ends_at', '>=', $startUtc)
-            ->orderBy('starts_at')
-            ->get()
-            ->map(static function (CalendarEvent $e) use ($user): CalendarGridEntry {
-                $canEdit = (int) $e->user_id === (int) $user->id;
+        $rangeStart = $startUtc;
+        $rangeEnd = $endUtc;
+        if ($this->filterDateFrom !== '') {
+            $fromUtc = CarbonImmutable::parse($this->filterDateFrom, $this->appTz())->startOfDay()->utc();
+            if ($fromUtc->greaterThan($rangeStart)) {
+                $rangeStart = $fromUtc;
+            }
+        }
+        if ($this->filterDateTo !== '') {
+            $toUtc = CarbonImmutable::parse($this->filterDateTo, $this->appTz())->endOfDay()->utc();
+            if ($toUtc->lessThan($rangeEnd)) {
+                $rangeEnd = $toUtc;
+            }
+        }
+        if ($rangeStart->greaterThan($rangeEnd)) {
+            return collect();
+        }
 
-                return CalendarGridEntry::fromCalendarEvent($e, $canEdit);
-            });
+        return app(MusicCalendarFeedService::class)
+            ->eventsForRange($user, $rangeStart, $rangeEnd, [
+                'event_kind' => $this->eventKind,
+                'owner_entity' => $this->ownerEntity,
+                'include_related_entities' => true,
+            ])
+            ->map(static fn (Event $event): CalendarGridEntry => CalendarGridEntry::fromDomainEvent($event));
     }
 
     /**

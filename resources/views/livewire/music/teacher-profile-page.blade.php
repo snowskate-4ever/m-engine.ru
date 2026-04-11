@@ -91,6 +91,7 @@
     </div>
 
     @if ($record)
+        <livewire:music.social-links-panel owner-kind="teacher" :owner-id="$record->id" :key="'socials-teacher-'.$record->id" />
         <livewire:music.address-book-panel owner-kind="teacher" :owner-id="$record->id" :key="'addresses-teacher-'.$record->id" />
     @endif
 </div>

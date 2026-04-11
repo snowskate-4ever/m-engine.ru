@@ -1,8 +1,10 @@
 <div class="mx-auto w-full max-w-3xl space-y-6">
-    <div class="space-y-2">
-        <flux:heading size="lg">{{ __('ui.music.discover_title') }}</flux:heading>
-        <flux:description>{{ __('ui.music.discover_hint') }}</flux:description>
-    </div>
+    @if ($showHeading)
+        <div class="space-y-2">
+            <flux:heading size="lg">{{ __('ui.music.discover_title') }}</flux:heading>
+            <flux:description>{{ __('ui.music.discover_hint') }}</flux:description>
+        </div>
+    @endif
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
         <flux:field class="min-w-0 flex-1">

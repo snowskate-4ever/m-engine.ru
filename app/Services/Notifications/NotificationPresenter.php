@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Notifications;
 
 use App\Notifications\Music\PerformerLineupInvitationNotification;
+use App\Notifications\Music\MatchingLifecycleNotification;
 use Illuminate\Notifications\DatabaseNotification;
 
 final class NotificationPresenter
@@ -45,6 +46,18 @@ final class NotificationPresenter
                     'performer' => (string) ($data['peformer_name'] ?? ''),
                 ]),
                 'action_url' => $profilesUrl.'#music-musician-lineup',
+            ];
+        }
+
+        if ($type === MatchingLifecycleNotification::class) {
+            $payload = is_array($data['payload'] ?? null) ? $data['payload'] : [];
+            $titleKey = is_string($data['title_key'] ?? null) ? $data['title_key'] : 'ui.notifications.generic_title';
+            $bodyKey = is_string($data['body_key'] ?? null) ? $data['body_key'] : 'ui.notifications.generic_body';
+
+            return [
+                'title' => __($titleKey, $payload),
+                'body' => __($bodyKey, $payload),
+                'action_url' => route('events', [], true),
             ];
         }
 

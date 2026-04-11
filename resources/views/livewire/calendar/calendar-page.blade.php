@@ -39,6 +39,49 @@
         </div>
     </div>
 
+    @if ($scopeMode !== 'kanban')
+        <div class="grid gap-3 md:grid-cols-4">
+            <div>
+                <label class="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">{{ __('ui.calendar.filter_kind_label') }}</label>
+                <select
+                    wire:model.live="eventKind"
+                    class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                >
+                    @foreach ($eventKindOptions as $option)
+                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">{{ __('ui.calendar.filter_owner_label') }}</label>
+                <select
+                    wire:model.live="ownerEntity"
+                    class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                >
+                    @foreach ($ownerOptions as $option)
+                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">{{ __('ui.calendar.filter_date_from') }}</label>
+                <input
+                    type="date"
+                    wire:model.live="filterDateFrom"
+                    class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                />
+            </div>
+            <div>
+                <label class="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">{{ __('ui.calendar.filter_date_to') }}</label>
+                <input
+                    type="date"
+                    wire:model.live="filterDateTo"
+                    class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                />
+            </div>
+        </div>
+    @endif
+
     @if ($viewMode === 'month' && $monthGrid)
         <div class="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
             <table class="w-full min-w-[640px] border-collapse text-sm">

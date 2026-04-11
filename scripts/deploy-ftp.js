@@ -2,10 +2,14 @@
  * FTP deploy: uploads project to server (excluding node_modules, vendor, .git, .env, etc.)
  * Reads settings from sync_config.jsonc (first profile or --profile=name).
  * При ошибке "maximum number of clients" автоматически повторяет попытку после паузы.
+ *
  * Run: npm run deploy
+ * Только фронт после локального `npm run build` (Vite → public/build):
+ *   npm run deploy -- public/build
+ *   npm run deploy:assets
  */
 import { Client } from 'basic-ftp';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -90,9 +94,31 @@ function* walk(dir, base = '') {
   }
 }
 
+/** Paths relative to project root; directories are walked recursively (same idea as deploy-ftp-curl.js). */
+function collectFilesFromArg(arg) {
+  const full = join(rootDir, arg);
+  if (!existsSync(full)) {
+    return [];
+  }
+  const rel = arg.replace(/\\/g, '/');
+  const out = [];
+  if (statSync(full).isFile()) {
+    if (!shouldIgnore(rel)) {
+      out.push(rel);
+    }
+
+    return out;
+  }
+  for (const f of walk(rootDir, rel)) {
+    out.push(f);
+  }
+
+  return out;
+}
+
 async function main() {
   const profileName = process.argv.find((a) => a.startsWith('--profile='))?.slice('--profile='.length);
-  const onlyFiles = process.argv.slice(2).filter((a) => !a.startsWith('--') && existsSync(join(rootDir, a)));
+  const onlyArgs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const cfg = loadSyncConfig(profileName);
   if (!cfg || !cfg.host || !cfg.username || !cfg.password) {
     console.error('FTP config not found. Add sync_config.jsonc with host, username, password (and remotePath).');
@@ -126,9 +152,15 @@ async function main() {
       });
       await client.cd(remotePath);
       const deployRoot = await client.pwd();
-      console.log('Uploading to', deployRoot, onlyFiles.length ? '(' + onlyFiles.length + ' files)' : '...');
+      const files = onlyArgs.length
+        ? onlyArgs.flatMap((a) => collectFilesFromArg(a))
+        : [...walk(rootDir)];
+      if (files.length === 0) {
+        console.error('No files to upload. For Vite assets run `npm run build` then e.g. `npm run deploy -- public/build`.');
+        process.exit(1);
+      }
 
-      const files = onlyFiles.length ? onlyFiles : [...walk(rootDir)];
+      console.log('Uploading to', deployRoot, onlyArgs.length ? '(' + files.length + ' files)' : '...');
       let done = 0;
       for (const rel of files) {
         const localPath = join(rootDir, rel);

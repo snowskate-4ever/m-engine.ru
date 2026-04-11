@@ -6,17 +6,38 @@
     $topBarTitle = __('ui.notifications.top_bar_title');
     $accountMenuLabel = __('ui.top_bar.account_menu');
     $settingsLabel = __('Settings');
+    $registrationInvitesLabel = __('ui.auth.registration_invites.menu');
     $messengerNotifLabel = __('ui.top_bar.messenger_notification_settings');
     $logoutLabel = __('ui.auth.logout.log_out');
 @endphp
 <div
     id="app-second-level-top-bar"
-    class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center justify-end border-b border-zinc-200 bg-zinc-50 px-3 dark:border-zinc-700 dark:bg-zinc-900 lg:me-[63px] lg:w-auto"
+    class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center gap-3 border-b border-zinc-200 bg-zinc-50 px-3 dark:border-zinc-700 dark:bg-zinc-900 lg:w-[calc(100%-4rem)]"
     wire:poll.keep-alive.120s="refreshPreview"
     x-data="{ notificationsOpen: false, accountOpen: false }"
     @keydown.escape.window="notificationsOpen = false; accountOpen = false"
 >
-    <div class="flex w-full min-w-0 items-center justify-end gap-2">
+    @if (filled($title))
+        <h1 class="min-w-0 truncate text-lg font-medium text-zinc-800 dark:text-white">
+            {{ $title }}
+        </h1>
+    @endif
+
+    @if (is_array($titleButton) && filled($titleButton['href'] ?? null))
+        <flux:button
+            size="sm"
+            variant="primary"
+            :href="$titleButton['href']"
+            wire:navigate
+            title="{{ $titleButton['title'] ?? '' }}"
+            aria-label="{{ $titleButton['title'] ?? '' }}"
+            class="px-3"
+        >
+            {{ $titleButton['label'] ?? '+' }}
+        </flux:button>
+    @endif
+
+    <div class="ms-auto flex min-w-0 items-center justify-end gap-2">
         {{-- Уведомления (слева от меню аккаунта) --}}
         <div class="relative z-50" @click.outside="notificationsOpen = false">
             <flux:button
@@ -141,6 +162,14 @@
                     @click="accountOpen = false"
                 >
                     {{ $settingsLabel }}
+                </a>
+                <a
+                    href="{{ route('settings.registration-invites.index') }}"
+                    wire:navigate
+                    class="block px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-700/50"
+                    @click="accountOpen = false"
+                >
+                    {{ $registrationInvitesLabel }}
                 </a>
                 <a
                     href="{{ route('messenger.settings.notifications') }}"

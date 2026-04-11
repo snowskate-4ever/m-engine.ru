@@ -198,6 +198,10 @@
         </style>
     </head>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex flex-col min-h-screen p-6 lg:p-8">
+        @php
+            $inviteToken = request()->query('invite');
+            $canShowRegister = is_string($inviteToken) && app(\App\Services\Auth\RegistrationInviteService::class)->isActiveToken($inviteToken);
+        @endphp
         <header class="w-full lg:max-w-4xl max-w-[335px] mx-auto text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
                 <nav class="flex items-center justify-center gap-4">
@@ -216,9 +220,9 @@
                             {{ __('ui.auth.login.button') }}
                         </a>
 
-                        @if (Route::has('register'))
+                        @if (Route::has('register') && $canShowRegister)
                             <a
-                                href="{{ route('register') }}"
+                                href="{{ route('register', ['invite' => $inviteToken]) }}"
                                 class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal">
                                 {{ __('ui.auth.register.home_button') }}
                             </a>

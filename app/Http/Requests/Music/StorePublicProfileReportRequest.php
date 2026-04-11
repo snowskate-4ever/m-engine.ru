@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Music;
 
 use App\Models\Musician;
+use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -29,6 +30,7 @@ class StorePublicProfileReportRequest extends FormRequest
             Peformer::class,
             Studio::class,
             Rehersal::class,
+            ConcertVenue::class,
             School::class,
             RecordLabel::class,
             ProducerCenter::class,

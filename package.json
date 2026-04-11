@@ -6,7 +6,9 @@
         "build": "vite build",
         "dev": "vite",
         "deploy": "node scripts/deploy-ftp.js",
-        "deploy:curl": "node scripts/deploy-ftp-curl.js"
+        "deploy:curl": "node scripts/deploy-ftp-curl.js",
+        "deploy:assets": "npm run build && node scripts/deploy-ftp.js public/build",
+        "deploy:assets:curl": "npm run build && node scripts/deploy-ftp-curl.js public/build"
     },
     "devDependencies": {
         "basic-ftp": "^5.1.0"
@@ -16,6 +18,7 @@
         "autoprefixer": "^10.4.20",
         "axios": "^1.7.4",
         "concurrently": "^9.0.1",
+        "gsap": "^3.14.2",
         "laravel-echo": "^2.3.1",
         "laravel-vite-plugin": "^2.0",
         "pusher-js": "^8.4.3",

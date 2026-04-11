@@ -8,6 +8,7 @@ use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Peformer extends Model
@@ -54,6 +55,7 @@ class Peformer extends Model
                 'status',
                 'show_on_musician_profile',
                 'invited_by_user_id',
+                'search_request_id',
                 'responded_at',
             ])
             ->withTimestamps();
@@ -76,5 +78,22 @@ class Peformer extends Model
     public function addresses(): MorphMany
     {
         return $this->morphMany(Address::class, 'addressable');
+    }
+
+    public function events(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'event_peformer')
+            ->withPivot('added_via_search_request_id')
+            ->withTimestamps();
+    }
+
+    public function organizerInvites(): HasMany
+    {
+        return $this->hasMany(OrganizerPerformerInvite::class);
+    }
+
+    public function memberships(): MorphMany
+    {
+        return $this->morphMany(MusicProfileMembership::class, 'entity');
     }
 }

@@ -16,6 +16,7 @@ class PeformerMusician extends Pivot
         'status',
         'show_on_musician_profile',
         'invited_by_user_id',
+        'search_request_id',
         'responded_at',
     ];
 
@@ -31,5 +32,10 @@ class PeformerMusician extends Pivot
     public function invitedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by_user_id');
+    }
+
+    public function searchRequest(): BelongsTo
+    {
+        return $this->belongsTo(SearchRequest::class);
     }
 }

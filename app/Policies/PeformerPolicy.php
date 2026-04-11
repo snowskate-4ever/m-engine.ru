@@ -40,6 +40,20 @@ class PeformerPolicy
         return $this->manages($user, $peformer);
     }
 
+    public function manageOrganizerMatching(User $user, Peformer $peformer): bool
+    {
+        return $this->canManageSearchRequests($user, $peformer) && $user->canActAsEventOrganizer();
+    }
+
+    public function canManageSearchRequests(User $user, Peformer $peformer): bool
+    {
+        if ($this->manages($user, $peformer)) {
+            return true;
+        }
+
+        return $user->hasAcceptedMusicMembershipFor($peformer, 'manager');
+    }
+
     private function manages(User $user, Peformer $peformer): bool
     {
         if ($peformer->owner_user_id !== null && (int) $peformer->owner_user_id === (int) $user->id) {

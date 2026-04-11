@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Livewire\Music;
 
 use App\Enums\LegalEntityType;
+use App\Enums\SearchRequestStatus;
+use App\Models\ConcertVenue;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
 use App\Models\Shop;
 use App\Models\Studio;
+use App\Models\SearchRequest;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -46,9 +49,16 @@ class VenueEditPage extends Component
     /** @var array<string, bool> */
     public array $layoutBlockEnabled = [];
 
+    /** @var array{open_requests: int, incomplete_events: int, ready_events: int} */
+    public array $matchingProgress = [
+        'open_requests' => 0,
+        'incomplete_events' => 0,
+        'ready_events' => 0,
+    ];
+
     public function mount(string $kind, ?int $recordId = null): void
     {
-        if (! in_array($kind, ['studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'], true)) {
+        if (! in_array($kind, ['studio', 'rehearsal', 'concert_venue', 'school', 'record_label', 'producer_center', 'shop'], true)) {
             abort(404);
         }
         $this->kind = $kind;
@@ -86,6 +96,7 @@ class VenueEditPage extends Component
                 }
             }
         }
+        $this->matchingProgress = $this->resolveMatchingProgress();
     }
 
     public function save(): void
@@ -181,9 +192,11 @@ class VenueEditPage extends Component
         return view('livewire.music.venue-edit-page', [
             'kind' => $this->kind,
             'blockCatalog' => $this->venueBlockCatalog(),
+            'matchingProgress' => $this->resolveMatchingProgress(),
             'routePrefix' => match ($this->kind) {
                 'studio' => 'studios',
                 'rehearsal' => 'rehearsals',
+                'concert_venue' => 'concert-venues',
                 'school' => 'schools',
                 'record_label' => 'labels',
                 'producer_center' => 'producer-centers',
@@ -192,6 +205,7 @@ class VenueEditPage extends Component
             'publicUrlPrefix' => match ($this->kind) {
                 'studio' => 'studios',
                 'rehearsal' => 'rehearsals',
+                'concert_venue' => 'concert-venues',
                 'school' => 'schools',
                 'record_label' => 'labels',
                 'producer_center' => 'producer-centers',
@@ -206,6 +220,7 @@ class VenueEditPage extends Component
         return match ($this->kind) {
             'studio' => Studio::class,
             'rehearsal' => Rehersal::class,
+            'concert_venue' => ConcertVenue::class,
             'school' => School::class,
             'record_label' => RecordLabel::class,
             'producer_center' => ProducerCenter::class,
@@ -218,6 +233,7 @@ class VenueEditPage extends Component
         return match ($this->kind) {
             'studio' => 'studios',
             'rehearsal' => 'rehearsals',
+            'concert_venue' => 'concert_venues',
             'school' => 'schools',
             'record_label' => 'record_labels',
             'producer_center' => 'producer_centers',
@@ -240,6 +256,7 @@ class VenueEditPage extends Component
         return match ($this->kind) {
             'studio' => route('music.studios.edit', $model),
             'rehearsal' => route('music.rehearsals.edit', $model),
+            'concert_venue' => route('music.concert-venues.edit', $model),
             'school' => route('music.schools.edit', $model),
             'record_label' => route('music.labels.edit', $model),
             'producer_center' => route('music.producer-centers.edit', $model),
@@ -274,5 +291,62 @@ class VenueEditPage extends Component
         }
 
         return $out;
+    }
+
+    /**
+     * @return array{open_requests: int, incomplete_events: int, ready_events: int}
+     */
+    private function resolveMatchingProgress(): array
+    {
+        if (! $this->record instanceof Model) {
+            return [
+                'open_requests' => 0,
+                'incomplete_events' => 0,
+                'ready_events' => 0,
+            ];
+        }
+
+        $matchingClass = match ($this->kind) {
+            'concert_venue' => ConcertVenue::class,
+            'studio' => Studio::class,
+            'rehearsal' => Rehersal::class,
+            'school' => School::class,
+            default => null,
+        };
+
+        if ($matchingClass === null) {
+            return [
+                'open_requests' => 0,
+                'incomplete_events' => 0,
+                'ready_events' => 0,
+            ];
+        }
+
+        $openRequests = SearchRequest::query()
+            ->where('initiator_type', $matchingClass)
+            ->where('initiator_id', $this->record->id)
+            ->whereIn('status', [SearchRequestStatus::Open->value, SearchRequestStatus::AwaitingApproval->value])
+            ->count();
+
+        $eventsQuery = \App\Models\Event::query();
+        if ($matchingClass === ConcertVenue::class) {
+            $eventsQuery->where(function ($query) use ($matchingClass): void {
+                $query->where('concert_venue_id', $this->record->id)
+                    ->orWhere(function ($nested) use ($matchingClass): void {
+                        $nested->where('matching_space_type', $matchingClass)
+                            ->where('matching_space_id', $this->record->id);
+                    });
+            });
+        } else {
+            $eventsQuery
+                ->where('matching_space_type', $matchingClass)
+                ->where('matching_space_id', $this->record->id);
+        }
+
+        return [
+            'open_requests' => $openRequests,
+            'incomplete_events' => (clone $eventsQuery)->where('assembly_status', 'incomplete')->count(),
+            'ready_events' => (clone $eventsQuery)->where('assembly_status', 'ready')->count(),
+        ];
     }
 }

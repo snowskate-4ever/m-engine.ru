@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\MoonShine\Resources\MusicEcosystem;
 
 use App\Enums\PublicProfileReportStatus;
+use App\Models\ConcertVenue;
 use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
@@ -118,6 +119,7 @@ final class PublicProfileReportResource extends ModelResource
                         Peformer::class => 'Исполнитель',
                         Studio::class => 'Студия',
                         Rehersal::class => 'Репточка',
+                        ConcertVenue::class => 'Концертная площадка',
                         School::class => 'Школа',
                         RecordLabel::class => 'Лейбл',
                         ProducerCenter::class => 'Продюсерский центр',

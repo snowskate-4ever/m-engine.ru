@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Music;
 
 use App\Enums\PerformerKind;
+use App\Enums\SearchRequestStatus;
 use App\Models\Peformer;
+use App\Models\SearchRequest;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +33,13 @@ class PerformerEditPage extends Component
 
     /** @var array<string, bool> */
     public array $layoutBlockEnabled = [];
+
+    /** @var array{open_requests: int, incomplete_events: int, ready_events: int} */
+    public array $matchingProgress = [
+        'open_requests' => 0,
+        'incomplete_events' => 0,
+        'ready_events' => 0,
+    ];
 
     public function mount(?int $recordId = null): void
     {
@@ -67,6 +76,8 @@ class PerformerEditPage extends Component
                 }
             }
         }
+
+        $this->matchingProgress = $this->resolveMatchingProgress();
     }
 
     public function save(): void
@@ -174,6 +185,41 @@ class PerformerEditPage extends Component
         return view('livewire.music.performer-edit-page', [
             'blockCatalog' => PublicProfileBlocks::performerCatalog(),
             'performerKinds' => PerformerKind::cases(),
+            'matchingProgress' => $this->resolveMatchingProgress(),
         ]);
+    }
+
+    /**
+     * @return array{open_requests: int, incomplete_events: int, ready_events: int}
+     */
+    private function resolveMatchingProgress(): array
+    {
+        if ($this->record === null) {
+            return [
+                'open_requests' => 0,
+                'incomplete_events' => 0,
+                'ready_events' => 0,
+            ];
+        }
+
+        $openRequests = SearchRequest::query()
+            ->where('initiator_type', Peformer::class)
+            ->where('initiator_id', $this->record->id)
+            ->whereIn('status', [SearchRequestStatus::Open->value, SearchRequestStatus::AwaitingApproval->value])
+            ->count();
+
+        $incompleteEvents = $this->record->events()
+            ->where('assembly_status', 'incomplete')
+            ->count();
+
+        $readyEvents = $this->record->events()
+            ->where('assembly_status', 'ready')
+            ->count();
+
+        return [
+            'open_requests' => $openRequests,
+            'incomplete_events' => $incompleteEvents,
+            'ready_events' => $readyEvents,
+        ];
     }
 }

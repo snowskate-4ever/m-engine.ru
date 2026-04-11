@@ -70,6 +70,74 @@ final class AgentToolRegistry
                     ],
                 ],
             ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'list_music_calendar_entries',
+                    'description' => 'List music events and bookings from the calendar with filters by date range, entry kind, and owner entity.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'date_from' => ['type' => 'string', 'description' => 'Date in YYYY-MM-DD format'],
+                            'date_to' => ['type' => 'string', 'description' => 'Date in YYYY-MM-DD format'],
+                            'event_kind' => ['type' => 'string', 'description' => 'all, event, booking, room_booking, resource_booking'],
+                            'owner_entity_type' => ['type' => 'string', 'description' => 'Owner type alias or model class'],
+                            'owner_entity_id' => ['type' => 'integer'],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'create_music_search_request',
+                    'description' => 'Create a music matching search request for an owned performer or space profile (concert venue, studio, rehearsal, school).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'initiator_type' => [
+                                'type' => 'string',
+                                'description' => 'Allowed values: performer, concert_venue, studio, rehearsal, school',
+                            ],
+                            'initiator_id' => ['type' => 'integer'],
+                            'search_goal' => [
+                                'type' => 'string',
+                                'description' => 'Matching goal code, e.g. find_organizer_for_performer',
+                            ],
+                            'actor_context' => [
+                                'type' => 'object',
+                                'description' => 'Optional actor context override. If omitted, current active actor is used.',
+                                'properties' => [
+                                    'type' => ['type' => 'string', 'description' => 'Model FQCN like App\\\\Models\\\\Peformer'],
+                                    'id' => ['type' => 'integer'],
+                                ],
+                            ],
+                            'criteria' => [
+                                'type' => 'object',
+                                'description' => 'Optional filters for candidate selection',
+                            ],
+                        ],
+                        'required' => ['initiator_type', 'initiator_id', 'search_goal'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'confirm_matching_booking',
+                    'description' => 'Confirm booking for an existing event using its matching slot context and selected resource/room.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'event_id' => ['type' => 'integer'],
+                            'booked_resource_id' => ['type' => 'integer'],
+                            'room_id' => ['type' => 'integer'],
+                            'booking_resource_id' => ['type' => 'integer'],
+                        ],
+                        'required' => ['event_id', 'booked_resource_id'],
+                    ],
+                ],
+            ],
         ];
     }
 }
