@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+
+[x-cloak] {
+    display: none !important;
+}
 /* @import '../../vendor/livewire/flux/dist/flux.css'; */
 
 @source '../views';
@@ -103,6 +107,12 @@ select:focus[data-flux-control] {
   position: relative;
   z-index: 30;
 }
+@media (min-width: 1024px) {
+  /* На десктопе меню и main в ряд; иначе z-30 сайдбара загоняет весь main (выпадашки, popover) под левую колонку. */
+  .sidebar-wrapper {
+    z-index: auto;
+  }
+}
 .dark .sidebar-wrapper {
   --ms-menu-item-hover-bg: rgb(255 255 255 / 0.08);
   --ms-menu-item-active-bg: rgb(255 255 255 / 0.12);
@@ -117,8 +127,10 @@ select:focus[data-flux-control] {
   width: var(--ms-menu-width);
   min-width: var(--ms-menu-width);
   padding: 1rem;
-  height: 100vh;
-  overflow-y: auto;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
   overflow-x: hidden;
   border-right: 1px solid var(--color-zinc-200);
   background: var(--color-zinc-50);
@@ -134,6 +146,10 @@ select:focus[data-flux-control] {
     inset: 0;
     left: 0;
     z-index: 50;
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    overflow-y: auto;
     transform: translateX(-100%);
     box-shadow: 4px 0 24px rgb(0 0 0 / 0.15);
   }
@@ -163,6 +179,13 @@ select:focus[data-flux-control] {
 .layout-menu._is-minimized .menu-icon {
   margin: 0;
 }
+.layout-menu._is-minimized .menu-brand-text {
+  display: none;
+}
+.layout-menu._is-minimized .menu-brand {
+  justify-content: center;
+  gap: 0;
+}
 
 .layout-menu .menu {
   flex: 1;
@@ -178,6 +201,7 @@ select:focus[data-flux-control] {
   list-style: none;
   padding: 0;
   margin: 0;
+  min-height: 0;
 }
 .layout-menu .menu-item {
   position: relative;
@@ -294,9 +318,11 @@ select:focus[data-flux-control] {
 /* Обёртка сайдбара: кнопка collapse вне aside, чтобы не обрезалась overflow-x */
 .layout-menu-outer {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
+  min-height: 0;
 }
 .layout-collapse {
   position: absolute;

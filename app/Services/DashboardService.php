@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Classes\StatClass;
 use App\Models\Event;
-use App\Models\Resource;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,16 +16,9 @@ class DashboardService
     {
         return view('dashboard', [
             'data' => [
-                'stat_cards' => [
-                    'events' => StatClass::get_stats(Auth::user(), 'Event'),
-                    'resources' => StatClass::get_stats(Auth::user(), 'Resource'),
-                    'events1' => StatClass::get_stats(Auth::user(), 'Event'),
-                    'resources2' => StatClass::get_stats(Auth::user(), 'Resource'),
-                    'events3' => StatClass::get_stats(Auth::user(), 'Event'),
-                    'resources4' => StatClass::get_stats(Auth::user(), 'Resource'),
-                ]
+                'stat_cards' => StatClass::dashboardStatCards(Auth::user()),
             ],
-            'buttons' => []
+            'buttons' => [],
         ]);
     }
 
@@ -59,7 +51,7 @@ class DashboardService
 
         $data = $validator->validated();
 
-        $event = new Event();
+        $event = new Event;
         $event->name = $data['name'];
         $event->description = $data['description'];
         $event->active = $data['active'] ?? true;
@@ -191,4 +183,3 @@ class DashboardService
         ];
     }
 }
-

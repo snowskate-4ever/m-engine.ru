@@ -73,9 +73,9 @@ class MessengerMessageAttachmentResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

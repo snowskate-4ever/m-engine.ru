@@ -104,12 +104,16 @@ class MessengerController extends Controller
             ], 422);
         }
 
+        $beforeId = isset($validated['before_id']) ? (int) $validated['before_id'] : null;
+        $afterId = isset($validated['after_id']) ? (int) $validated['after_id'] : null;
+        $perPage = (int) ($validated['per_page'] ?? 50);
+
         $payload = $this->messenger->listMessages(
             $user,
             $conversation,
-            $validated['before_id'] ?? null,
-            $validated['after_id'] ?? null,
-            $validated['per_page'] ?? 50,
+            $beforeId,
+            $afterId,
+            $perPage,
         );
 
         return response()->json($payload);

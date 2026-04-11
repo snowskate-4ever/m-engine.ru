@@ -28,8 +28,11 @@ function loadSyncConfig(profileName = null) {
   return data[key];
 }
 
+// vendor/ is not uploaded — server: composer install --no-dev --optimize-autoloader (same PHP as web; see .env.example).
 const IGNORE_DIRS = new Set([
   'node_modules', 'vendor', '.git', '.github', '.cursor', '.idea', '.vscode', '.fleet', '.nova', '.zed',
+  // Same as deploy-ftp.js: do not upload dev bootstrap cache.
+  'bootstrap/cache',
   'storage/logs', 'storage/framework/cache', 'storage/framework/sessions', 'storage/framework/views', 'storage/framework/testing',
 ]);
 const IGNORE_FILES = new Set(['.env', '.env.backup', '.env.production', '.phpunit.cache', '.phpunit.result.cache']);

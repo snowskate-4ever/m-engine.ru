@@ -8,7 +8,8 @@ use App\Enums\UserAiSubscriptionStatus;
 use App\Models\AiSubscriptionTier;
 use App\Models\User;
 use App\Models\UserAiSubscription;
-use Illuminate\Database\Eloquent\Builder;
+use App\MoonShine\Resources\User\UserResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 use MoonShine\Contracts\Core\PageContract;
@@ -46,9 +47,9 @@ final class UserAiSubscriptionResource extends ModelResource
     {
         return [
             ID::make(),
-            BelongsTo::make(__('moonshine.ai.user'), 'user', formatted: static fn (User $u) => $u->name.' #'.$u->id)
+            BelongsTo::make(__('moonshine.ai.user'), 'user', formatted: static fn (User $u) => $u->name.' #'.$u->id, resource: UserResource::class)
                 ->searchable(),
-            BelongsTo::make(__('moonshine.ai.subscription_tier'), 'tier', formatted: static fn (AiSubscriptionTier $t) => $t->name)
+            BelongsTo::make(__('moonshine.ai.subscription_tier'), 'tier', formatted: static fn (AiSubscriptionTier $t) => $t->name, resource: AiSubscriptionTierResource::class)
                 ->searchable(),
             Enum::make(__('moonshine.ai.subscription_status'), 'status')->attach(UserAiSubscriptionStatus::class),
             Date::make(__('moonshine.ai.period_end'), 'current_period_end')->withTime(),
@@ -64,10 +65,10 @@ final class UserAiSubscriptionResource extends ModelResource
         return [
             Box::make(__('moonshine.ai.user_subscription_box'), [
                 ID::make()->disabled(),
-                BelongsTo::make(__('moonshine.ai.user'), 'user', formatted: static fn (User $u) => $u->name.' #'.$u->id)
+                BelongsTo::make(__('moonshine.ai.user'), 'user', formatted: static fn (User $u) => $u->name.' #'.$u->id, resource: UserResource::class)
                     ->searchable()
                     ->required(),
-                BelongsTo::make(__('moonshine.ai.subscription_tier'), 'tier', formatted: static fn (AiSubscriptionTier $t) => $t->name)
+                BelongsTo::make(__('moonshine.ai.subscription_tier'), 'tier', formatted: static fn (AiSubscriptionTier $t) => $t->name, resource: AiSubscriptionTierResource::class)
                     ->searchable()
                     ->required(),
                 Enum::make(__('moonshine.ai.subscription_status'), 'status')
@@ -96,9 +97,9 @@ final class UserAiSubscriptionResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

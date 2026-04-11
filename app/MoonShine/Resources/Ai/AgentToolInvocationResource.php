@@ -6,7 +6,8 @@ namespace App\MoonShine\Resources\Ai;
 
 use App\Models\AgentToolInvocation;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\MoonShine\Resources\User\UserResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
@@ -47,6 +48,7 @@ final class AgentToolInvocationResource extends ModelResource
                 __('moonshine.ai.user'),
                 'user',
                 formatted: static fn (User $u) => $u->email ?? (string) $u->getKey(),
+                resource: UserResource::class,
             )->searchable(),
             Text::make(__('moonshine.ai.tool_name'), 'tool_name'),
             Text::make(__('moonshine.ai.arguments_hash'), 'arguments_hash'),
@@ -75,6 +77,7 @@ final class AgentToolInvocationResource extends ModelResource
                     __('moonshine.ai.user'),
                     'user',
                     formatted: static fn (User $u) => $u->email ?? (string) $u->getKey(),
+                    resource: UserResource::class,
                 ),
                 Text::make(__('moonshine.ai.conversation_id'), 'conversation_id')->nullable(),
                 Text::make(__('moonshine.ai.tool_name'), 'tool_name'),
@@ -91,9 +94,9 @@ final class AgentToolInvocationResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

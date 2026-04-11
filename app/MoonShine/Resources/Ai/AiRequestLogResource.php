@@ -9,7 +9,8 @@ use App\Enums\AiRequestStatus;
 use App\Models\AiRequestLog;
 use App\Models\User;
 use App\MoonShine\Resources\Ai\Pages\AiRequestLogIndexPage;
-use Illuminate\Database\Eloquent\Builder;
+use App\MoonShine\Resources\User\UserResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
@@ -52,6 +53,7 @@ final class AiRequestLogResource extends ModelResource
                 __('moonshine.ai.user'),
                 'user',
                 formatted: static fn (User $model) => $model->email ?? (string) $model->getKey(),
+                resource: UserResource::class,
             )->searchable(),
             Text::make(__('moonshine.ai.conversation_id'), 'conversation_id')->nullable(),
             Enum::make(__('moonshine.ai.source'), 'source')->attach(AiRequestSource::class),
@@ -83,6 +85,7 @@ final class AiRequestLogResource extends ModelResource
                     __('moonshine.ai.user'),
                     'user',
                     formatted: static fn (User $model) => $model->email ?? (string) $model->getKey(),
+                    resource: UserResource::class,
                 ),
                 Text::make(__('moonshine.ai.conversation_id'), 'conversation_id')->nullable(),
                 Enum::make(__('moonshine.ai.source'), 'source')->attach(AiRequestSource::class),
@@ -110,8 +113,8 @@ final class AiRequestLogResource extends ModelResource
     {
         return [
             AiRequestLogIndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

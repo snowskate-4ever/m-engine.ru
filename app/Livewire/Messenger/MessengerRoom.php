@@ -18,9 +18,14 @@ class MessengerRoom extends Component
 {
     use WithFileUploads;
 
+    public bool $embedded = false;
+
     public Conversation $conversation;
 
     public string $headerTitle = '';
+
+    /** @var array<string, mixed> Данные для шапки (как контекст сессии во внешнем чате CRM). */
+    public array $headerMeta = [];
 
     public array $items = [];
 
@@ -55,13 +60,29 @@ class MessengerRoom extends Component
 
     public ?int $editingSkillId = null;
 
-    public function mount(Conversation $conversation, MessengerService $messenger): void
-    {
+    public function mount(
+        MessengerService $messenger,
+        ?Conversation $conversation = null,
+        ?int $conversationId = null,
+        bool $embedded = false,
+    ): void {
+        // Явный id с родителя (workspace) важнее implicit route binding: иначе на страницах вроде
+        // /resources/... Livewire может подставить Conversation из чужого контекста маршрута и
+        // Gate::authorize('view', …) вернёт 403 после создания чата.
+        if ($conversationId !== null) {
+            $conversation = Conversation::query()->findOrFail($conversationId);
+        } elseif ($conversation === null) {
+            abort(404);
+        }
+
+        $this->embedded = $embedded;
+
         Gate::authorize('view', $conversation);
         $this->conversation = $conversation;
         $this->isAiChat = $conversation->type === ConversationType::Ai;
 
         $detail = $messenger->conversationToDetailArray($conversation, Auth::user());
+        $this->headerMeta = $detail;
         $this->headerTitle = $detail['title'] ?? '';
         if ($this->headerTitle === '' || $this->headerTitle === null) {
             $peer = $detail['direct_peer'] ?? null;
@@ -272,6 +293,7 @@ class MessengerRoom extends Component
 
         $this->syncAiReplyWaitState();
         $this->updatePollIntervalForAiWait();
+        $this->scrollEmbeddedToBottom();
     }
 
     public function loadOlderMessages(MessengerService $messenger): void
@@ -286,6 +308,7 @@ class MessengerRoom extends Component
 
         $this->syncAiReplyWaitState();
         $this->updatePollIntervalForAiWait();
+        $this->scrollEmbeddedToBottom();
     }
 
     public function send(MessengerService $messenger): void
@@ -364,6 +387,14 @@ class MessengerRoom extends Component
         };
     }
 
+    private function scrollEmbeddedToBottom(): void
+    {
+        if (! $this->embedded) {
+            return;
+        }
+        $this->js('window.dispatchEvent(new CustomEvent("messages-updated"))');
+    }
+
     public function toggleMute(MessengerService $messenger): void
     {
         $next = ! $this->muted;
@@ -375,9 +406,14 @@ class MessengerRoom extends Component
 
     public function render()
     {
-        return view('livewire.messenger.messenger-room')
-            ->layout('components.layouts.second_level_layout', [
-                'title' => $this->headerTitle,
-            ]);
+        $view = view('livewire.messenger.messenger-room');
+
+        if ($this->embedded) {
+            return $view;
+        }
+
+        return $view->layout('components.layouts.second_level_layout', [
+            'title' => $this->headerTitle,
+        ]);
     }
 }

@@ -12,14 +12,23 @@ class MessengerNotificationSettings extends Component
 {
     public bool $pushEnabled = true;
 
+    public bool $musicLineupEmail = true;
+
     public function mount(MessengerService $messenger): void
     {
-        $this->pushEnabled = $messenger->preferencesToArray(Auth::user())['push_enabled'];
+        $user = Auth::user();
+        $this->pushEnabled = $messenger->preferencesToArray($user)['push_enabled'];
+        $this->musicLineupEmail = $user->wantsMusicLineupInvitationEmail();
     }
 
     public function updatedPushEnabled(mixed $value): void
     {
         app(MessengerService::class)->updatePreferences(Auth::user(), (bool) $value);
+    }
+
+    public function updatedMusicLineupEmail(mixed $value): void
+    {
+        Auth::user()->setMusicLineupInvitationEmail((bool) $value);
     }
 
     public function render()

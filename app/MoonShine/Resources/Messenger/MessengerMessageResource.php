@@ -8,7 +8,8 @@ use App\Enums\MessageKind;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\MoonShine\Resources\User\UserResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
@@ -52,12 +53,14 @@ class MessengerMessageResource extends ModelResource
                 'conversation',
                 formatted: static fn (Conversation $model) => '#'.$model->id
                     .($model->title !== null && $model->title !== '' ? ' — '.$model->title : ''),
+                resource: MessengerConversationResource::class,
             )
                 ->searchable(),
             BelongsTo::make(
                 __('moonshine.messenger.author'),
                 'user',
                 formatted: static fn (User $model) => $model->name,
+                resource: UserResource::class,
             )
                 ->searchable(),
             Enum::make(__('moonshine.messenger.message_kind'), 'kind')
@@ -90,11 +93,13 @@ class MessengerMessageResource extends ModelResource
                     'conversation',
                     formatted: static fn (Conversation $model) => '#'.$model->id
                         .($model->title !== null && $model->title !== '' ? ' — '.$model->title : ''),
+                    resource: MessengerConversationResource::class,
                 ),
                 BelongsTo::make(
                     __('moonshine.messenger.author'),
                     'user',
                     formatted: static fn (User $model) => $model->name,
+                    resource: UserResource::class,
                 ),
                 Enum::make(__('moonshine.messenger.message_kind'), 'kind')
                     ->attach(MessageKind::class),
@@ -105,6 +110,7 @@ class MessengerMessageResource extends ModelResource
                     __('moonshine.messenger.forwarded_from'),
                     'forwardedFrom',
                     formatted: static fn (?Message $model) => $model ? (string) $model->getKey() : '—',
+                    resource: MessengerMessageResource::class,
                 )
                     ->nullable(),
                 Json::make(__('moonshine.messenger.forward_snapshot'), 'forward_snapshot')
@@ -128,9 +134,9 @@ class MessengerMessageResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

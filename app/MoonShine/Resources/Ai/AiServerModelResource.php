@@ -6,7 +6,7 @@ namespace App\MoonShine\Resources\Ai;
 
 use App\Models\AiProvider;
 use App\Models\AiServerModel;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 use MoonShine\Contracts\Core\PageContract;
@@ -47,6 +47,7 @@ final class AiServerModelResource extends ModelResource
                 __('moonshine.ai.provider'),
                 'provider',
                 formatted: static fn (AiProvider $p) => $p->name,
+                resource: AiProviderResource::class,
             )->searchable(),
             Text::make(__('moonshine.ai.vendor_model_id'), 'vendor_model_id'),
             Text::make(__('moonshine.ai.display_name'), 'display_name'),
@@ -67,6 +68,7 @@ final class AiServerModelResource extends ModelResource
                     __('moonshine.ai.provider'),
                     'provider',
                     formatted: static fn (AiProvider $p) => $p->name,
+                    resource: AiProviderResource::class,
                 )
                     ->searchable()
                     ->required(),
@@ -107,9 +109,9 @@ final class AiServerModelResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

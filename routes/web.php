@@ -1,9 +1,24 @@
 <?php
 
-use App\Livewire\Messenger\MessengerIndex;
+use App\Http\Controllers\KanbanCardAttachmentController;
+use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\KanbanLogsController;
+use App\Http\Controllers\Music\MusicSitemapController;
+use App\Http\Controllers\Music\PublicProfileReportController;
 use App\Livewire\Messenger\MessengerNotificationSettings;
-use App\Livewire\Messenger\MessengerRoom;
+use App\Livewire\Messenger\MessengerWorkspace;
+use App\Livewire\Notifications\NotificationsIndexPage;
+use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
+use App\Models\Rehersal;
+use App\Models\School;
+use App\Models\Shop;
+use App\Models\Studio;
+use App\Services\Music\MusicPublicSearchService;
+use App\Services\Music\ShopInventorySpreadsheetImporter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -12,6 +27,66 @@ Route::get('/', function () {
 
     return view('welcome', ['menuItems' => $menuItems]);
 })->name('home');
+
+Route::get('/robots.txt', function () {
+    $base = rtrim((string) config('app.url'), '/');
+    $sitemap = $base.'/sitemap-music.xml';
+
+    return response(
+        "User-agent: *\nDisallow:\n\nSitemap: {$sitemap}\n",
+        200,
+        ['Content-Type' => 'text/plain; charset=UTF-8'],
+    );
+})->name('robots');
+
+Route::get('/sitemap-music.xml', MusicSitemapController::class)->name('sitemap.music');
+
+Route::prefix('musicians')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'musician'])
+        ->name('public.musicians.show');
+});
+Route::prefix('teachers')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'teacher'])
+        ->name('public.teachers.show');
+});
+Route::prefix('performers')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'performer'])
+        ->name('public.performers.show');
+});
+Route::prefix('studios')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'studio'])
+        ->name('public.studios.show');
+});
+Route::prefix('rehearsals')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'rehearsal'])
+        ->name('public.rehearsals.show');
+});
+Route::prefix('schools')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'school'])
+        ->name('public.schools.show');
+});
+Route::prefix('labels')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'recordLabel'])
+        ->name('public.labels.show');
+});
+Route::prefix('producer-centers')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'producerCenter'])
+        ->name('public.producer-centers.show');
+});
+Route::prefix('shops')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'shop'])
+        ->name('public.shops.show');
+});
+
+Route::get('/discover/{category}', function (string $category) {
+    if (! in_array($category, MusicPublicSearchService::scopedDiscoverRouteCategories(), true)) {
+        abort(404);
+    }
+
+    return view('music.discover-public-scoped', ['discoverCategory' => $category]);
+})->name('discover.category');
+
+Route::view('discover', 'music.discover-public')->name('discover');
 
 // VK: страница /admin/vk (токен, тесты), меню общее с /admin/vk-posts
 Route::get('/admin/vk', [App\Http\Controllers\TestController::class, 'openApiIndex'])->name('admin.vk');
@@ -69,10 +144,109 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::prefix('messenger')->group(function () {
-        Route::get('/', MessengerIndex::class)->name('messenger.index');
+        Route::get('/', MessengerWorkspace::class)->name('messenger.index');
         Route::get('/settings/notifications', MessengerNotificationSettings::class)->name('messenger.settings.notifications');
-        Route::get('/{conversation}', MessengerRoom::class)->name('messenger.show');
+        Route::get('/{conversation}', MessengerWorkspace::class)->name('messenger.show');
     });
+
+    Route::get('/notifications', NotificationsIndexPage::class)->name('notifications.index');
+
+    Route::view('calendar', 'calendar')->name('calendar');
+
+    Route::view('music/profiles', 'music.profiles')->name('music.profiles');
+    Route::get('music/musician', fn () => redirect()->route('music.profiles', ['tab' => 'musician']))->name('music.musician');
+    Route::get('music/teacher', fn () => redirect()->route('music.profiles', ['tab' => 'teacher']))->name('music.teacher');
+    Route::view('music/discover', 'music.discover')->name('music.discover');
+
+    Route::post('music/report-profile', [PublicProfileReportController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('music.report-profile');
+
+    Route::view('music/performers', 'music.performers-index')->name('music.performers.index');
+    Route::view('music/performers/create', 'music.performer-edit', ['recordId' => null])->name('music.performers.create');
+    Route::get('music/performers/{peformer}/edit', function (Peformer $peformer) {
+        Gate::authorize('update', $peformer);
+
+        return view('music.performer-edit', ['recordId' => $peformer->id]);
+    })->name('music.performers.edit');
+
+    Route::view('music/studios', 'music.venue-index', ['kind' => 'studio'])->name('music.studios.index');
+    Route::view('music/studios/create', 'music.venue-edit', ['kind' => 'studio', 'recordId' => null])->name('music.studios.create');
+    Route::get('music/studios/{studio}/edit', function (Studio $studio) {
+        Gate::authorize('update', $studio);
+
+        return view('music.venue-edit', ['kind' => 'studio', 'recordId' => $studio->id]);
+    })->name('music.studios.edit');
+
+    Route::view('music/rehearsals', 'music.venue-index', ['kind' => 'rehearsal'])->name('music.rehearsals.index');
+    Route::view('music/rehearsals/create', 'music.venue-edit', ['kind' => 'rehearsal', 'recordId' => null])->name('music.rehearsals.create');
+    Route::get('music/rehearsals/{rehersal}/edit', function (Rehersal $rehersal) {
+        Gate::authorize('update', $rehersal);
+
+        return view('music.venue-edit', ['kind' => 'rehearsal', 'recordId' => $rehersal->id]);
+    })->name('music.rehearsals.edit');
+
+    Route::view('music/schools', 'music.venue-index', ['kind' => 'school'])->name('music.schools.index');
+    Route::view('music/schools/create', 'music.venue-edit', ['kind' => 'school', 'recordId' => null])->name('music.schools.create');
+    Route::get('music/schools/{school}/edit', function (School $school) {
+        Gate::authorize('update', $school);
+
+        return view('music.venue-edit', ['kind' => 'school', 'recordId' => $school->id]);
+    })->name('music.schools.edit');
+
+    Route::view('music/labels', 'music.venue-index', ['kind' => 'record_label'])->name('music.labels.index');
+    Route::view('music/labels/create', 'music.venue-edit', ['kind' => 'record_label', 'recordId' => null])->name('music.labels.create');
+    Route::get('music/labels/{recordLabel}/edit', function (RecordLabel $recordLabel) {
+        Gate::authorize('update', $recordLabel);
+
+        return view('music.venue-edit', ['kind' => 'record_label', 'recordId' => $recordLabel->id]);
+    })->name('music.labels.edit');
+
+    Route::view('music/producer-centers', 'music.venue-index', ['kind' => 'producer_center'])->name('music.producer-centers.index');
+    Route::view('music/producer-centers/create', 'music.venue-edit', ['kind' => 'producer_center', 'recordId' => null])->name('music.producer-centers.create');
+    Route::get('music/producer-centers/{producerCenter}/edit', function (ProducerCenter $producerCenter) {
+        Gate::authorize('update', $producerCenter);
+
+        return view('music.venue-edit', ['kind' => 'producer_center', 'recordId' => $producerCenter->id]);
+    })->name('music.producer-centers.edit');
+
+    Route::view('music/shops', 'music.venue-index', ['kind' => 'shop'])->name('music.shops.index');
+    Route::view('music/shops/create', 'music.venue-edit', ['kind' => 'shop', 'recordId' => null])->name('music.shops.create');
+    Route::get('music/shops/{shop}/edit', function (Shop $shop) {
+        Gate::authorize('update', $shop);
+
+        return view('music.venue-edit', ['kind' => 'shop', 'recordId' => $shop->id]);
+    })->name('music.shops.edit');
+    Route::get('music/shops/{shop}/inventory', function (Shop $shop) {
+        Gate::authorize('update', $shop);
+
+        return view('music.shop-inventory', ['shop' => $shop]);
+    })->name('music.shops.inventory');
+    Route::get('music/shops/{shop}/inventory/template', function (Shop $shop) {
+        Gate::authorize('update', $shop);
+        $bytes = app(ShopInventorySpreadsheetImporter::class)->templateXlsxBytes();
+
+        return response($bytes, 200, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="shop-import-template.xlsx"',
+        ]);
+    })->name('music.shops.inventory.template');
+    Route::get('music/shops/{shop}/orders', function (Shop $shop) {
+        Gate::authorize('update', $shop);
+
+        return view('music.shop-owner-orders', ['shop' => $shop]);
+    })->name('music.shops.orders');
+
+    Route::view('music/cart', 'music.shop-cart')->name('music.shop.cart');
+    Route::view('music/orders', 'music.shop-my-orders')->name('music.shop.orders');
+
+    Route::get('kanban', [KanbanController::class, 'index'])->name('kanban');
+    Route::get('kanban/logs', [KanbanLogsController::class, 'index'])->name('kanban.logs');
+    Route::post('kanban/boards/reorder', [KanbanController::class, 'reorderBoards'])->name('kanban.boards.reorder');
+    Route::post('kanban/boards/reorder-shared', [KanbanController::class, 'reorderSharedBoards'])->name('kanban.boards.reorder-shared');
+    Route::post('kanban/boards/{board}/sync', [KanbanController::class, 'sync'])->name('kanban.sync');
+    Route::get('kanban/attachments/{attachment}/download', [KanbanCardAttachmentController::class, 'download'])
+        ->name('kanban.attachments.download');
 
     Route::get('/settings/profile', [App\Http\Controllers\SettingsController::class, 'profile'])->name('settings.profile.edit');
     Route::get('/settings/password', [App\Http\Controllers\SettingsController::class, 'password'])->name('settings.password.edit');

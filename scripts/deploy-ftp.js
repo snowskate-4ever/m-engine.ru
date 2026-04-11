@@ -6,7 +6,7 @@
  */
 import { Client } from 'basic-ftp';
 import { readFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { join } from 'path';
 import { readdirSync } from 'fs';
 import { fileURLToPath } from 'url';
 
@@ -36,8 +36,12 @@ function loadSyncConfig(profileName = null) {
   return data[key];
 }
 
+// vendor/ is not uploaded — on the server run composer install --no-dev --optimize-autoloader
+// using the same PHP binary as the web app (not necessarily `php` in SSH PATH). See .env.example.
 const IGNORE_DIRS = new Set([
   'node_modules', 'vendor', '.git', '.github', '.cursor', '.idea', '.vscode', '.fleet', '.nova', '.zed',
+  // Do not upload dev package/config cache — regenerate on server after composer install.
+  'bootstrap/cache',
   'storage/logs', 'storage/framework/cache', 'storage/framework/sessions', 'storage/framework/views', 'storage/framework/testing',
 ]);
 const IGNORE_FILES = new Set(['.env', '.env.backup', '.env.production', '.phpunit.cache', '.phpunit.result.cache']);
@@ -54,6 +58,20 @@ function shouldIgnore(relPath) {
   if (IGNORE_PREFIX.some((p) => base.startsWith(p))) return true;
   if (base.endsWith('.tmp') || base.endsWith('.log')) return true;
   return false;
+}
+
+/** Remote paths must use `/`; avoid Node `path.dirname` on Windows (backslashes break FTP). */
+function posixDirname(p) {
+  const n = p.replace(/\\/g, '/');
+  const i = n.lastIndexOf('/');
+  if (i <= 0) return '.';
+  return n.slice(0, i);
+}
+
+function posixBasename(p) {
+  const n = p.replace(/\\/g, '/');
+  const i = n.lastIndexOf('/');
+  return i < 0 ? n : n.slice(i + 1);
 }
 
 function* walk(dir, base = '') {
@@ -107,27 +125,22 @@ async function main() {
         secureOptions: { rejectUnauthorized: false },
       });
       await client.cd(remotePath);
-      console.log('Uploading to', remotePath, onlyFiles.length ? '(' + onlyFiles.length + ' files)' : '...');
+      const deployRoot = await client.pwd();
+      console.log('Uploading to', deployRoot, onlyFiles.length ? '(' + onlyFiles.length + ' files)' : '...');
 
       const files = onlyFiles.length ? onlyFiles : [...walk(rootDir)];
       let done = 0;
       for (const rel of files) {
         const localPath = join(rootDir, rel);
-        const remoteDir = dirname(rel).replace(/\\/g, '/');
         const remoteFile = rel.replace(/\\/g, '/');
-        if (remoteDir !== '.') {
-          const parts = remoteDir.split('/').filter(Boolean);
-          for (const part of parts) {
-            try {
-              await client.cd(part);
-            } catch (_) {
-              await client.ensureDir(part);
-              await client.cd(part);
-            }
-          }
-          await client.cd(remotePath);
+        const remoteDir = posixDirname(remoteFile);
+
+        await client.cd(deployRoot);
+        if (remoteDir !== '.' && remoteDir !== '') {
+          await client.ensureDir(remoteDir);
         }
-        await client.uploadFrom(localPath, remoteFile);
+        // Many FTP servers reject STOR with a multi-segment path; CWD + filename only.
+        await client.uploadFrom(localPath, posixBasename(remoteFile));
         done++;
         if (done % 50 === 0 || done === files.length) {
           console.log(done + '/' + files.length);

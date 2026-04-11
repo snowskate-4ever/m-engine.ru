@@ -30,6 +30,7 @@ class ConversationUser extends Pivot
     {
         return [
             'role' => ConversationRole::class,
+            'last_read_message_id' => 'integer',
             'joined_at' => 'datetime',
             'notifications_muted' => 'boolean',
             'mute_until' => 'datetime',

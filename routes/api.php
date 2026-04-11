@@ -9,7 +9,7 @@ use App\Http\Controllers\api\ApiResourceController;
 use App\Http\Controllers\api\ApiTaskController;
 use App\Http\Controllers\api\ApiTypeController;
 use App\Http\Controllers\api\ApiUserController;
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\api\AuthController;
 use App\Http\Controllers\api\BillingWebhookController;
 use App\Http\Controllers\api\DevicePushTokenController;
 use App\Http\Controllers\api\MessengerAttachmentDownloadController;

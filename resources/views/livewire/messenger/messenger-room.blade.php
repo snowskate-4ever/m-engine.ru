@@ -1,68 +1,144 @@
-<div class="flex w-full max-w-3xl flex-col gap-4" style="min-height: 70vh;"
+@php
+    $outerClass = $embedded
+        ? 'flex h-full min-h-0 w-full min-w-0 flex-1 flex-col'
+        : 'flex w-full max-w-3xl flex-col gap-4';
+@endphp
+<div class="{{ $outerClass }}"
      wire:key="messenger-room-poll-{{ $pollIntervalSeconds }}-{{ $aiWaitingForReply ? 'w' : 'i' }}"
      wire:poll.keep-alive.{{ $pollIntervalSeconds }}s="loadMessages">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-        <flux:link href="{{ route('messenger.index') }}" wire:navigate class="text-sm">{{ __('ui.back') }}</flux:link>
-        <flux:button size="sm" variant="ghost" wire:click="toggleMute" type="button">
-            {{ $muted ? __('ui.messenger.unmute_chat') : __('ui.messenger.mute_chat') }}
-        </flux:button>
-    </div>
-
-    @if ($hasMoreOlder && $nextBeforeId)
-        <div>
-            <flux:button size="sm" variant="ghost" wire:click="loadOlderMessages" type="button">
-                {{ __('ui.messenger.load_older') }}
+    @if ($embedded)
+        {{-- Шапка как у external-chat-window в CRM --}}
+        <div class="shrink-0 border-b border-zinc-200 p-4 dark:border-zinc-700">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                    <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                        {{ $headerTitle }}
+                    </h2>
+                    @if ($isAiChat)
+                        <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                            {{ __('ui.messenger.ai_chat') }}
+                        </p>
+                    @elseif (($headerMeta['type'] ?? '') === 'group' && ! empty($headerMeta['participants']))
+                        @php
+                            $allNames = collect($headerMeta['participants'])->pluck('name')->filter();
+                            $namesPreview = $allNames->take(12);
+                        @endphp
+                        <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                            {{ __('ui.messenger.group') }} · {{ $namesPreview->implode(', ') }}{{ $allNames->count() > 12 ? '…' : '' }}
+                        </p>
+                    @elseif (($headerMeta['type'] ?? '') === 'direct' && ! empty($headerMeta['direct_peer']['id']))
+                        <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                            <span>{{ __('ui.messenger.direct') }}</span>
+                            @if (! empty($headerMeta['direct_peer']['name']))
+                                <span class="ms-1">· {{ $headerMeta['direct_peer']['name'] }}</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+                {{-- Действия только в меню ⋮ (без отдельных кнопок в шапке) --}}
+                <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    <flux:dropdown position="bottom" align="end">
+                        <flux:button size="sm" variant="ghost" icon="ellipsis-vertical" :title="__('ui.messenger.chat_menu_title')" />
+                        <flux:menu class="min-w-[14rem]">
+                            <flux:menu.item :href="route('messenger.settings.notifications')" icon="bell" wire:navigate>
+                                {{ __('ui.messenger.notifications_title') }}
+                            </flux:menu.item>
+                            <flux:menu.item as="button" type="button" wire:click="toggleMute" icon="{{ $muted ? 'bell-alert' : 'bell-slash' }}">
+                                {{ $muted ? __('ui.messenger.unmute_chat') : __('ui.messenger.mute_chat') }}
+                            </flux:menu.item>
+                        </flux:menu>
+                    </flux:dropdown>
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 px-4 py-3 dark:border-zinc-700">
+            <flux:link href="{{ route('messenger.index') }}" wire:navigate class="text-sm">{{ __('ui.back') }}</flux:link>
+            <flux:button size="sm" variant="ghost" wire:click="toggleMute" type="button">
+                {{ $muted ? __('ui.messenger.unmute_chat') : __('ui.messenger.mute_chat') }}
             </flux:button>
         </div>
     @endif
 
-    <div class="flex flex-1 flex-col gap-2 overflow-y-auto rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/40"
-         style="max-height: 50vh;">
-        @forelse ($items as $msg)
-            <div class="rounded-lg bg-white px-3 py-2 text-sm shadow-xs dark:bg-zinc-800">
-                <div class="mb-1 flex items-center justify-between gap-2 text-xs text-zinc-500">
-                    <span class="font-medium text-zinc-700 dark:text-zinc-200">
-                        @if (($msg['kind'] ?? '') === 'system')
-                            {{ __('ui.messenger.system') }}
-                        @elseif ($isAiChat && ($msg['user_id'] ?? null) === null)
-                            {{ __('ui.messenger.assistant') }}
-                        @else
-                            {{ $msg['author']['name'] ?? __('ui.messenger.system') }}
-                        @endif
-                    </span>
-                    <span>{{ \Illuminate\Support\Carbon::parse($msg['created_at'])->timezone(config('app.timezone'))->format('d.m H:i') }}</span>
+    {{-- Лента сообщений: разметка как в CRM (время слева узкой колонкой, пузыри) --}}
+    @if ($embedded)
+        <div
+            class="min-h-0 flex-1 overflow-y-auto overscroll-y-none p-4"
+            id="messages-container"
+            x-data="{
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = this.$el;
+                        container.scrollTop = container.scrollHeight;
+                    });
+                },
+                isNearBottom() {
+                    const container = this.$el;
+                    const threshold = 100;
+                    return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+                }
+            }"
+            x-init="scrollToBottom()"
+            @messages-updated.window="scrollToBottom()"
+        >
+            @if ($hasMoreOlder && $nextBeforeId)
+                <div class="mb-4 text-center">
+                    <button
+                        type="button"
+                        wire:click="loadOlderMessages"
+                        wire:loading.attr="disabled"
+                        class="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                        {{ __('ui.messenger.load_older') }}
+                    </button>
                 </div>
-                @if (!empty($msg['is_forward']))
-                    <div class="mb-1 text-xs text-zinc-500">{{ __('ui.messenger.forwarded') }}</div>
-                @endif
-                <div class="whitespace-pre-wrap text-zinc-900 dark:text-zinc-100">{{ $msg['body'] }}</div>
-                @if (!empty($msg['attachments']))
-                    <ul class="mt-2 list-inside list-disc text-xs text-zinc-600 dark:text-zinc-400">
-                        @foreach ($msg['attachments'] as $att)
-                            <li>
-                                @if (!empty($att['download_url']))
-                                    <a href="{{ $att['download_url'] }}" class="text-accent underline" target="_blank" rel="noopener noreferrer">{{ $att['original_name'] ?? $att['path'] }}</a>
-                                @else
-                                    {{ $att['original_name'] ?? $att['path'] }}
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
+            @endif
+
+            @include('livewire.messenger.partials.message-list-items')
+
+            @if ($items === [])
+                <p class="py-4 text-center text-sm text-zinc-500">{{ __('ui.messenger.no_messages') }}</p>
+            @endif
+        </div>
+    @else
+        @if ($hasMoreOlder && $nextBeforeId)
+            <div class="shrink-0 px-4 pt-2">
+                <flux:button size="sm" variant="ghost" wire:click="loadOlderMessages" type="button">
+                    {{ __('ui.messenger.load_older') }}
+                </flux:button>
+            </div>
+        @endif
+        <div class="flex max-h-[50vh] min-h-[200px] flex-1 flex-col overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/40">
+            <div
+                class="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-y-none p-3"
+                id="messages-container"
+                x-data="{
+                    scrollToBottom() {
+                        this.$nextTick(() => {
+                            const container = this.$el;
+                            container.scrollTop = container.scrollHeight;
+                        });
+                    }
+                }"
+                x-init="scrollToBottom()"
+                @messages-updated.window="scrollToBottom()"
+            >
+                @include('livewire.messenger.partials.message-list-items')
+                @if ($items === [])
+                    <p class="text-center text-sm text-zinc-500">{{ __('ui.messenger.no_messages') }}</p>
                 @endif
             </div>
-        @empty
-            <p class="text-center text-sm text-zinc-500">{{ __('ui.messenger.no_messages') }}</p>
-        @endforelse
-    </div>
+        </div>
+    @endif
 
     @if ($isAiChat && $aiWaitingForReply)
-        <p class="text-center text-xs text-zinc-500 dark:text-zinc-400" wire:loading.remove wire:target="send">
+        <p class="shrink-0 px-4 text-center text-xs text-zinc-500 dark:text-zinc-400" wire:loading.remove wire:target="send">
             {{ __('ui.messenger.ai_thinking') }}
         </p>
     @endif
 
     @if ($isAiChat && config('ai.enabled'))
-        <div class="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800/80">
+        <div class="shrink-0 space-y-3 border-t border-zinc-200 p-4 dark:border-zinc-700">
             <flux:heading size="sm">{{ __('ui.messenger.ai_skills') }}</flux:heading>
 
             @if ($editingSkillId)
@@ -88,10 +164,10 @@
                         <li class="flex flex-col gap-1 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 dark:border-zinc-600 dark:bg-zinc-900/50">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <span class="font-medium text-zinc-900 dark:text-zinc-100">{{ $s['title'] }}</span>
-                                @if (!empty($s['owned']))
+                                @if (! empty($s['owned']))
                                     <div class="flex flex-wrap gap-1">
                                         <flux:button size="xs" variant="ghost" type="button" wire:click="toggleSkillEnabled({{ (int) $s['id'] }})">
-                                            {{ !empty($s['enabled']) ? __('ui.messenger.skill_disable') : __('ui.messenger.skill_enable') }}
+                                            {{ ! empty($s['enabled']) ? __('ui.messenger.skill_disable') : __('ui.messenger.skill_enable') }}
                                         </flux:button>
                                         <flux:button size="xs" variant="ghost" type="button" wire:click="startEditSkill({{ (int) $s['id'] }})">
                                             {{ __('ui.edit') }}
@@ -113,19 +189,30 @@
         </div>
     @endif
 
-    <form wire:submit="send" class="space-y-3 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800/80">
-        <flux:textarea wire:model="body" rows="3" :placeholder="__('ui.messenger.message_placeholder')" />
-        <div class="flex flex-wrap items-end gap-3">
+    <form wire:submit="send" class="shrink-0 space-y-3 border-t border-zinc-200 p-4 dark:border-zinc-700">
+        <flux:textarea wire:model="body" rows="{{ $embedded ? 2 : 3 }}" :placeholder="__('ui.messenger.message_placeholder')" />
+        <div class="flex flex-wrap items-end justify-end gap-3">
             @if (! $isAiChat)
-                <div class="min-w-[200px] flex-1">
-                    <input type="file" wire:model="attachment" class="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-2 dark:text-zinc-300 dark:file:bg-zinc-700" />
-                    <div wire:loading wire:target="attachment" class="mt-1 text-xs text-zinc-500">{{ __('ui.loading') }}</div>
-                </div>
+                <label
+                    class="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-zinc-600 outline-none transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-900"
+                    title="{{ __('ui.messenger.attach_file') }}"
+                >
+                    <span class="sr-only">{{ __('ui.messenger.attach_file') }}</span>
+                    <input type="file" wire:model="attachment" class="sr-only" />
+                    <flux:icon.paper-clip variant="outline" class="size-5" />
+                </label>
             @endif
-            <flux:button variant="primary" type="submit" wire:loading.attr="disabled">
-                {{ __('ui.messenger.send') }}
-            </flux:button>
+            <flux:button
+                variant="primary"
+                type="submit"
+                icon="paper-airplane"
+                wire:loading.attr="disabled"
+                :title="__('ui.messenger.send')"
+            />
         </div>
+        @if (! $isAiChat)
+            <div wire:loading wire:target="attachment" class="text-end text-xs text-zinc-500 dark:text-zinc-400">{{ __('ui.loading') }}</div>
+        @endif
     </form>
 
     @script

@@ -7,6 +7,7 @@ namespace App\MoonShine\Resources\Messenger;
 use App\Enums\ConversationRole;
 use App\Models\ConversationUser;
 use App\Models\User;
+use App\MoonShine\Resources\User\UserResource;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
@@ -41,6 +42,7 @@ class MessengerConversationUserResource extends ModelResource
                 __('moonshine.messenger.user'),
                 'user',
                 formatted: static fn (User $model) => $model->name,
+                resource: UserResource::class,
             )
                 ->searchable(),
             Enum::make(__('moonshine.messenger.role'), 'role')
@@ -70,6 +72,7 @@ class MessengerConversationUserResource extends ModelResource
                     __('moonshine.messenger.user'),
                     'user',
                     formatted: static fn (User $model) => $model->name,
+                    resource: UserResource::class,
                 ),
                 Enum::make(__('moonshine.messenger.role'), 'role')
                     ->attach(ConversationRole::class),
@@ -92,9 +95,9 @@ class MessengerConversationUserResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

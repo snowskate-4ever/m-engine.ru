@@ -8,7 +8,8 @@ use App\Enums\AiRequestSource;
 use App\Models\AiServerModel;
 use App\Models\AiUsageLedger;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\MoonShine\Resources\User\UserResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Contracts\UI\FieldContract;
 use MoonShine\Laravel\Fields\Relationships\BelongsTo;
@@ -49,11 +50,13 @@ final class AiUsageLedgerResource extends ModelResource
                 __('moonshine.ai.user'),
                 'user',
                 formatted: static fn (User $u) => $u->email ?? (string) $u->getKey(),
+                resource: UserResource::class,
             )->searchable(),
             BelongsTo::make(
                 __('moonshine.ai.ai_server_model_id'),
                 'serverModel',
                 formatted: static fn (AiServerModel $m) => $m->display_name,
+                resource: AiServerModelResource::class,
             )->nullable()->searchable(),
             Enum::make(__('moonshine.ai.source'), 'source')->attach(AiRequestSource::class),
             Number::make(__('moonshine.ai.tokens_prompt'), 'tokens_prompt'),
@@ -83,11 +86,13 @@ final class AiUsageLedgerResource extends ModelResource
                     __('moonshine.ai.user'),
                     'user',
                     formatted: static fn (User $u) => $u->email ?? (string) $u->getKey(),
+                    resource: UserResource::class,
                 ),
                 BelongsTo::make(
                     __('moonshine.ai.ai_server_model_id'),
                     'serverModel',
                     formatted: static fn (AiServerModel $m) => $m->display_name,
+                    resource: AiServerModelResource::class,
                 )->nullable(),
                 Text::make(__('moonshine.ai.conversation_id'), 'conversation_id')->nullable(),
                 Enum::make(__('moonshine.ai.source'), 'source')->attach(AiRequestSource::class),
@@ -104,9 +109,9 @@ final class AiUsageLedgerResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 

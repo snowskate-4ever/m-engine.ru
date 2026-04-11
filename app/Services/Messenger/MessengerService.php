@@ -99,6 +99,9 @@ final class MessengerService
                 array_map('intval', $data['user_ids'] ?? []),
             ),
             ConversationType::Ai => $this->createAiConversation($user, $data),
+            ConversationType::Notice => throw ValidationException::withMessages([
+                'type' => ['Notice conversations are created automatically.'],
+            ]),
         };
     }
 
@@ -445,6 +448,51 @@ final class MessengerService
         return $m;
     }
 
+    public function getOrCreateNoticeFeed(User $user): Conversation
+    {
+        $existing = Conversation::query()
+            ->where('type', ConversationType::Notice)
+            ->where('created_by_user_id', $user->id)
+            ->first();
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        return DB::transaction(function () use ($user): Conversation {
+            $conversation = Conversation::query()->create([
+                'type' => ConversationType::Notice,
+                'title' => __('ui.messenger.notice_feed_title'),
+                'created_by_user_id' => $user->id,
+            ]);
+            $conversation->participants()->attach($user->id, [
+                'role' => ConversationRole::Owner->value,
+                'joined_at' => now(),
+            ]);
+
+            return $conversation;
+        });
+    }
+
+    public function postSystemMessage(Conversation $conversation, string $body, bool $broadcastNow = true): Message
+    {
+        return DB::transaction(function () use ($conversation, $body, $broadcastNow): Message {
+            $message = Message::query()->create([
+                'conversation_id' => $conversation->id,
+                'user_id' => null,
+                'kind' => MessageKind::System,
+                'body' => $body,
+                'is_forward' => false,
+            ]);
+            $conversation->touch();
+            $message->load(['user:id,name', 'attachments']);
+            DB::afterCommit(static function () use ($message, $broadcastNow): void {
+                broadcast(new MessageSent($message, $broadcastNow));
+            });
+
+            return $message;
+        });
+    }
+
     private function createDirectConversation(User $user, int $otherUserId): Conversation
     {
         abort_if($otherUserId === $user->id, 422, 'Cannot start a direct chat with yourself.');
@@ -652,8 +700,8 @@ final class MessengerService
         if ($conversation->type === ConversationType::Direct) {
             return;
         }
-        if ($conversation->type === ConversationType::Ai) {
-            throw ValidationException::withMessages(['retention_days' => ['Retention for AI chats is not supported yet.']]);
+        if ($conversation->type === ConversationType::Ai || $conversation->type === ConversationType::Notice) {
+            throw ValidationException::withMessages(['retention_days' => ['Retention is not supported for this conversation type.']]);
         }
     }
 
@@ -686,7 +734,7 @@ final class MessengerService
     private function conversationToSummaryArray(Conversation $conversation, User $viewer): array
     {
         $membership = $this->membershipOrAbort($viewer, $conversation);
-        $lastRead = $membership->last_read_message_id ?? 0;
+        $lastRead = (int) ($membership->last_read_message_id ?? 0);
         $unread = $this->unreadCount($conversation, $viewer, $lastRead);
 
         $row = [
@@ -747,25 +795,139 @@ final class MessengerService
             'id' => $message->id,
             'conversation_id' => $message->conversation_id,
             'user_id' => $message->user_id,
-            'author' => $message->user !== null
-                ? ['id' => $message->user->id, 'name' => $message->user->name]
-                : null,
-            'kind' => $message->kind->value,
-            'body' => $message->body,
-            'is_forward' => $message->is_forward,
+            'author' => $this->messageAuthorPayload($message),
+            'kind' => $this->messageKindToApiString($message),
+            'body' => $this->messageBodyToApiString($message),
+            'is_forward' => (bool) $message->is_forward,
             'forwarded_from_message_id' => $message->forwarded_from_message_id,
-            'forward_snapshot' => $message->forward_snapshot,
-            'client_message_id' => $message->client_message_id,
+            'forward_snapshot' => $this->messageForwardSnapshotToArray($message),
+            'client_message_id' => $this->messageClientMessageIdToString($message),
             'created_at' => $message->created_at?->toIso8601String(),
-            'attachments' => $message->attachments->map(fn (MessageAttachment $a) => [
-                'id' => $a->id,
-                'path' => $a->path,
-                'disk' => $a->disk,
-                'original_name' => $a->original_name,
-                'mime' => $a->mime,
-                'size' => $a->size,
-                'download_url' => $this->attachmentDownloadUrl($a),
-            ])->values()->all(),
+            'attachments' => $message->attachments->map(fn (MessageAttachment $a) => $this->attachmentToApiArray($a))->values()->all(),
+        ];
+    }
+
+    /**
+     * @return array{id: int, name: string|null}|null
+     */
+    private function messageAuthorPayload(Message $message): ?array
+    {
+        $user = $message->user;
+        if ($user === null) {
+            return null;
+        }
+        $name = $user->name;
+        if (! is_string($name)) {
+            $name = is_scalar($name) ? (string) $name : '';
+        }
+        $name = $name === '' ? null : $name;
+
+        return ['id' => (int) $user->id, 'name' => $name];
+    }
+
+    private function messageKindToApiString(Message $message): string
+    {
+        try {
+            $k = $message->getAttribute('kind');
+            if ($k instanceof MessageKind) {
+                return $k->value;
+            }
+            if (is_string($k) && $k !== '') {
+                return in_array($k, ['text', 'file', 'system'], true) ? $k : MessageKind::Text->value;
+            }
+        } catch (\Throwable) {
+        }
+
+        return MessageKind::Text->value;
+    }
+
+    private function messageBodyToApiString(Message $message): ?string
+    {
+        $body = $message->getAttribute('body');
+        if ($body === null) {
+            return null;
+        }
+        if (is_string($body)) {
+            return $body;
+        }
+        if (is_scalar($body)) {
+            return (string) $body;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function messageForwardSnapshotToArray(Message $message): ?array
+    {
+        try {
+            $v = $message->getAttribute('forward_snapshot');
+            if ($v === null) {
+                return null;
+            }
+            if (is_array($v)) {
+                return $v;
+            }
+            if (is_string($v) && $v !== '') {
+                $decoded = json_decode($v, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
+    }
+
+    private function messageClientMessageIdToString(Message $message): ?string
+    {
+        $v = $message->getAttribute('client_message_id');
+        if ($v === null) {
+            return null;
+        }
+        if (is_string($v)) {
+            return $v;
+        }
+        if (is_object($v) && method_exists($v, '__toString')) {
+            return (string) $v;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function attachmentToApiArray(MessageAttachment $a): array
+    {
+        $path = $a->path;
+        $path = is_string($path) ? $path : '';
+        $disk = $a->disk;
+        $disk = is_string($disk) && $disk !== '' ? $disk : 'local';
+        $originalName = $a->original_name;
+        $originalName = is_string($originalName) ? $originalName : null;
+        $mime = $a->mime;
+        $mime = is_string($mime) ? $mime : null;
+        $size = is_numeric($a->size) ? (int) $a->size : 0;
+
+        $downloadUrl = '';
+        try {
+            $downloadUrl = $this->attachmentDownloadUrl($a);
+        } catch (\Throwable) {
+            $downloadUrl = '';
+        }
+
+        return [
+            'id' => $a->id,
+            'path' => $path,
+            'disk' => $disk,
+            'original_name' => $originalName,
+            'mime' => $mime,
+            'size' => $size,
+            'download_url' => $downloadUrl,
         ];
     }
 

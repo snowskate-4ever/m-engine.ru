@@ -4,14 +4,7 @@
         @php
             $items = $data['stat_cards'];
             $chunkSize = 3;
-            $itemsArray = [];
-            $itemsKeys = [];
-            foreach($items as $key => $value) {
-                $itemsArray[] = $value;
-                $itemsKeys[] = $key;
-            }
-            $chunks = array_chunk($itemsArray, $chunkSize);
-            $chunksKeys = array_chunk($itemsKeys, $chunkSize);
+            $chunks = array_chunk($items, $chunkSize);
         @endphp
         <div id="stat_cards" class="relative w-full overflow-hidden rounded-xl" data-carousel="slide" style="overflow: hidden !important;">
             <!-- Carousel wrapper -->
@@ -19,14 +12,11 @@
                 <!-- Group items into sets of 3 -->
                 @foreach($chunks as $chunkIndex => $chunk)
                     <div class="flex w-full flex-shrink-0 gap-4" data-slide="{{ $chunkIndex }}" style="min-width: 100%; width: 100%;">
-                        @foreach($chunk as $index => $card)
-                            @php
-                                $key = $chunksKeys[$chunkIndex][$index];
-                            @endphp
-                            <div class="flex-1 border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 rounded-lg" id="{{ $key }}">
-                                Статистика по {{ $key }}<br>
-                                Всего: {{ $key }} - {{ $card['count_all'] }}<br>
-                                Мои: {{ $key }} - {{ $card['my_items'] }}
+                        @foreach($chunk as $card)
+                            <div class="flex-1 border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800 rounded-lg" id="{{ $card['id'] }}">
+                                {{ $card['title'] }}<br>
+                                {{ __($card['count_all_label'] ?? 'ui.total') }}: {{ $card['count_all'] }}<br>
+                                {{ __('ui.stat_card_mine') }}: {{ $card['my_items'] }}
                             </div>
                         @endforeach
                     </div>

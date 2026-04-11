@@ -67,7 +67,21 @@ class User extends Authenticatable
             'telegram_id' => 'integer',
             'vk_token_expires_at' => 'datetime',
             'vk_user_id' => 'integer',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    public function wantsMusicLineupInvitationEmail(): bool
+    {
+        return (bool) (($this->notification_preferences ?? [])['music_lineup_email'] ?? true);
+    }
+
+    public function setMusicLineupInvitationEmail(bool $enabled): void
+    {
+        $prefs = $this->notification_preferences ?? [];
+        $prefs['music_lineup_email'] = $enabled;
+        $this->notification_preferences = $prefs;
+        $this->save();
     }
 
     /**
@@ -149,5 +163,128 @@ class User extends Authenticatable
     public function aiPreference(): HasOne
     {
         return $this->hasOne(UserAiPreference::class);
+    }
+
+    /**
+     * @return HasMany<KanbanBoard, User>
+     */
+    public function kanbanBoards(): HasMany
+    {
+        return $this->hasMany(KanbanBoard::class);
+    }
+
+    /**
+     * @return HasOne<UserKanbanCalendarSetting, User>
+     */
+    public function kanbanCalendarSetting(): HasOne
+    {
+        return $this->hasOne(UserKanbanCalendarSetting::class);
+    }
+
+    /**
+     * @return BelongsToMany<KanbanBoard, User>
+     */
+    public function sharedKanbanBoards(): BelongsToMany
+    {
+        return $this->belongsToMany(KanbanBoard::class, 'kanban_board_user')
+            ->withPivot('access_level')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasOne<Musician, User>
+     */
+    public function musician(): HasOne
+    {
+        return $this->hasOne(Musician::class);
+    }
+
+    /**
+     * @return HasOne<Teacher, User>
+     */
+    public function teacher(): HasOne
+    {
+        return $this->hasOne(Teacher::class);
+    }
+
+    /**
+     * @return HasMany<Peformer, User>
+     */
+    public function ownedPeformers(): HasMany
+    {
+        return $this->hasMany(Peformer::class, 'owner_user_id');
+    }
+
+    /**
+     * @return BelongsToMany<Peformer, User>
+     */
+    public function administeredPeformers(): BelongsToMany
+    {
+        return $this->belongsToMany(Peformer::class, 'peformer_admins', 'user_id', 'peformer_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return HasMany<Studio, User>
+     */
+    public function ownedStudios(): HasMany
+    {
+        return $this->hasMany(Studio::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<Rehersal, User>
+     */
+    public function ownedRehearsals(): HasMany
+    {
+        return $this->hasMany(Rehersal::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<School, User>
+     */
+    public function ownedSchools(): HasMany
+    {
+        return $this->hasMany(School::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<RecordLabel, User>
+     */
+    public function ownedRecordLabels(): HasMany
+    {
+        return $this->hasMany(RecordLabel::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<ProducerCenter, User>
+     */
+    public function ownedProducerCenters(): HasMany
+    {
+        return $this->hasMany(ProducerCenter::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<Shop, User>
+     */
+    public function ownedShops(): HasMany
+    {
+        return $this->hasMany(Shop::class, 'owner_user_id');
+    }
+
+    /**
+     * @return HasMany<ShopCartItem, User>
+     */
+    public function shopCartItems(): HasMany
+    {
+        return $this->hasMany(ShopCartItem::class);
+    }
+
+    /**
+     * @return HasMany<ShopOrder, User>
+     */
+    public function shopOrdersAsBuyer(): HasMany
+    {
+        return $this->hasMany(ShopOrder::class, 'buyer_user_id');
     }
 }

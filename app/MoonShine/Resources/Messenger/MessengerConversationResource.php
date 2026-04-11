@@ -8,7 +8,8 @@ use App\Enums\ConversationType;
 use App\Events\Messenger\ConversationRetentionUpdated;
 use App\Models\Conversation;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
+use App\MoonShine\Resources\User\UserResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use MoonShine\Contracts\Core\PageContract;
 use MoonShine\Contracts\Core\TypeCasts\DataWrapperContract;
@@ -58,6 +59,7 @@ class MessengerConversationResource extends ModelResource
                 __('moonshine.messenger.creator'),
                 'creator',
                 formatted: static fn (?User $model) => $model?->name ?? '—',
+                resource: UserResource::class,
             )
                 ->nullable()
                 ->searchable(),
@@ -83,6 +85,7 @@ class MessengerConversationResource extends ModelResource
                     __('moonshine.messenger.creator'),
                     'creator',
                     formatted: static fn (?User $model) => $model?->name ?? '—',
+                    resource: UserResource::class,
                 )
                     ->disabled()
                     ->nullable(),
@@ -113,6 +116,7 @@ class MessengerConversationResource extends ModelResource
                     __('moonshine.messenger.creator'),
                     'creator',
                     formatted: static fn (?User $model) => $model?->name ?? '—',
+                    resource: UserResource::class,
                 )
                     ->nullable(),
                 Text::make(__('moonshine.messenger.direct_peer_min_id'), 'direct_peer_min_id')
@@ -145,9 +149,9 @@ class MessengerConversationResource extends ModelResource
     protected function pages(): array
     {
         return [
-            \MoonShine\Laravel\Pages\IndexPage::class,
-            \MoonShine\Laravel\Pages\FormPage::class,
-            \MoonShine\Laravel\Pages\DetailPage::class,
+            \MoonShine\Laravel\Pages\Crud\IndexPage::class,
+            \MoonShine\Laravel\Pages\Crud\FormPage::class,
+            \MoonShine\Laravel\Pages\Crud\DetailPage::class,
         ];
     }
 
