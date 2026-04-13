@@ -76,3 +76,47 @@
         @endforeach
     </div>
 </div>
+
+@script
+<script>
+    (() => {
+        const componentId = $wire.$id ?? '';
+        const chatIds = Array.isArray($wire.chats)
+            ? $wire.chats
+                .map((row) => Number(row?.id ?? 0))
+                .filter((id) => Number.isInteger(id) && id > 0)
+            : [];
+
+        if (!componentId) {
+            return;
+        }
+
+        window.__messengerRailRealtime ??= {};
+
+        const prevCleanup = window.__messengerRailRealtime[componentId];
+        if (typeof prevCleanup === 'function') {
+            prevCleanup();
+        }
+
+        if (!window.Echo || !Array.isArray(chatIds) || chatIds.length === 0) {
+            window.__messengerRailRealtime[componentId] = null;
+            return;
+        }
+
+        const channelNames = chatIds.map((id) => `messenger.conversation.${id}`);
+        const refresh = () => $wire.refreshList();
+
+        channelNames.forEach((name) => {
+            window.Echo.private(name)
+                .listen('.messenger.message.sent', refresh)
+                .listen('.messenger.read.updated', refresh)
+                .listen('.messenger.conversation.updated', refresh);
+        });
+
+        window.__messengerRailRealtime[componentId] = () => {
+            channelNames.forEach((name) => window.Echo.leave(name));
+            delete window.__messengerRailRealtime[componentId];
+        };
+    })();
+</script>
+@endscript

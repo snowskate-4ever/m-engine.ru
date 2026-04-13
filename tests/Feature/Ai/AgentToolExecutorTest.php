@@ -13,6 +13,7 @@ use App\Models\ConversationUser;
 use App\Models\Event;
 use App\Models\Peformer;
 use App\Models\Resource;
+use App\Models\SearchRequest;
 use App\Models\Studio;
 use App\Models\Type;
 use App\Models\User;
@@ -303,5 +304,83 @@ class AgentToolExecutorTest extends TestCase
         $this->assertTrue($decoded['ok'] ?? false);
         $ids = collect($decoded['events'] ?? [])->pluck('id')->all();
         $this->assertSame([$linkedEvent->id], $ids);
+    }
+
+    public function test_music_search_tools_and_resource_catalog_return_owned_data(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+
+        $performer = Peformer::query()->create([
+            'name' => 'Owned Band',
+            'owner_user_id' => $user->id,
+            'performer_kind' => 'band',
+        ]);
+        Studio::query()->create([
+            'name' => 'Owned Studio',
+            'owner_user_id' => $user->id,
+        ]);
+
+        $request = SearchRequest::query()->create([
+            'search_goal' => 'find_organizer_for_performer',
+            'status' => 'open',
+            'initiator_type' => Peformer::class,
+            'initiator_id' => $performer->id,
+            'created_by_user_id' => $user->id,
+            'criteria' => [],
+            'submitted_at' => now(),
+        ]);
+
+        $conv = Conversation::query()->create([
+            'type' => ConversationType::Ai,
+            'title' => 'AI',
+            'retention_days' => null,
+            'created_by_user_id' => $user->id,
+            'ai_server_model_id' => null,
+            'user_ai_connection_id' => null,
+        ]);
+        ConversationUser::query()->create([
+            'conversation_id' => $conv->id,
+            'user_id' => $user->id,
+            'role' => \App\Enums\ConversationRole::Owner,
+        ]);
+
+        $executor = app(AgentToolExecutor::class);
+
+        $listJson = $executor->execute(
+            $user,
+            $conv,
+            'list_music_search_requests',
+            json_encode(['status' => 'open'], JSON_THROW_ON_ERROR),
+        );
+        $listDecoded = json_decode($listJson, true);
+        $this->assertTrue($listDecoded['ok'] ?? false);
+        $this->assertSame($request->id, $listDecoded['items'][0]['id'] ?? null);
+
+        $cancelJson = $executor->execute(
+            $user,
+            $conv,
+            'change_music_search_request_status',
+            json_encode(['search_request_id' => $request->id, 'action' => 'cancel'], JSON_THROW_ON_ERROR),
+        );
+        $cancelDecoded = json_decode($cancelJson, true);
+        $this->assertTrue($cancelDecoded['ok'] ?? false);
+        $this->assertDatabaseHas('search_requests', [
+            'id' => $request->id,
+            'status' => 'cancelled',
+        ]);
+
+        $catalogJson = $executor->execute(
+            $user,
+            $conv,
+            'list_music_resource_catalog',
+            json_encode((object) [], JSON_THROW_ON_ERROR),
+        );
+        $catalogDecoded = json_decode($catalogJson, true);
+        $this->assertTrue($catalogDecoded['ok'] ?? false);
+        $keys = collect($catalogDecoded['sections'] ?? [])->pluck('key')->all();
+        $this->assertContains('performers', $keys);
+        $this->assertContains('studios', $keys);
     }
 }

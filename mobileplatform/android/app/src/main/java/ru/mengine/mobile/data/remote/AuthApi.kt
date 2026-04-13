@@ -1,9 +1,12 @@
 package ru.mengine.mobile.data.remote
 
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
@@ -52,5 +55,17 @@ class AuthApi(
                 "Ошибка ${response.status.value}"
             }
         return Result.failure(Exception(msg))
+    }
+
+    suspend fun hasValidSession(token: String): Boolean {
+        if (token.isBlank()) {
+            return false
+        }
+
+        val response = client.get("api/messenger/conversations") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+
+        return response.status == HttpStatusCode.OK
     }
 }

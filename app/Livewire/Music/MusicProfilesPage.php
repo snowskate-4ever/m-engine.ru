@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Music;
 
+use App\Models\User;
 use App\Services\Music\MusicActorContextService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +13,7 @@ use Livewire\Component;
 
 class MusicProfilesPage extends Component
 {
-    /** @var 'musician'|'teacher'|'organizer'|'venue_representative'|'manager' */
+    /** @var 'musician'|'teacher'|'organizer'|'manager'|'session_musician' */
     #[Url(history: true)]
     public string $tab = 'musician';
 
@@ -20,7 +21,7 @@ class MusicProfilesPage extends Component
 
     public function mount(): void
     {
-        if (! in_array($this->tab, ['musician', 'teacher', 'organizer', 'venue_representative', 'manager'], true)) {
+        if (! in_array($this->tab, ['musician', 'teacher', 'organizer', 'manager', 'session_musician'], true)) {
             $this->tab = 'musician';
         }
 
@@ -32,15 +33,18 @@ class MusicProfilesPage extends Component
 
     public function saveActiveActor(): void
     {
+        /** @var User $user */
+        $user = Auth::user();
+
         if ($this->activeActorRef === null || $this->activeActorRef === '') {
-            Auth::user()->setActiveMusicActor(null, null);
+            $user->setActiveMusicActor(null, null);
             session()->flash('success', __('ui.music.saved'));
 
             return;
         }
 
         [$type, $id] = explode(':', $this->activeActorRef, 2);
-        app(MusicActorContextService::class)->setActiveActor(Auth::user(), (string) $type, (int) $id);
+        app(MusicActorContextService::class)->setActiveActor($user, (string) $type, (int) $id);
         session()->flash('success', __('ui.music.saved'));
     }
 

@@ -16,7 +16,9 @@ use App\Http\Controllers\api\MessengerAttachmentDownloadController;
 use App\Http\Controllers\api\MessengerController;
 use App\Http\Controllers\api\MessengerConversationSkillController;
 use App\Http\Controllers\api\MusicActorContextController;
+use App\Http\Controllers\api\MusicResourceCatalogController;
 use App\Http\Controllers\api\MusicProfileMembershipController;
+use App\Http\Controllers\api\MusicSearchRequestController;
 use App\Http\Controllers\api\UserAiConnectionController;
 use App\Http\Controllers\api\UserAiPreferenceController;
 use App\Http\Controllers\api\UserAiScheduledItemController;
@@ -129,6 +131,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/memberships', [MusicProfileMembershipController::class, 'store'])->name('api_music_memberships_store');
         Route::patch('/memberships/{membership}/respond', [MusicProfileMembershipController::class, 'respond'])->name('api_music_memberships_respond');
         Route::patch('/memberships/{membership}/revoke', [MusicProfileMembershipController::class, 'revoke'])->name('api_music_memberships_revoke');
+
+        Route::get('/resources/catalog', [MusicResourceCatalogController::class, 'catalog'])->name('api_music_resources_catalog');
+
+        Route::get('/search-requests', [MusicSearchRequestController::class, 'index'])->name('api_music_search_requests_index');
+        Route::post('/search-requests', [MusicSearchRequestController::class, 'store'])->name('api_music_search_requests_store');
+        Route::post('/search-requests/{searchRequest}/cancel', [MusicSearchRequestController::class, 'cancel'])->name('api_music_search_requests_cancel');
+        Route::post('/search-requests/{searchRequest}/reopen', [MusicSearchRequestController::class, 'reopen'])->name('api_music_search_requests_reopen');
     });
 
     Route::middleware('ai.enabled')->prefix('ai')->group(function () {

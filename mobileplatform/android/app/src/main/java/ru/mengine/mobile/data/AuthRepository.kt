@@ -21,4 +21,18 @@ class AuthRepository(
     suspend fun logout() {
         tokenStore.clear()
     }
+
+    suspend fun hasValidSession(): Boolean {
+        val token = tokenStore.getToken()
+        if (token.isNullOrBlank()) {
+            return false
+        }
+
+        val valid = runCatching { api.hasValidSession(token) }.getOrDefault(false)
+        if (!valid) {
+            tokenStore.clear()
+        }
+
+        return valid
+    }
 }

@@ -157,3 +157,47 @@
         </div>
     </div>
 </div>
+
+@script
+<script>
+    (() => {
+        const componentId = $wire.$id ?? '';
+        const conversationIds = Array.isArray($wire.conversations)
+            ? $wire.conversations
+                .map((row) => Number(row?.id ?? 0))
+                .filter((id) => Number.isInteger(id) && id > 0)
+            : [];
+
+        if (!componentId) {
+            return;
+        }
+
+        window.__messengerWorkspaceRealtime ??= {};
+
+        const prevCleanup = window.__messengerWorkspaceRealtime[componentId];
+        if (typeof prevCleanup === 'function') {
+            prevCleanup();
+        }
+
+        if (!window.Echo || !Array.isArray(conversationIds) || conversationIds.length === 0) {
+            window.__messengerWorkspaceRealtime[componentId] = null;
+            return;
+        }
+
+        const channelNames = conversationIds.map((id) => `messenger.conversation.${id}`);
+        const refresh = () => $wire.refreshList();
+
+        channelNames.forEach((name) => {
+            window.Echo.private(name)
+                .listen('.messenger.message.sent', refresh)
+                .listen('.messenger.read.updated', refresh)
+                .listen('.messenger.conversation.updated', refresh);
+        });
+
+        window.__messengerWorkspaceRealtime[componentId] = () => {
+            channelNames.forEach((name) => window.Echo.leave(name));
+            delete window.__messengerWorkspaceRealtime[componentId];
+        };
+    })();
+</script>
+@endscript

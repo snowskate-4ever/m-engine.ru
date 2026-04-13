@@ -29,7 +29,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => User::class,
                 'id' => $user->id,
-                'label' => 'Organizer: '.$user->name,
+                'label' => $this->buildActorLabel(User::class, $user->name),
             ];
         }
 
@@ -37,7 +37,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => Peformer::class,
                 'id' => $peformer->id,
-                'label' => 'Performer: '.$peformer->name,
+                'label' => $this->buildActorLabel(Peformer::class, $peformer->name),
             ];
         }
 
@@ -45,7 +45,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => Musician::class,
                 'id' => $user->musician->id,
-                'label' => 'Musician: '.$user->musician->name,
+                'label' => $this->buildActorLabel(Musician::class, $user->musician->name),
             ];
         }
 
@@ -53,7 +53,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => ConcertVenue::class,
                 'id' => $venue->id,
-                'label' => 'Venue: '.$venue->name,
+                'label' => $this->buildActorLabel(ConcertVenue::class, $venue->name),
             ];
         }
 
@@ -61,7 +61,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => Studio::class,
                 'id' => $studio->id,
-                'label' => 'Studio: '.$studio->name,
+                'label' => $this->buildActorLabel(Studio::class, $studio->name),
             ];
         }
 
@@ -69,7 +69,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => Rehersal::class,
                 'id' => $rehersal->id,
-                'label' => 'Rehearsal: '.$rehersal->name,
+                'label' => $this->buildActorLabel(Rehersal::class, $rehersal->name),
             ];
         }
 
@@ -77,7 +77,7 @@ class MusicActorContextService
             $actors[] = [
                 'type' => School::class,
                 'id' => $school->id,
-                'label' => 'School: '.$school->name,
+                'label' => $this->buildActorLabel(School::class, $school->name),
             ];
         }
 
@@ -92,15 +92,7 @@ class MusicActorContextService
                 continue;
             }
 
-            $label = match ($entity::class) {
-                Peformer::class => 'Managed performer: '.$entity->name,
-                Musician::class => 'Managed musician: '.$entity->name,
-                ConcertVenue::class => 'Represented venue: '.$entity->name,
-                Studio::class => 'Represented studio: '.$entity->name,
-                Rehersal::class => 'Represented rehearsal: '.$entity->name,
-                School::class => 'Represented school: '.$entity->name,
-                default => null,
-            };
+            $label = $this->buildActorLabel($entity::class, (string) $entity->name);
 
             if ($label === null) {
                 continue;
@@ -149,5 +141,24 @@ class MusicActorContextService
         }
 
         return null;
+    }
+
+    private function buildActorLabel(string $actorType, string $name): string
+    {
+        return $this->actorTypeLabel($actorType).': '.$name;
+    }
+
+    private function actorTypeLabel(string $actorType): string
+    {
+        return match ($actorType) {
+            User::class => __('ui.music.search_initiator_user'),
+            Peformer::class => __('ui.music.search_initiator_performer'),
+            Musician::class => __('ui.music.search_initiator_musician'),
+            ConcertVenue::class => __('ui.music.search_initiator_concert_venue'),
+            Studio::class => __('ui.music.search_initiator_studio'),
+            Rehersal::class => __('ui.music.search_initiator_rehersal'),
+            School::class => __('ui.music.search_initiator_school'),
+            default => class_basename($actorType),
+        };
     }
 }

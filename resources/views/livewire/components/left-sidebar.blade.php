@@ -22,7 +22,7 @@
 
         {{-- Navigation --}}
         <nav class="menu flex flex-1 min-h-0 flex-col overflow-hidden">
-            <ul class="menu-list flex-1 overflow-y-auto">
+            <ul class="menu-list flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <li class="menu-item {{ request()->routeIs('dashboard') ? 'is_active' : '' }}">
                     <a href="{{ route('dashboard') }}" class="menu-link" wire:navigate>
                         <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 12 2.45-2.45M3 12h18M12 3v18M21 12l-2.45 2.45M21 12H3M12 21V3"/></svg></span>

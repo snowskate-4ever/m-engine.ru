@@ -27,6 +27,10 @@ use Illuminate\Support\Facades\DB;
 
 class SearchRequestService
 {
+    public function __construct(
+        private readonly SearchGoalEligibilityService $searchGoalEligibilityService,
+    ) {}
+
     /**
      * @throws \Illuminate\Auth\Access\AuthorizationException
      */
@@ -52,6 +56,7 @@ class SearchRequestService
         };
 
         $this->authorizeActor($actor, $initiator);
+        $this->ensureGoalAllowedForInitiator($goal, $resolvedType);
 
         return $this->create($actor, $initiator, $goal, $criteria, $expiresAt);
     }
@@ -251,8 +256,19 @@ class SearchRequestService
 
     private function authorizeOrganizerUser(User $actor, User $initiator): void
     {
-        if ((int) $actor->id !== (int) $initiator->id || ! $actor->canActAsEventOrganizer()) {
+        $canUseOwnProfile = $actor->canActAsEventOrganizer()
+            || $actor->canActAsVenueRepresentative()
+            || $actor->canActAsManager();
+
+        if ((int) $actor->id !== (int) $initiator->id || ! $canUseOwnProfile) {
             throw new \Illuminate\Auth\Access\AuthorizationException;
+        }
+    }
+
+    private function ensureGoalAllowedForInitiator(SearchGoal $goal, string $initiatorType): void
+    {
+        if (! $this->searchGoalEligibilityService->isAllowed($initiatorType, $goal)) {
+            throw new \InvalidArgumentException('Search goal is not allowed for selected initiator.');
         }
     }
 }

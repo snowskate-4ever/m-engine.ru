@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Music;
 
 use App\Enums\PerformerMembershipStatus;
+use App\Enums\UserMusicProfile;
 use App\Models\Instrument;
 use App\Models\Musician;
 use App\Models\Peformer;
+use App\Models\User;
 use App\Services\Music\PerformerMembershipService;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
@@ -19,6 +21,8 @@ use Livewire\Component;
 
 class MusicianProfilePage extends Component
 {
+    public bool $enabled = false;
+
     public ?Musician $record = null;
 
     public string $name = '';
@@ -30,8 +34,6 @@ class MusicianProfilePage extends Component
     public string $slug = '';
 
     public bool $public_page_enabled = false;
-
-    public bool $is_session = false;
 
     /** @var list<int> */
     public array $instrumentIds = [];
@@ -45,7 +47,18 @@ class MusicianProfilePage extends Component
 
     public function mount(): void
     {
-        $this->record = Auth::user()->musician;
+        /** @var User $user */
+        $user = Auth::user();
+        $this->enabled = $user->canActAsMusician();
+        $this->record = $user->musician;
+        if ($this->record === null) {
+            Gate::authorize('create', Musician::class);
+            $this->record = Musician::create([
+                'user_id' => $user->id,
+                'name' => (string) $user->name,
+                'is_session' => $user->canActAsSessionMusician(),
+            ]);
+        }
 
         $catalog = PublicProfileBlocks::musicianCatalog();
         foreach ($catalog as $row) {
@@ -59,7 +72,6 @@ class MusicianProfilePage extends Component
             $this->bio = (string) ($this->record->bio ?? '');
             $this->slug = (string) ($this->record->slug ?? '');
             $this->public_page_enabled = (bool) $this->record->public_page_enabled;
-            $this->is_session = (bool) $this->record->is_session;
             $this->instrumentIds = $this->record->instruments->pluck('id')->all();
 
             $draft = $this->record->layout_draft;
@@ -74,12 +86,39 @@ class MusicianProfilePage extends Component
             return;
         }
 
-        Gate::authorize('create', Musician::class);
-        $this->name = (string) Auth::user()->name;
+        if ($this->enabled) {
+            Gate::authorize('create', Musician::class);
+        }
+        $this->name = (string) $user->name;
+    }
+
+    public function toggleProfile(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $profiles = collect($user->music_profiles ?? []);
+        $target = UserMusicProfile::Musician->value;
+
+        if ($profiles->contains($target)) {
+            $profiles = $profiles->reject(fn (string $value) => $value === $target)->values();
+        } else {
+            $profiles->push($target);
+        }
+
+        $user->music_profiles = $profiles->unique()->values()->all();
+        $user->save();
+        $this->enabled = $user->canActAsMusician();
+        session()->flash('success', __('ui.music.saved'));
     }
 
     public function save(): void
     {
+        if (! $this->enabled) {
+            $this->addError('name', __('ui.music.profile_enable_required'));
+
+            return;
+        }
+
         if ($this->record) {
             Gate::authorize('update', $this->record);
         } else {
@@ -109,7 +148,6 @@ class MusicianProfilePage extends Component
             'bio' => ['nullable', 'string'],
             'slug' => $slugRules,
             'public_page_enabled' => ['boolean'],
-            'is_session' => ['boolean'],
             'instrumentIds' => ['required', 'array', 'min:1'],
             'instrumentIds.*' => ['integer', 'exists:instruments,id'],
         ], [
@@ -120,6 +158,8 @@ class MusicianProfilePage extends Component
         ]);
 
         $layoutDraft = PublicProfileBlocks::wrapVersion1($this->buildLayoutBlocks());
+        /** @var User $user */
+        $user = Auth::user();
 
         $payload = [
             'name' => $validated['name'],
@@ -127,7 +167,7 @@ class MusicianProfilePage extends Component
             'bio' => $validated['bio'] ?? null,
             'slug' => $validated['slug'] ?: null,
             'public_page_enabled' => $validated['public_page_enabled'],
-            'is_session' => $validated['is_session'],
+            'is_session' => $user->canActAsSessionMusician(),
             'layout_draft' => $layoutDraft,
         ];
 

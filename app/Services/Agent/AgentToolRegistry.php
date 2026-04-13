@@ -124,6 +124,55 @@ final class AgentToolRegistry
             [
                 'type' => 'function',
                 'function' => [
+                    'name' => 'list_music_search_requests',
+                    'description' => 'List current user search requests in the music matching workflow with latest status and initiator labels.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'status' => [
+                                'type' => 'string',
+                                'description' => 'Optional status filter, e.g. open, cancelled, fulfilled',
+                            ],
+                            'limit' => [
+                                'type' => 'integer',
+                                'description' => 'Max number of requests to return (1..100). Default 25.',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'change_music_search_request_status',
+                    'description' => 'Cancel an open search request or reopen a cancelled/expired/failed request owned by the current user.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'search_request_id' => ['type' => 'integer'],
+                            'action' => [
+                                'type' => 'string',
+                                'description' => 'Allowed values: cancel, reopen',
+                            ],
+                        ],
+                        'required' => ['search_request_id', 'action'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'list_music_resource_catalog',
+                    'description' => 'List all owned music resource entities grouped by category (performers, studios, rehearsal spaces, venues, schools, labels, producer centers, shops).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
                     'name' => 'confirm_matching_booking',
                     'description' => 'Confirm booking for an existing event using its matching slot context and selected resource/room.',
                     'parameters' => [

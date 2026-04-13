@@ -55,19 +55,19 @@ class SearchRequestServiceTest extends TestCase
         $service = app(SearchRequestService::class);
 
         $initiators = [
-            [User::class, $user->id],
-            [Peformer::class, $performer->id],
-            [Musician::class, $musician->id],
-            [ConcertVenue::class, $venue->id],
-            [Studio::class, $studio->id],
-            [Rehersal::class, $rehersal->id],
-            [School::class, $school->id],
+            [User::class, $user->id, SearchGoal::FindPerformerForOrganizer],
+            [Peformer::class, $performer->id, SearchGoal::FindMusicianForPerformer],
+            [Musician::class, $musician->id, SearchGoal::FindPerformerForMusician],
+            [ConcertVenue::class, $venue->id, SearchGoal::FindOrganizerForVenue],
+            [Studio::class, $studio->id, SearchGoal::FindOrganizerForStudio],
+            [Rehersal::class, $rehersal->id, SearchGoal::FindOrganizerForRehearsal],
+            [School::class, $school->id, SearchGoal::FindOrganizerForSchool],
         ];
 
-        foreach ($initiators as [$type, $id]) {
+        foreach ($initiators as [$type, $id, $goal]) {
             $request = $service->createUsingActorContext(
                 $user,
-                SearchGoal::FindPerformerForOrganizer,
+                $goal,
                 ['region' => 'Moscow'],
                 $type,
                 $id,
@@ -77,6 +77,30 @@ class SearchRequestServiceTest extends TestCase
             $this->assertSame($id, $request->initiator_id);
             $this->assertSame('open', $request->status->value);
         }
+    }
+
+    public function test_create_using_actor_context_rejects_goal_not_allowed_for_initiator(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+
+        $performer = Peformer::query()->create([
+            'name' => 'Restricted Performer',
+            'owner_user_id' => $user->id,
+            'performer_kind' => 'band',
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Search goal is not allowed for selected initiator.');
+
+        app(SearchRequestService::class)->createUsingActorContext(
+            $user,
+            SearchGoal::FindVenueForOrganizerEvent,
+            [],
+            Peformer::class,
+            $performer->id,
+        );
     }
 
     public function test_cancel_request_revokes_pending_invites(): void

@@ -6,7 +6,10 @@ namespace App\Enums;
 
 enum UserMusicProfile: string
 {
+    case Musician = 'musician';
+    case Teacher = 'teacher';
     case EventOrganizer = 'event_organizer';
     case VenueRepresentative = 'venue_representative';
     case Manager = 'manager';
+    case SessionMusician = 'session_musician';
 }

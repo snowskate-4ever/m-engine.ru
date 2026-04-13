@@ -11,8 +11,12 @@ use App\Models\ConcertVenue;
 use App\Models\Conversation;
 use App\Models\Event;
 use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\SearchRequest;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\Task;
 use App\Models\User;
@@ -64,6 +68,9 @@ final class AgentToolExecutor
                 'link_event_booking_reminder' => $this->linkEventBookingReminder($user, $conversation, $args),
                 'list_music_calendar_entries' => $this->listMusicCalendarEntries($user, $args),
                 'create_music_search_request' => $this->createMusicSearchRequest($user, $args),
+                'list_music_search_requests' => $this->listMusicSearchRequests($user, $args),
+                'change_music_search_request_status' => $this->changeMusicSearchRequestStatus($user, $args),
+                'list_music_resource_catalog' => $this->listMusicResourceCatalog($user),
                 'confirm_matching_booking' => $this->confirmMatchingBooking($user, $args),
                 default => ['ok' => false, 'error' => 'Unknown tool: '.$name],
             };
@@ -359,6 +366,124 @@ final class AgentToolExecutor
             'ok' => true,
             'count' => count($events),
             'events' => $events,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $args
+     * @return array<string, mixed>
+     */
+    private function listMusicSearchRequests(User $user, array $args): array
+    {
+        $status = isset($args['status']) && is_string($args['status']) ? trim($args['status']) : null;
+        $limit = isset($args['limit']) ? max(1, min(100, (int) $args['limit'])) : 25;
+
+        $query = SearchRequest::query()
+            ->with('initiator')
+            ->where('created_by_user_id', $user->id);
+
+        if ($status !== null && $status !== '') {
+            $query->where('status', $status);
+        }
+
+        $items = $query
+            ->orderByDesc('created_at')
+            ->limit($limit)
+            ->get()
+            ->map(static fn (SearchRequest $item): array => [
+                'id' => $item->id,
+                'search_goal' => $item->search_goal?->value ?? (string) $item->search_goal,
+                'status' => $item->status?->value ?? (string) $item->status,
+                'initiator_type' => $item->initiator_type,
+                'initiator_id' => $item->initiator_id,
+                'initiator_name' => $item->initiator?->name ?? null,
+                'created_at' => $item->created_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'ok' => true,
+            'count' => count($items),
+            'items' => $items,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $args
+     * @return array<string, mixed>
+     */
+    private function changeMusicSearchRequestStatus(User $user, array $args): array
+    {
+        $requestId = isset($args['search_request_id']) ? (int) $args['search_request_id'] : 0;
+        $action = isset($args['action']) && is_string($args['action']) ? trim($args['action']) : '';
+
+        if ($requestId < 1 || ! in_array($action, ['cancel', 'reopen'], true)) {
+            return ['ok' => false, 'error' => 'search_request_id and valid action are required'];
+        }
+
+        $request = SearchRequest::query()
+            ->whereKey($requestId)
+            ->where('created_by_user_id', $user->id)
+            ->first();
+
+        if ($request === null) {
+            return ['ok' => false, 'error' => 'Search request not found'];
+        }
+
+        try {
+            if ($action === 'cancel') {
+                $this->searchRequestService->cancel($request);
+            } else {
+                $this->searchRequestService->reopen($request);
+            }
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'error' => $e->getMessage()];
+        }
+
+        return [
+            'ok' => true,
+            'id' => $request->id,
+            'status' => $request->fresh()->status?->value ?? (string) $request->status,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function listMusicResourceCatalog(User $user): array
+    {
+        $sections = [
+            $this->resourceSection('performers', Peformer::class, $user->ownedPeformers()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('studios', Studio::class, $user->ownedStudios()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('rehearsals', Rehersal::class, $user->ownedRehearsals()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('concert_venues', ConcertVenue::class, $user->ownedConcertVenues()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('schools', School::class, $user->ownedSchools()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('record_labels', RecordLabel::class, $user->ownedRecordLabels()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('producer_centers', ProducerCenter::class, $user->ownedProducerCenters()->orderBy('name')->get(['id', 'name'])),
+            $this->resourceSection('shops', Shop::class, $user->ownedShops()->orderBy('name')->get(['id', 'name'])),
+        ];
+
+        return [
+            'ok' => true,
+            'sections' => $sections,
+        ];
+    }
+
+    /**
+     * @param  \Illuminate\Support\Collection<int, object{id:int,name:string|null}>  $items
+     * @return array<string, mixed>
+     */
+    private function resourceSection(string $key, string $modelClass, \Illuminate\Support\Collection $items): array
+    {
+        return [
+            'key' => $key,
+            'model' => $modelClass,
+            'total_count' => $items->count(),
+            'items' => $items->take(10)->map(static fn (object $item): array => [
+                'id' => (int) $item->id,
+                'name' => (string) ($item->name ?? ('#'.$item->id)),
+            ])->values()->all(),
         ];
     }
 }

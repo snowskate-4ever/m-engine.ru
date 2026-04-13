@@ -12,13 +12,13 @@
 @endphp
 <div
     id="app-second-level-top-bar"
-    class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center gap-3 border-b border-zinc-200 bg-zinc-50 px-3 dark:border-zinc-700 dark:bg-zinc-900 lg:w-[calc(100%-4rem)]"
+    class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center gap-3 border-b border-zinc-200 bg-zinc-50 pe-3 ps-14 dark:border-zinc-700 dark:bg-zinc-900 lg:w-[calc(100%-4rem)] lg:px-3"
     wire:poll.keep-alive.120s="refreshPreview"
     x-data="{ notificationsOpen: false, accountOpen: false }"
     @keydown.escape.window="notificationsOpen = false; accountOpen = false"
 >
     @if (filled($title))
-        <h1 class="min-w-0 truncate text-lg font-medium text-zinc-800 dark:text-white">
+        <h1 class="ml-[15px] min-w-0 truncate text-lg font-medium text-zinc-800 dark:text-white">
             {{ $title }}
         </h1>
     @endif

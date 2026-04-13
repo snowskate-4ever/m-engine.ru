@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Music;
 
 use App\Enums\LegalEntityType;
+use App\Enums\UserMusicProfile;
 use App\Models\Teacher;
+use App\Models\User;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +17,8 @@ use Livewire\Component;
 
 class TeacherProfilePage extends Component
 {
+    public bool $enabled = false;
+
     public ?Teacher $record = null;
 
     public string $name = '';
@@ -40,7 +44,17 @@ class TeacherProfilePage extends Component
 
     public function mount(): void
     {
-        $this->record = Auth::user()->teacher;
+        /** @var User $user */
+        $user = Auth::user();
+        $this->enabled = $user->canActAsTeacher();
+        $this->record = $user->teacher;
+        if ($this->record === null) {
+            Gate::authorize('create', Teacher::class);
+            $this->record = Teacher::create([
+                'user_id' => $user->id,
+                'name' => (string) $user->name,
+            ]);
+        }
 
         $catalog = PublicProfileBlocks::teacherCatalog();
         foreach ($catalog as $row) {
@@ -71,12 +85,47 @@ class TeacherProfilePage extends Component
             return;
         }
 
-        Gate::authorize('create', Teacher::class);
-        $this->name = (string) Auth::user()->name;
+        if ($this->enabled) {
+            Gate::authorize('create', Teacher::class);
+        }
+        $this->name = (string) $user->name;
+    }
+
+    public function toggleProfile(): void
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $profiles = collect($user->music_profiles ?? []);
+        $target = UserMusicProfile::Teacher->value;
+
+        if ($profiles->contains($target)) {
+            $profiles = $profiles->reject(fn (string $value) => $value === $target)->values();
+        } else {
+            $profiles->push($target);
+        }
+
+        $user->music_profiles = $profiles->unique()->values()->all();
+        $user->save();
+        $this->enabled = $user->canActAsTeacher();
+
+        if ($this->enabled && $this->record === null) {
+            $this->record = Teacher::create([
+                'user_id' => $user->id,
+                'name' => (string) $user->name,
+            ]);
+        }
+
+        session()->flash('success', __('ui.music.saved'));
     }
 
     public function save(): void
     {
+        if (! $this->enabled) {
+            $this->addError('name', __('ui.music.profile_enable_required'));
+
+            return;
+        }
+
         if ($this->record) {
             Gate::authorize('update', $this->record);
         } else {

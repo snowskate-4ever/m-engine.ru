@@ -26,8 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import ru.mengine.mobile.di.AppContainer
 import ru.mengine.mobile.ui.auth.LoginScreen
 import ru.mengine.mobile.ui.auth.LoginViewModel
-import ru.mengine.mobile.ui.home.HomeScreen
-import ru.mengine.mobile.ui.home.HomeViewModel
+import ru.mengine.mobile.ui.main.MainShell
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,8 +54,7 @@ private fun RootNav(container: AppContainer) {
     var bootstrapped by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(Unit) {
-        val token = container.tokenStore.getToken()
-        bootstrapped = !token.isNullOrBlank()
+        bootstrapped = container.authRepository.hasValidSession()
     }
 
     when (bootstrapped) {
@@ -68,7 +66,7 @@ private fun RootNav(container: AppContainer) {
         else -> {
             NavHost(
                 navController = navController,
-                startDestination = if (bootstrapped == true) "home" else "login",
+                startDestination = if (bootstrapped == true) "main" else "login",
             ) {
                 composable("login") {
                     val vm = viewModel<LoginViewModel>(
@@ -81,29 +79,21 @@ private fun RootNav(container: AppContainer) {
                     LoginScreen(
                         viewModel = vm,
                         onLoggedIn = {
-                            navController.navigate("home") {
+                            navController.navigate("main") {
                                 popUpTo("login") { inclusive = true }
                             }
                         },
                     )
                 }
-                composable("home") {
-                    val vm = viewModel<HomeViewModel>(
-                        factory = object : ViewModelProvider.Factory {
-                            @Suppress("UNCHECKED_CAST")
-                            override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                                HomeViewModel(
-                                    authRepository = container.authRepository,
-                                    tokenStore = container.tokenStore,
-                                    onLoggedOut = {
-                                        navController.navigate("login") {
-                                            popUpTo(0) { inclusive = true }
-                                        }
-                                    },
-                                ) as T
+                composable("main") {
+                    MainShell(
+                        container = container,
+                        onLoggedOut = {
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
                         },
                     )
-                    HomeScreen(viewModel = vm)
                 }
             }
         }

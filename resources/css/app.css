@@ -411,8 +411,10 @@ select:focus[data-flux-control] {
 }
 .sidebar-mobile-toggle {
   position: fixed;
-  top: 1rem;
+  /* Center button vertically against top bar (56px). */
+  top: calc(56px / 2);
   left: 1rem;
+  transform: translateY(-50%);
   z-index: 45;
   display: flex;
   align-items: center;

@@ -91,6 +91,16 @@ class User extends Authenticatable
         return $this->hasMusicProfile(UserMusicProfile::EventOrganizer);
     }
 
+    public function canActAsMusician(): bool
+    {
+        return $this->hasMusicProfile(UserMusicProfile::Musician);
+    }
+
+    public function canActAsTeacher(): bool
+    {
+        return $this->hasMusicProfile(UserMusicProfile::Teacher);
+    }
+
     public function canActAsVenueRepresentative(): bool
     {
         return $this->hasMusicProfile(UserMusicProfile::VenueRepresentative);
@@ -99,6 +109,11 @@ class User extends Authenticatable
     public function canActAsManager(): bool
     {
         return $this->hasMusicProfile(UserMusicProfile::Manager);
+    }
+
+    public function canActAsSessionMusician(): bool
+    {
+        return $this->hasMusicProfile(UserMusicProfile::SessionMusician);
     }
 
     public function setActiveMusicActor(?string $type, ?int $id): void

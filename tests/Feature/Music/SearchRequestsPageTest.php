@@ -6,6 +6,7 @@ namespace Tests\Feature\Music;
 
 use App\Enums\SearchGoal;
 use App\Livewire\Music\SearchRequestsPage;
+use App\Models\Peformer;
 use App\Models\User;
 use App\Services\Music\SearchRequestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -63,6 +64,27 @@ class SearchRequestsPageTest extends TestCase
         ]);
     }
 
+    public function test_livewire_component_creates_request_from_manager_profile_scope(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['manager'],
+        ]);
+
+        Livewire::actingAs($user)->test(SearchRequestsPage::class)
+            ->set('initiatorRef', 'profile:manager')
+            ->set('searchGoal', SearchGoal::FindPerformerForOrganizer->value)
+            ->set('criteriaValues', ['city' => 'Moscow', 'budget_from' => 25000])
+            ->call('createRequest')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('search_requests', [
+            'created_by_user_id' => $user->id,
+            'initiator_type' => User::class,
+            'initiator_id' => $user->id,
+            'search_goal' => SearchGoal::FindPerformerForOrganizer->value,
+        ]);
+    }
+
     public function test_livewire_component_filters_requests_by_status(): void
     {
         $user = User::factory()->create([
@@ -78,5 +100,24 @@ class SearchRequestsPageTest extends TestCase
             ->set('statusFilter', 'cancelled')
             ->assertSee('cancelled-only')
             ->assertDontSee('open-only');
+    }
+
+    public function test_goal_options_are_limited_by_selected_initiator(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+        $performer = Peformer::query()->create([
+            'name' => 'Band Goals',
+            'owner_user_id' => $user->id,
+            'performer_kind' => 'band',
+        ]);
+
+        Livewire::actingAs($user)->test(SearchRequestsPage::class)
+            ->set('initiatorRef', Peformer::class.':'.$performer->id)
+            ->assertSet('searchGoal', SearchGoal::FindMusicianForPerformer->value)
+            ->set('searchGoal', SearchGoal::FindVenueForOrganizerEvent->value)
+            ->call('createRequest')
+            ->assertHasErrors(['searchGoal']);
     }
 }

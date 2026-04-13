@@ -50,4 +50,22 @@ class SearchRequestActorContextTest extends TestCase
         $this->assertSame($peformer->id, (int) $request->initiator_id);
         $this->assertSame(Peformer::class, $request->initiator_type);
     }
+
+    public function test_manager_can_create_request_from_own_profile_context(): void
+    {
+        $manager = User::factory()->create([
+            'music_profiles' => ['manager'],
+        ]);
+
+        $request = app(SearchRequestService::class)->createUsingActorContext(
+            $manager,
+            SearchGoal::FindPerformerForOrganizer,
+            ['city' => 'Moscow'],
+            User::class,
+            $manager->id,
+        );
+
+        $this->assertSame($manager->id, (int) $request->initiator_id);
+        $this->assertSame(User::class, $request->initiator_type);
+    }
 }

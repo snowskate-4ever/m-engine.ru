@@ -1,8 +1,8 @@
 document.addEventListener('alpine:init', () => {
     const MIN_W = 280;
     const MIN_H = 220;
-    const DEF_W = 500;
-    const DEF_H = 400;
+    const DEF_W = 800;
+    const DEF_H = 700;
     const GAP = 4;
     const PAD = 16;
 

@@ -4,27 +4,28 @@
     @endif
 
     <div class="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-        <div class="grid gap-4 md:grid-cols-2">
-            <flux:field>
-                <flux:label>{{ __('ui.music.search_requests_goal_label') }}</flux:label>
-                <select wire:model="searchGoal" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
-                    @foreach ($searchGoalOptions as $goal)
-                        <option value="{{ $goal->value }}">{{ $this->goalLabel($goal) }}</option>
-                    @endforeach
-                </select>
-            </flux:field>
-
+        <div class="grid gap-4">
             <flux:field>
                 <flux:label>{{ __('ui.music.search_requests_initiator_label') }}</flux:label>
-                <select wire:model="initiatorRef" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                <select wire:model.live="initiatorRef" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
                     <option value="">{{ __('ui.select') }}</option>
-                    @foreach ($actorOptions as $actor)
-                        <option value="{{ $actor['type'] }}:{{ $actor['id'] }}">{{ $actor['label'] }}</option>
+                    @foreach ($initiatorOptions as $actor)
+                        <option value="{{ $actor['value'] }}">{{ $actor['label'] }}</option>
                     @endforeach
                 </select>
                 @error('initiatorRef')
                     <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
                 @enderror
+            </flux:field>
+
+            <flux:field>
+                <flux:label>{{ __('ui.music.search_requests_goal_label') }}</flux:label>
+                <select wire:model="searchGoal" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                    @foreach ($createGoalOptions as $goal)
+                        <option value="{{ $goal->value }}">{{ $this->goalTargetLabel($goal) }}</option>
+                    @endforeach
+                </select>
+                <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ __('ui.music.search_requests_goal_hint') }}</div>
             </flux:field>
 
             <flux:field>
@@ -34,7 +35,27 @@
 
             <flux:field>
                 <flux:label>{{ __('ui.music.search_requests_criteria_label') }}</flux:label>
-                <textarea wire:model="criteriaJson" rows="4" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"></textarea>
+                <div class="grid gap-3 md:grid-cols-2">
+                    @foreach ($criteriaFieldOptions as $field)
+                        <div>
+                            <label class="mb-1 block text-xs text-zinc-500 dark:text-zinc-400">{{ $field['label'] }}</label>
+                            @if (($field['type'] ?? '') === 'select')
+                                <select wire:model="criteriaValues.{{ $field['key'] }}" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                                    <option value="">{{ __('ui.select') }}</option>
+                                    @foreach (($field['options'] ?? []) as $option)
+                                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            @elseif (($field['type'] ?? '') === 'date')
+                                <input type="date" wire:model="criteriaValues.{{ $field['key'] }}" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                            @elseif (($field['type'] ?? '') === 'number')
+                                <input type="number" wire:model="criteriaValues.{{ $field['key'] }}" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                            @else
+                                <input type="text" wire:model="criteriaValues.{{ $field['key'] }}" placeholder="{{ $field['placeholder'] ?? '' }}" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
                 <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ __('ui.music.search_requests_criteria_hint') }}</div>
                 @error('criteriaJson')
                     <div class="mt-1 text-xs text-rose-600 dark:text-rose-400">{{ $message }}</div>
@@ -75,7 +96,7 @@
                 <flux:label>{{ __('ui.music.search_requests_filter_initiator') }}</flux:label>
                 <select wire:model.live="initiatorFilter" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
                     <option value="all">{{ __('ui.music.search_requests_filter_all') }}</option>
-                    @foreach ($actorOptions as $actor)
+                    @foreach ($entityOptions as $actor)
                         <option value="{{ $actor['type'] }}:{{ $actor['id'] }}">{{ $actor['label'] }}</option>
                     @endforeach
                 </select>
