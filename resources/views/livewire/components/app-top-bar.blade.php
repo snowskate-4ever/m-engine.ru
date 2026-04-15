@@ -5,17 +5,18 @@
     $markAllLabel = __('ui.notifications.mark_all_read');
     $topBarTitle = __('ui.notifications.top_bar_title');
     $accountMenuLabel = __('ui.top_bar.account_menu');
-    $settingsLabel = __('Settings');
+    $settingsLabel = __('ui.top_bar.settings');
     $registrationInvitesLabel = __('ui.auth.registration_invites.menu');
     $messengerNotifLabel = __('ui.top_bar.messenger_notification_settings');
+    $publicPagesLabel = __('ui.music.public_pages_settings');
     $logoutLabel = __('ui.auth.logout.log_out');
 @endphp
 <div
     id="app-second-level-top-bar"
     class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center gap-3 border-b border-zinc-200 bg-zinc-50 pe-3 ps-14 dark:border-zinc-700 dark:bg-zinc-900 lg:w-[calc(100%-4rem)] lg:px-3"
     wire:poll.keep-alive.120s="refreshPreview"
-    x-data="{ notificationsOpen: false, accountOpen: false }"
-    @keydown.escape.window="notificationsOpen = false; accountOpen = false"
+    x-data="{ notificationsOpen: false, accountOpen: false, publicPagesOpen: false }"
+    @keydown.escape.window="notificationsOpen = false; accountOpen = false; publicPagesOpen = false"
 >
     @if (filled($title))
         <h1 class="ml-[15px] min-w-0 truncate text-lg font-medium text-zinc-800 dark:text-white">
@@ -29,6 +30,18 @@
             variant="primary"
             :href="$titleButton['href']"
             wire:navigate
+            title="{{ $titleButton['title'] ?? '' }}"
+            aria-label="{{ $titleButton['title'] ?? '' }}"
+            class="px-3"
+        >
+            {{ $titleButton['label'] ?? '+' }}
+        </flux:button>
+    @elseif (is_array($titleButton) && filled($titleButton['dispatch'] ?? null))
+        <flux:button
+            size="sm"
+            variant="primary"
+            type="button"
+            wire:click="$dispatch('{{ $titleButton['dispatch'] }}')"
             title="{{ $titleButton['title'] ?? '' }}"
             aria-label="{{ $titleButton['title'] ?? '' }}"
             class="px-3"
@@ -179,6 +192,13 @@
                 >
                     {{ $messengerNotifLabel }}
                 </a>
+                <button
+                    type="button"
+                    class="block w-full px-3 py-2 text-start text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-700/50"
+                    @click="accountOpen = false; publicPagesOpen = true"
+                >
+                    {{ $publicPagesLabel }}
+                </button>
                 <div class="border-t border-zinc-200 dark:border-zinc-700">
                     <form method="POST" action="{{ route('logout') }}" class="block">
                         @csrf
@@ -191,6 +211,24 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div
+        x-show="publicPagesOpen"
+        x-transition.opacity
+        x-cloak
+        class="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-900/50 p-4"
+        @click.self="publicPagesOpen = false"
+    >
+        <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ $publicPagesLabel }}</h2>
+                <flux:button type="button" size="sm" variant="ghost" @click="publicPagesOpen = false">
+                    {{ __('ui.close') }}
+                </flux:button>
+            </div>
+            <livewire:music.public-page-settings-modal />
         </div>
     </div>
 

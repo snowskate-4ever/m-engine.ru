@@ -6,12 +6,16 @@ namespace App\Livewire\Music;
 
 use App\Enums\PerformerMembershipStatus;
 use App\Enums\UserMusicProfile;
+use App\Models\City;
+use App\Models\Country;
+use App\Models\Genre;
 use App\Models\Instrument;
 use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\User;
 use App\Services\Music\PerformerMembershipService;
 use App\Support\Music\PublicProfileBlocks;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -29,14 +33,30 @@ class MusicianProfilePage extends Component
 
     public string $description = '';
 
-    public string $bio = '';
-
     public string $slug = '';
 
     public bool $public_page_enabled = false;
 
     /** @var list<int> */
     public array $instrumentIds = [];
+
+    public ?int $selectedInstrumentId = null;
+
+    /** @var list<int> */
+    public array $genreIds = [];
+
+    public ?int $selectedGenreId = null;
+
+    /** @var list<int> */
+    public array $cityIds = [];
+
+    public ?int $selectedCityId = null;
+
+    public int $cityPickerCountryId = 0;
+
+    public ?int $experienceStartMonth = null;
+
+    public ?int $experienceStartYear = null;
 
     /** @var array<string, bool> */
     public array $layoutBlockEnabled = [];
@@ -60,6 +80,8 @@ class MusicianProfilePage extends Component
             ]);
         }
 
+        $this->record->loadMissing(['instruments', 'genres', 'cities']);
+
         $catalog = PublicProfileBlocks::musicianCatalog();
         foreach ($catalog as $row) {
             $this->layoutBlockEnabled[$row['id']] = true;
@@ -69,10 +91,21 @@ class MusicianProfilePage extends Component
             Gate::authorize('update', $this->record);
             $this->name = (string) $this->record->name;
             $this->description = (string) ($this->record->description ?? '');
-            $this->bio = (string) ($this->record->bio ?? '');
             $this->slug = (string) ($this->record->slug ?? '');
             $this->public_page_enabled = (bool) $this->record->public_page_enabled;
             $this->instrumentIds = $this->record->instruments->pluck('id')->all();
+            $this->genreIds = $this->record->genres->pluck('id')->all();
+            $this->cityIds = $this->record->cities->pluck('id')->all();
+            if ($this->record->experience_started_on !== null) {
+                $this->experienceStartMonth = (int) $this->record->experience_started_on->format('n');
+                $this->experienceStartYear = (int) $this->record->experience_started_on->format('Y');
+            }
+            $this->cityPickerCountryId = (int) (
+                Country::query()->where('code', 'RU')->value('id')
+                ?? Country::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->value('id')
+                ?? Country::query()->orderBy('sort_order')->orderBy('name')->value('id')
+                ?? 0
+            );
 
             $draft = $this->record->layout_draft;
             if (is_array($draft) && ! empty($draft['blocks']) && is_array($draft['blocks'])) {
@@ -125,6 +158,13 @@ class MusicianProfilePage extends Component
             Gate::authorize('create', Musician::class);
         }
 
+        $this->experienceStartMonth = $this->experienceStartMonth === '' || $this->experienceStartMonth === false
+            ? null
+            : ($this->experienceStartMonth !== null ? (int) $this->experienceStartMonth : null);
+        $this->experienceStartYear = $this->experienceStartYear === '' || $this->experienceStartYear === false
+            ? null
+            : ($this->experienceStartYear !== null ? (int) $this->experienceStartYear : null);
+
         $slugRules = [
             'nullable',
             'string',
@@ -142,20 +182,61 @@ class MusicianProfilePage extends Component
             ];
         }
 
+        $this->instrumentIds = array_values(array_unique(array_map(static fn (mixed $id): int => (int) $id, $this->instrumentIds)));
+        $this->genreIds = array_values(array_unique(array_map(static fn (mixed $id): int => (int) $id, $this->genreIds)));
+        $this->cityIds = array_values(array_unique(array_map(static fn (mixed $id): int => (int) $id, $this->cityIds)));
+
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'bio' => ['nullable', 'string'],
             'slug' => $slugRules,
             'public_page_enabled' => ['boolean'],
             'instrumentIds' => ['required', 'array', 'min:1'],
             'instrumentIds.*' => ['integer', 'exists:instruments,id'],
+            'genreIds' => ['required', 'array', 'min:1'],
+            'genreIds.*' => ['integer', 'exists:genres,id'],
+            'cityIds' => ['nullable', 'array'],
+            'cityIds.*' => ['integer', 'exists:cities,id'],
+            'experienceStartMonth' => ['nullable', 'integer', 'between:1,12', 'required_with:experienceStartYear'],
+            'experienceStartYear' => [
+                'nullable',
+                'integer',
+                'min:'.(now()->year - 80),
+                'max:'.now()->year,
+                'required_with:experienceStartMonth',
+            ],
         ], [
             'instrumentIds.required' => __('ui.music.validation.instruments_required'),
             'instrumentIds.min' => __('ui.music.validation.instruments_required'),
+            'genreIds.required' => __('ui.music.validation.genres_required'),
+            'genreIds.min' => __('ui.music.validation.genres_required'),
             'slug.required' => __('ui.music.validation.slug_required_public'),
             'slug.regex' => __('ui.music.validation.slug_format'),
         ]);
+
+        $experienceStartedOn = null;
+        if (($validated['experienceStartMonth'] ?? null) !== null && ($validated['experienceStartYear'] ?? null) !== null) {
+            $start = CarbonImmutable::parse(sprintf(
+                '%04d-%02d-01',
+                (int) $validated['experienceStartYear'],
+                (int) $validated['experienceStartMonth'],
+            ))->startOfMonth();
+            $latestAllowed = now()->startOfMonth();
+            if ($start->greaterThan($latestAllowed)) {
+                throw ValidationException::withMessages([
+                    'experienceStartMonth' => [__('ui.music.validation.experience_started_future')],
+                ]);
+            }
+            $oldestAllowed = now()->subYears(80)->startOfMonth();
+            if ($start->lessThan($oldestAllowed)) {
+                throw ValidationException::withMessages([
+                    'experienceStartYear' => [__('ui.music.validation.experience_started_too_old', [
+                        'year' => $oldestAllowed->year,
+                    ])],
+                ]);
+            }
+            $experienceStartedOn = $start->toDateString();
+        }
 
         $layoutDraft = PublicProfileBlocks::wrapVersion1($this->buildLayoutBlocks());
         /** @var User $user */
@@ -164,10 +245,10 @@ class MusicianProfilePage extends Component
         $payload = [
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
-            'bio' => $validated['bio'] ?? null,
             'slug' => $validated['slug'] ?: null,
             'public_page_enabled' => $validated['public_page_enabled'],
             'is_session' => $user->canActAsSessionMusician(),
+            'experience_started_on' => $experienceStartedOn,
             'layout_draft' => $layoutDraft,
         ];
 
@@ -179,8 +260,106 @@ class MusicianProfilePage extends Component
         }
 
         $this->record->instruments()->sync($validated['instrumentIds']);
+        $this->record->genres()->sync($validated['genreIds']);
+        $this->record->cities()->sync($validated['cityIds'] ?? []);
 
         session()->flash('success', __('ui.music.saved'));
+    }
+
+    public function addInstrument(): void
+    {
+        if ($this->selectedInstrumentId === null) {
+            return;
+        }
+
+        $instrumentId = (int) $this->selectedInstrumentId;
+        $exists = Instrument::query()
+            ->whereKey($instrumentId)
+            ->where('active', true)
+            ->exists();
+
+        if (! $exists) {
+            return;
+        }
+
+        if (! in_array($instrumentId, $this->instrumentIds, true)) {
+            $this->instrumentIds[] = $instrumentId;
+            sort($this->instrumentIds);
+        }
+
+        $this->selectedInstrumentId = null;
+    }
+
+    public function addGenre(): void
+    {
+        if ($this->selectedGenreId === null) {
+            return;
+        }
+
+        $genreId = (int) $this->selectedGenreId;
+        $exists = Genre::query()
+            ->whereKey($genreId)
+            ->where('active', true)
+            ->exists();
+
+        if (! $exists) {
+            return;
+        }
+
+        if (! in_array($genreId, $this->genreIds, true)) {
+            $this->genreIds[] = $genreId;
+            sort($this->genreIds);
+        }
+
+        $this->selectedGenreId = null;
+    }
+
+    public function removeGenre(int $genreId): void
+    {
+        $this->genreIds = array_values(array_filter(
+            $this->genreIds,
+            static fn (int $id): bool => $id !== $genreId
+        ));
+    }
+
+    public function addCity(): void
+    {
+        if ($this->selectedCityId === null) {
+            return;
+        }
+
+        $cityId = (int) $this->selectedCityId;
+        $exists = City::query()
+            ->whereKey($cityId)
+            ->where('is_active', true)
+            ->exists();
+
+        if (! $exists) {
+            return;
+        }
+
+        if (! in_array($cityId, $this->cityIds, true)) {
+            $this->cityIds[] = $cityId;
+            sort($this->cityIds);
+        }
+
+        $this->selectedCityId = null;
+    }
+
+    public function removeCity(int $cityId): void
+    {
+        $this->cityIds = array_values(array_filter(
+            $this->cityIds,
+            static fn (int $id): bool => $id !== $cityId
+        ));
+    }
+
+    public function removeInstrument(int $instrumentId): void
+    {
+        $this->instrumentIds = array_values(array_filter(
+            $this->instrumentIds,
+            static fn (int $id): bool => $id !== $instrumentId
+        ));
     }
 
     public function publishLayout(): void
@@ -298,8 +477,52 @@ class MusicianProfilePage extends Component
             ->orderBy('name')
             ->get();
 
+        $genres = Genre::query()
+            ->where('active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $countries = Country::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $cityPickerCities = collect();
+        if ($this->cityPickerCountryId > 0) {
+            $cityPickerCities = City::query()
+                ->where('country_id', $this->cityPickerCountryId)
+                ->where('is_active', true)
+                ->orderByDesc('is_capital')
+                ->orderByDesc('population')
+                ->orderBy('name')
+                ->limit(500)
+                ->get();
+        }
+
+        $pickedCities = $this->cityIds !== []
+            ? City::query()->whereIn('id', $this->cityIds)->orderBy('name')->get()
+            : collect();
+
+        $experienceMonthOptions = [];
+        foreach (range(1, 12) as $m) {
+            $experienceMonthOptions[] = [
+                'value' => $m,
+                'label' => CarbonImmutable::parse(sprintf('2000-%02d-01', $m))
+                    ->locale(app()->getLocale())
+                    ->translatedFormat('F'),
+            ];
+        }
+        $y0 = (int) now()->year;
+        $experienceYearOptions = range($y0, $y0 - 80);
+
         return view('livewire.music.musician-profile-page', [
             'instruments' => $instruments,
+            'genres' => $genres,
+            'countries' => $countries,
+            'cityPickerCities' => $cityPickerCities,
+            'pickedCities' => $pickedCities,
             'blockCatalog' => PublicProfileBlocks::musicianCatalog(),
             'pendingLineupInvites' => $this->record
                 ? $this->record->peformers()->wherePivot('status', PerformerMembershipStatus::Pending->value)->orderBy('name')->get()
@@ -307,6 +530,8 @@ class MusicianProfilePage extends Component
             'acceptedLineup' => $this->record
                 ? $this->record->peformers()->wherePivot('status', PerformerMembershipStatus::Accepted->value)->orderBy('name')->get()
                 : collect(),
+            'experienceMonthOptions' => $experienceMonthOptions,
+            'experienceYearOptions' => $experienceYearOptions,
         ]);
     }
 }

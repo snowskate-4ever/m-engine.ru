@@ -9,8 +9,11 @@ use App\Enums\MusicMembershipStatus;
 use App\Models\ConcertVenue;
 use App\Models\Musician;
 use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -78,6 +81,30 @@ class MusicActorContextService
                 'type' => School::class,
                 'id' => $school->id,
                 'label' => $this->buildActorLabel(School::class, $school->name),
+            ];
+        }
+
+        foreach ($user->ownedRecordLabels()->get(['id', 'name']) as $label) {
+            $actors[] = [
+                'type' => RecordLabel::class,
+                'id' => $label->id,
+                'label' => $this->buildActorLabel(RecordLabel::class, $label->name),
+            ];
+        }
+
+        foreach ($user->ownedProducerCenters()->get(['id', 'name']) as $producerCenter) {
+            $actors[] = [
+                'type' => ProducerCenter::class,
+                'id' => $producerCenter->id,
+                'label' => $this->buildActorLabel(ProducerCenter::class, $producerCenter->name),
+            ];
+        }
+
+        foreach ($user->ownedShops()->get(['id', 'name']) as $shop) {
+            $actors[] = [
+                'type' => Shop::class,
+                'id' => $shop->id,
+                'label' => $this->buildActorLabel(Shop::class, $shop->name),
             ];
         }
 
@@ -158,6 +185,9 @@ class MusicActorContextService
             Studio::class => __('ui.music.search_initiator_studio'),
             Rehersal::class => __('ui.music.search_initiator_rehersal'),
             School::class => __('ui.music.search_initiator_school'),
+            RecordLabel::class => __('ui.music.search_initiator_record_label'),
+            ProducerCenter::class => __('ui.music.search_initiator_producer_center'),
+            Shop::class => __('ui.music.search_initiator_shop'),
             default => class_basename($actorType),
         };
     }

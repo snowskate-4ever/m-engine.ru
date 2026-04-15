@@ -99,7 +99,6 @@ final class MusicPublicSearchServiceTest extends TestCase
         Musician::query()->create([
             'name' => 'Musician '.$token,
             'description' => 'Bio',
-            'bio' => null,
             'slug' => 'm-'.uniqid('', true),
             'public_page_enabled' => true,
         ]);

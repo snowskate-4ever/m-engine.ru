@@ -45,12 +45,6 @@ class SocialLinksPanel extends Component
 
     public bool $form_active = true;
 
-    public string $filterType = '';
-
-    public string $filterState = 'all';
-
-    public string $filterQuery = '';
-
     public function mount(string $ownerKind, int $ownerId): void
     {
         if (! in_array($ownerKind, $this->allowedKinds(), true)) {
@@ -158,13 +152,6 @@ class SocialLinksPanel extends Component
             : __('ui.social.deactivated');
     }
 
-    public function resetFilters(): void
-    {
-        $this->filterType = '';
-        $this->filterState = 'all';
-        $this->filterQuery = '';
-    }
-
     public function render(): View
     {
         $owner = $this->resolveOwner();
@@ -173,25 +160,6 @@ class SocialLinksPanel extends Component
         $query = Social::query()
             ->where('socialable_id', $owner->getKey())
             ->where('socialable_type', $owner->getMorphClass());
-
-        if ($this->filterType !== '' && in_array($this->filterType, $this->socialTypes(), true)) {
-            $query->where('type', $this->filterType);
-        }
-
-        if ($this->filterState === 'active') {
-            $query->where('active', true);
-        } elseif ($this->filterState === 'inactive') {
-            $query->where('active', false);
-        }
-
-        $needle = trim($this->filterQuery);
-        if ($needle !== '') {
-            $query->where(function ($inner) use ($needle): void {
-                $inner->where('name', 'like', "%{$needle}%")
-                    ->orWhere('link', 'like', "%{$needle}%")
-                    ->orWhere('description', 'like', "%{$needle}%");
-            });
-        }
 
         $links = $query
             ->orderByDesc('active')

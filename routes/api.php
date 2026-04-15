@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\api\AiExpansionController;
 use App\Http\Controllers\api\AiServerModelController;
 use App\Http\Controllers\api\AiSubscriptionController;
 use App\Http\Controllers\api\ApiAuthController;
@@ -11,14 +12,25 @@ use App\Http\Controllers\api\ApiTypeController;
 use App\Http\Controllers\api\ApiUserController;
 use App\Http\Controllers\api\AuthController;
 use App\Http\Controllers\api\BillingWebhookController;
+use App\Http\Controllers\api\BlogCommentController;
+use App\Http\Controllers\api\BlogPostController;
+use App\Http\Controllers\api\BlogSubscriptionController;
+use App\Http\Controllers\api\ContractApiController;
 use App\Http\Controllers\api\DevicePushTokenController;
+use App\Http\Controllers\api\GamificationController;
+use App\Http\Controllers\api\Integration\IntegrationAnalyticsController;
+use App\Http\Controllers\api\Integration\IntegrationMeController;
+use App\Http\Controllers\api\Integration\IntegrationTokenController;
 use App\Http\Controllers\api\MessengerAttachmentDownloadController;
 use App\Http\Controllers\api\MessengerController;
 use App\Http\Controllers\api\MessengerConversationSkillController;
+use App\Http\Controllers\api\MobileSyncController;
 use App\Http\Controllers\api\MusicActorContextController;
-use App\Http\Controllers\api\MusicResourceCatalogController;
 use App\Http\Controllers\api\MusicProfileMembershipController;
+use App\Http\Controllers\api\MusicResourceCatalogController;
 use App\Http\Controllers\api\MusicSearchRequestController;
+use App\Http\Controllers\api\PlatformPaymentController;
+use App\Http\Controllers\api\PublicBlogController;
 use App\Http\Controllers\api\UserAiConnectionController;
 use App\Http\Controllers\api\UserAiPreferenceController;
 use App\Http\Controllers\api\UserAiScheduledItemController;
@@ -26,6 +38,23 @@ use App\Http\Controllers\api\VkApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/features', ApiFeaturesController::class)->name('api.features');
+
+Route::get('/public/blog-posts', [PublicBlogController::class, 'index'])
+    ->middleware('throttle:120,1')
+    ->name('api_public_blog_posts_index');
+Route::get('/public/blog-posts/detail', [PublicBlogController::class, 'show'])
+    ->middleware('throttle:120,1')
+    ->name('api_public_blog_posts_show');
+
+Route::prefix('integration/v1')->middleware(['integration.api', 'throttle:integration'])->group(function (): void {
+    Route::get('/me', IntegrationMeController::class)->name('api_integration_v1_me');
+    Route::get('/analytics/bookings/summary', [IntegrationAnalyticsController::class, 'bookingsSummary'])
+        ->name('api_integration_v1_analytics_bookings_summary');
+    Route::get('/analytics/bookings/by-month', [IntegrationAnalyticsController::class, 'bookingsByMonth'])
+        ->name('api_integration_v1_analytics_bookings_by_month');
+    Route::get('/analytics/bookings/export.csv', [IntegrationAnalyticsController::class, 'exportBookingsCsv'])
+        ->name('api_integration_v1_analytics_bookings_export_csv');
+});
 
 // Устаревший маршрут для обратной совместимости
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
@@ -135,10 +164,75 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/resources/catalog', [MusicResourceCatalogController::class, 'catalog'])->name('api_music_resources_catalog');
 
         Route::get('/search-requests', [MusicSearchRequestController::class, 'index'])->name('api_music_search_requests_index');
+        Route::get('/search-requests-feed', [MusicSearchRequestController::class, 'feed'])->name('api_music_search_requests_feed');
         Route::post('/search-requests', [MusicSearchRequestController::class, 'store'])->name('api_music_search_requests_store');
         Route::post('/search-requests/{searchRequest}/cancel', [MusicSearchRequestController::class, 'cancel'])->name('api_music_search_requests_cancel');
         Route::post('/search-requests/{searchRequest}/reopen', [MusicSearchRequestController::class, 'reopen'])->name('api_music_search_requests_reopen');
+        Route::post('/search-requests/{searchRequest}/responses', [MusicSearchRequestController::class, 'respond'])->name('api_music_search_requests_respond');
+        Route::get('/search-requests/{searchRequest}/responses', [MusicSearchRequestController::class, 'responses'])->name('api_music_search_requests_responses');
     });
+
+    Route::post('/platform/bookings/{booking}/payments', [PlatformPaymentController::class, 'storeForBooking'])
+        ->middleware('throttle:30,1')
+        ->name('api_platform_booking_payments_store');
+    Route::post('/platform/payments/{platformPayment}/capture-stub', [PlatformPaymentController::class, 'captureStub'])
+        ->middleware('throttle:30,1')
+        ->name('api_platform_payments_capture_stub');
+    Route::post('/platform/payments/{platformPayment}/refund', [PlatformPaymentController::class, 'refund'])
+        ->middleware('throttle:30,1')
+        ->name('api_platform_payments_refund');
+
+    Route::post('/contracts/generate', [ContractApiController::class, 'generate'])
+        ->middleware('throttle:30,1')
+        ->name('api_contracts_generate');
+    Route::post('/contracts/{contract}/accept', [ContractApiController::class, 'accept'])
+        ->middleware('throttle:60,1')
+        ->name('api_contracts_accept');
+
+    Route::get('/blog-posts', [BlogPostController::class, 'index'])->name('api_blog_posts_index');
+    Route::post('/blog-posts', [BlogPostController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('api_blog_posts_store');
+    Route::patch('/blog-posts/{blogPost}', [BlogPostController::class, 'update'])
+        ->middleware('throttle:30,1')
+        ->name('api_blog_posts_update');
+
+    Route::post('/blog-subscriptions', [BlogSubscriptionController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('api_blog_subscriptions_store');
+    Route::delete('/blog-subscriptions', [BlogSubscriptionController::class, 'destroy'])
+        ->middleware('throttle:60,1')
+        ->name('api_blog_subscriptions_destroy');
+
+    Route::post('/blog-posts/{blogPost}/comments', [BlogCommentController::class, 'store'])
+        ->middleware('throttle:60,1')
+        ->name('api_blog_comments_store');
+
+    Route::post('/integration/tokens', [IntegrationTokenController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('api_integration_tokens_store');
+
+    Route::get('/gamification/xp', [GamificationController::class, 'meXp'])->name('api_gamification_xp');
+    Route::get('/gamification/leaderboard', [GamificationController::class, 'leaderboard'])
+        ->middleware('throttle:60,1')
+        ->name('api_gamification_leaderboard');
+
+    Route::post('/ai/expansion/moderation-score', [AiExpansionController::class, 'moderationScore'])
+        ->middleware('throttle:30,1')
+        ->name('api_ai_expansion_moderation_score');
+    Route::get('/ai/expansion/recommend-partners', [AiExpansionController::class, 'recommendPartners'])
+        ->middleware('throttle:30,1')
+        ->name('api_ai_expansion_recommend_partners');
+    Route::post('/ai/expansion/studio-forecast', [AiExpansionController::class, 'studioForecast'])
+        ->middleware('throttle:30,1')
+        ->name('api_ai_expansion_studio_forecast');
+    Route::post('/ai/expansion/support-chat', [AiExpansionController::class, 'supportChat'])
+        ->middleware('throttle:30,1')
+        ->name('api_ai_expansion_support_chat');
+
+    Route::get('/mobile/v1/sync/manifest', [MobileSyncController::class, 'manifest'])
+        ->middleware('throttle:60,1')
+        ->name('api_mobile_sync_manifest');
 
     Route::middleware('ai.enabled')->prefix('ai')->group(function () {
         Route::get('/subscription', [AiSubscriptionController::class, 'show'])->name('api_ai_subscription_show');

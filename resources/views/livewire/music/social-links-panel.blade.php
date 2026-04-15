@@ -60,42 +60,6 @@
         </form>
     @endif
 
-    <div class="grid gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700 sm:grid-cols-4">
-        <flux:field>
-            <flux:label>{{ __('ui.social.filter_search') }}</flux:label>
-            <flux:input wire:model.live.debounce.300ms="filterQuery" type="text" :placeholder="__('ui.search')" />
-        </flux:field>
-
-        <flux:field>
-            <flux:label>{{ __('ui.social.filter_type') }}</flux:label>
-            <select
-                wire:model.live="filterType"
-                class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-            >
-                <option value="">{{ __('ui.social.filter_all_types') }}</option>
-                @foreach ($types as $type)
-                    <option value="{{ $type }}">{{ __('ui.social.types.'.$type) }}</option>
-                @endforeach
-            </select>
-        </flux:field>
-
-        <flux:field>
-            <flux:label>{{ __('ui.social.filter_state') }}</flux:label>
-            <select
-                wire:model.live="filterState"
-                class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-            >
-                <option value="all">{{ __('ui.social.filter_all_states') }}</option>
-                <option value="active">{{ __('ui.social.filter_active') }}</option>
-                <option value="inactive">{{ __('ui.social.filter_inactive') }}</option>
-            </select>
-        </flux:field>
-
-        <div class="flex items-end">
-            <flux:button type="button" variant="ghost" wire:click="resetFilters">{{ __('ui.reset') }}</flux:button>
-        </div>
-    </div>
-
     @if ($links->isEmpty() && ! $showForm)
         <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('ui.social.empty') }}</p>
     @elseif ($links->isNotEmpty())

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\MatchingRunController;
 use App\Http\Controllers\KanbanCardAttachmentController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\KanbanLogsController;
@@ -46,6 +47,8 @@ Route::get('/robots.txt', function () {
 })->name('robots');
 
 Route::get('/sitemap-music.xml', MusicSitemapController::class)->name('sitemap.music');
+Route::get('/public/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'show'])
+    ->name('public.profile.show');
 
 Route::prefix('musicians')->group(function () {
     Route::get('/{slug}', [App\Http\Controllers\Public\PublicMusicProfileController::class, 'musician'])
@@ -137,6 +140,9 @@ Route::get('/resources/type/{type_id}', function ($type_id) {
 })->name('resources.stub');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/matching/run', [MatchingRunController::class, 'form'])->name('admin.matching.run');
+    Route::post('/admin/matching/run', [MatchingRunController::class, 'run'])->name('admin.matching.run.execute');
+
     Route::redirect('settings', 'settings/profile');
 
     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'dashboard'])

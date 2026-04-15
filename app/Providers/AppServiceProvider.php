@@ -3,11 +3,13 @@
 namespace App\Providers;
 
 use App\Contracts\Billing\PaymentGatewayContract;
+use App\Contracts\PlatformPayments\PlatformAcquiringDriverContract;
 use App\Listeners\LogNotificationFailed;
 use App\Listeners\Notifications\BroadcastDatabaseNotification;
+use App\Listeners\Notifications\MirrorDatabaseNotificationToSystemChat;
+use App\Models\ConcertVenue;
 use App\Models\Event;
 use App\Models\Musician;
-use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\PublicProfileReport;
@@ -23,8 +25,8 @@ use App\Observers\MusicProfileModerationAuditObserver;
 use App\Observers\PublicMusicCatalogCacheObserver;
 use App\Observers\PublicProfileReportAuditObserver;
 use App\Observers\ShopOrderObserver;
-use App\Policies\MusicianPolicy;
 use App\Policies\ConcertVenuePolicy;
+use App\Policies\MusicianPolicy;
 use App\Policies\PeformerPolicy;
 use App\Policies\ProducerCenterPolicy;
 use App\Policies\RecordLabelPolicy;
@@ -36,10 +38,14 @@ use App\Policies\StudioPolicy;
 use App\Policies\TeacherPolicy;
 use App\Services\Billing\StubBillingPaymentGateway;
 use App\Services\Billing\YooKassaPaymentGateway;
+use App\Services\PlatformPayments\StubPlatformAcquiringDriver;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Notifications\Events\NotificationSent;
 use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -53,6 +59,12 @@ class AppServiceProvider extends ServiceProvider
             return match ((string) config('billing.payment_gateway', 'stub')) {
                 'yookassa' => $app->make(YooKassaPaymentGateway::class),
                 default => $app->make(StubBillingPaymentGateway::class),
+            };
+        });
+
+        $this->app->singleton(PlatformAcquiringDriverContract::class, function ($app) {
+            return match ((string) config('platform_payments.driver', 'stub')) {
+                default => $app->make(StubPlatformAcquiringDriver::class),
             };
         });
     }
@@ -100,6 +112,17 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ShopOrder::class, ShopOrderPolicy::class);
 
         EventFacade::listen(NotificationSent::class, BroadcastDatabaseNotification::class);
+        EventFacade::listen(NotificationSent::class, MirrorDatabaseNotificationToSystemChat::class);
         EventFacade::listen(NotificationFailed::class, LogNotificationFailed::class);
+
+        RateLimiter::for('integration', function (Request $request): Limit {
+            $token = $request->attributes->get('integration_api_token');
+            $perMinute = $token?->rate_limit_per_minute
+                ?? (int) config('integration.default_rate_limit_per_minute', 120);
+
+            return Limit::perMinute(max(10, min(6000, $perMinute)))->by(
+                $token ? 'int_token:'.$token->id : 'int_ip:'.$request->ip(),
+            );
+        });
     }
 }

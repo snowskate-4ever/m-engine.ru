@@ -13,7 +13,9 @@ use Livewire\Component;
 
 class MusicProfilesPage extends Component
 {
-    /** @var 'musician'|'teacher'|'organizer'|'manager'|'session_musician' */
+    /**
+     * @var 'musician'|'teacher'|'organizer'|'manager'|'session_musician'|'agent'|'sound_engineer'|'arranger'|'live_sound'|'lighting_designer'|'videographer'|'photographer'|'journalist'|'venue_manager'|'merchandiser'|'tour_manager'|'promoter'|'recording_engineer'|'mastering_engineer'|'session_producer'|'tech_rider'|'backline_tech'|'graphic_designer'|'smm_manager'|'music_lawyer'|'accountant'
+     */
     #[Url(history: true)]
     public string $tab = 'musician';
 
@@ -21,7 +23,7 @@ class MusicProfilesPage extends Component
 
     public function mount(): void
     {
-        if (! in_array($this->tab, ['musician', 'teacher', 'organizer', 'manager', 'session_musician'], true)) {
+        if (! in_array($this->tab, $this->allowedTabs(), true)) {
             $this->tab = 'musician';
         }
 
@@ -54,6 +56,47 @@ class MusicProfilesPage extends Component
 
         return view('livewire.music.music-profiles-page', [
             'actorOptions' => $actorOptions,
+            'profileDescription' => $this->profileDescription($this->tab),
         ]);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedTabs(): array
+    {
+        return [
+            'musician',
+            'teacher',
+            'organizer',
+            'manager',
+            'session_musician',
+            'agent',
+            'sound_engineer',
+            'arranger',
+            'live_sound',
+            'lighting_designer',
+            'videographer',
+            'photographer',
+            'journalist',
+            'venue_manager',
+            'merchandiser',
+            'tour_manager',
+            'promoter',
+            'recording_engineer',
+            'mastering_engineer',
+            'session_producer',
+            'tech_rider',
+            'backline_tech',
+            'graphic_designer',
+            'smm_manager',
+            'music_lawyer',
+            'accountant',
+        ];
+    }
+
+    private function profileDescription(string $tab): string
+    {
+        return (string) __('ui.music.profile_description_'.$tab);
     }
 }

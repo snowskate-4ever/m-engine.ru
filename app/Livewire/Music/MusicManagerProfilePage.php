@@ -46,6 +46,7 @@ class MusicManagerProfilePage extends Component
 
         return view('livewire.music.music-manager-profile-page', [
             'memberships' => $memberships,
+            'criteriaProfileKey' => UserMusicProfile::Manager->value,
         ]);
     }
 }

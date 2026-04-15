@@ -25,13 +25,15 @@ use App\MoonShine\Resources\Instrument\InstrumentResource;
 use App\MoonShine\Resources\Manufacturer\ManufacturerResource;
 use App\MoonShine\Resources\Messenger\MessengerConversationResource;
 use App\MoonShine\Resources\Messenger\MessengerMessageResource;
+use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
+use App\MoonShine\Resources\MusicEcosystem\MatchingControlSettingResource;
+use App\MoonShine\Resources\MusicEcosystem\MatchingRunLogResource;
 use App\MoonShine\Resources\MusicEcosystem\MusicianResource;
 use App\MoonShine\Resources\MusicEcosystem\MusicSchoolResource;
 use App\MoonShine\Resources\MusicEcosystem\MusicStudioResource;
 use App\MoonShine\Resources\MusicEcosystem\PeformerResource as MusicPeformerMoonShineResource;
 use App\MoonShine\Resources\MusicEcosystem\ProducerCenterResource as MusicProducerCenterMoonShineResource;
 use App\MoonShine\Resources\MusicEcosystem\RecordLabelResource as MusicRecordLabelMoonShineResource;
-use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
 use App\MoonShine\Resources\MusicEcosystem\RehersalResource;
 use App\MoonShine\Resources\MusicEcosystem\TeacherResource as MusicTeacherMoonShineResource;
 use App\MoonShine\Resources\Region\RegionResource;
@@ -115,6 +117,9 @@ final class MoonShineLayout extends AppLayout
                 MenuItem::make(MusicSchoolResource::class)->icon('building-library'),
                 MenuItem::make(MusicRecordLabelMoonShineResource::class)->icon('musical-note'),
                 MenuItem::make(MusicProducerCenterMoonShineResource::class)->icon('adjustments-vertical'),
+                MenuItem::make(MatchingControlSettingResource::class)->icon('cog-6-tooth'),
+                MenuItem::make(MatchingRunLogResource::class)->icon('bolt'),
+                MenuItem::make('Matching Run Form', '/admin/matching/run')->icon('play'),
             ])->icon('globe-alt'),
             MenuGroup::make(static fn () => __('moonshine.messenger.menu_group'), [
                 MenuItem::make(MessengerConversationResource::class)->icon('chat-bubble-left-right'),

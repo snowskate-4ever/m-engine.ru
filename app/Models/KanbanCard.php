@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class KanbanCard extends Model
 {
@@ -23,6 +24,9 @@ class KanbanCard extends Model
         'visibility_mode',
         'visibility_set_by_user_id',
         'source_chat_message_id',
+        'source_type',
+        'source_id',
+        'is_archived',
     ];
 
     protected function casts(): array
@@ -31,6 +35,7 @@ class KanbanCard extends Model
             'importance' => KanbanCardImportance::class,
             'visibility_mode' => KanbanVisibilityMode::class,
             'due_at' => 'immutable_datetime',
+            'is_archived' => 'boolean',
         ];
     }
 
@@ -64,6 +69,11 @@ class KanbanCard extends Model
     public function grants(): MorphMany
     {
         return $this->morphMany(KanbanAccessGrant::class, 'subject');
+    }
+
+    public function source(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     /**

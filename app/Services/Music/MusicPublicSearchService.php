@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Music;
 
-use App\Models\Musician;
 use App\Models\ConcertVenue;
+use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -126,7 +126,7 @@ final class MusicPublicSearchService
     private function searchMusicians(string $like, int $limit): Collection
     {
         $q = $this->musicianPublic();
-        $this->applyTextMatch($q, $like, true);
+        $this->applyTextMatch($q, $like);
 
         return $this->mapMusicians($q->orderBy('name')->limit($limit)->get());
     }
@@ -137,9 +137,9 @@ final class MusicPublicSearchService
     private function searchTeachers(string $like, int $limit): Collection
     {
         $q = $this->teacherPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'teacher', 'public.teachers.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'teacher');
     }
 
     /**
@@ -148,9 +148,9 @@ final class MusicPublicSearchService
     private function searchPerformers(string $like, int $limit): Collection
     {
         $q = $this->peformerPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'performer', 'public.performers.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'performer');
     }
 
     /**
@@ -159,9 +159,9 @@ final class MusicPublicSearchService
     private function searchStudios(string $like, int $limit): Collection
     {
         $q = $this->studioPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'studio', 'public.studios.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'studio');
     }
 
     /**
@@ -170,9 +170,9 @@ final class MusicPublicSearchService
     private function searchRehearsals(string $like, int $limit): Collection
     {
         $q = $this->rehearsalPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'rehearsal', 'public.rehearsals.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'rehearsal');
     }
 
     /**
@@ -181,9 +181,9 @@ final class MusicPublicSearchService
     private function searchConcertVenues(string $like, int $limit): Collection
     {
         $q = $this->concertVenuePublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'concert_venue', 'public.concert-venues.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'concert_venue');
     }
 
     /**
@@ -192,9 +192,9 @@ final class MusicPublicSearchService
     private function searchSchools(string $like, int $limit): Collection
     {
         $q = $this->schoolPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'school', 'public.schools.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'school');
     }
 
     /**
@@ -203,9 +203,9 @@ final class MusicPublicSearchService
     private function searchRecordLabels(string $like, int $limit): Collection
     {
         $q = $this->recordLabelPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'record_label', 'public.labels.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'record_label');
     }
 
     /**
@@ -214,9 +214,9 @@ final class MusicPublicSearchService
     private function searchProducerCenters(string $like, int $limit): Collection
     {
         $q = $this->producerCenterPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'producer_center', 'public.producer-centers.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'producer_center');
     }
 
     /**
@@ -225,9 +225,9 @@ final class MusicPublicSearchService
     private function searchShops(string $like, int $limit): Collection
     {
         $q = $this->shopPublic();
-        $this->applyTextMatch($q, $like, false);
+        $this->applyTextMatch($q, $like);
 
-        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'shop', 'public.shops.show');
+        return $this->mapSimple($q->orderBy('name')->limit($limit)->get(), 'shop');
     }
 
     private function escapeLike(string $value): string
@@ -340,14 +340,11 @@ final class MusicPublicSearchService
         );
     }
 
-    private function applyTextMatch(Builder $query, string $like, bool $includeBio): void
+    private function applyTextMatch(Builder $query, string $like): void
     {
-        $query->where(function (Builder $q) use ($like, $includeBio) {
+        $query->where(function (Builder $q) use ($like) {
             $q->where('name', 'like', $like)
                 ->orWhere('description', 'like', $like);
-            if ($includeBio) {
-                $q->orWhere('bio', 'like', $like);
-            }
         });
     }
 
@@ -360,8 +357,8 @@ final class MusicPublicSearchService
         return $musicians->map(fn (Musician $m) => [
             'type' => 'musician',
             'name' => $m->name,
-            'url' => route('public.musicians.show', ['slug' => $m->slug]),
-            'excerpt' => $this->excerpt((string) ($m->bio ?? $m->description ?? '')),
+            'url' => route('public.profile.show', ['slug' => $m->slug]),
+            'excerpt' => $this->excerpt((string) ($m->description ?? '')),
         ]);
     }
 
@@ -369,12 +366,12 @@ final class MusicPublicSearchService
      * @param  \Illuminate\Database\Eloquent\Collection<int, Teacher|Peformer|Studio|Rehersal|ConcertVenue|School|RecordLabel|ProducerCenter|Shop>  $items
      * @return Collection<int, array{type: string, name: string, url: string, excerpt: ?string}>
      */
-    private function mapSimple($items, string $type, string $routeName): Collection
+    private function mapSimple($items, string $type): Collection
     {
         return $items->map(fn ($row) => [
             'type' => $type,
             'name' => $row->name,
-            'url' => route($routeName, ['slug' => $row->slug]),
+            'url' => route('public.profile.show', ['slug' => $row->slug]),
             'excerpt' => $this->excerpt((string) ($row->description ?? '')),
         ]);
     }

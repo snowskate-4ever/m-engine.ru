@@ -6,9 +6,9 @@ namespace App\Livewire\Music;
 
 use App\Models\Address;
 use App\Models\City;
+use App\Models\ConcertVenue;
 use App\Models\Country;
 use App\Models\Musician;
-use App\Models\ConcertVenue;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -18,8 +18,10 @@ use App\Models\School;
 use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
@@ -70,13 +72,13 @@ class AddressBookPanel extends Component
         $this->ownerKind = $ownerKind;
         $this->ownerId = $ownerId;
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
     }
 
     public function openCreate(): void
     {
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
         $this->editingId = null;
         $this->resetFormDefaults($owner);
         $this->showForm = true;
@@ -86,7 +88,7 @@ class AddressBookPanel extends Component
     public function openEdit(int $addressId): void
     {
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
         $address = $this->findOwnedAddress($addressId);
         $this->editingId = $address->id;
         $this->form_country_id = $address->country_id;
@@ -115,7 +117,7 @@ class AddressBookPanel extends Component
     public function save(): void
     {
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
 
         $this->form_region_id = $this->form_region_id ?: null;
         $this->form_city_id = $this->form_city_id ?: null;
@@ -178,7 +180,7 @@ class AddressBookPanel extends Component
     public function deleteAddress(int $addressId): void
     {
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
         $this->findOwnedAddress($addressId)->delete();
         $this->notice = __('ui.address.deleted');
     }
@@ -186,7 +188,7 @@ class AddressBookPanel extends Component
     public function makePrimary(int $addressId): void
     {
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
         $this->findOwnedAddress($addressId)->setAsPrimary();
         $this->notice = __('ui.address.primary_set');
     }
@@ -205,7 +207,7 @@ class AddressBookPanel extends Component
     public function render(): View
     {
         $owner = $this->resolveOwner();
-        Gate::authorize('update', $owner);
+        $this->authorizeOwner($owner);
 
         $addresses = $owner->addresses()->with(['country', 'region', 'city'])->orderByDesc('is_primary')->orderBy('id')->get();
 
@@ -233,12 +235,13 @@ class AddressBookPanel extends Component
      */
     private function allowedKinds(): array
     {
-        return ['musician', 'teacher', 'performer', 'studio', 'rehearsal', 'concert_venue', 'school', 'record_label', 'producer_center', 'shop'];
+        return ['user', 'musician', 'teacher', 'performer', 'studio', 'rehearsal', 'concert_venue', 'school', 'record_label', 'producer_center', 'shop'];
     }
 
     private function resolveModelClass(): string
     {
         return match ($this->ownerKind) {
+            'user' => User::class,
             'musician' => Musician::class,
             'teacher' => Teacher::class,
             'performer' => Peformer::class,
@@ -259,6 +262,17 @@ class AddressBookPanel extends Component
         $class = $this->resolveModelClass();
 
         return $class::query()->findOrFail($this->ownerId);
+    }
+
+    private function authorizeOwner(Model $owner): void
+    {
+        if ($owner instanceof User) {
+            abort_unless((int) $owner->id === (int) Auth::id(), 403);
+
+            return;
+        }
+
+        Gate::authorize('update', $owner);
     }
 
     private function findOwnedAddress(int $id): Address

@@ -32,9 +32,6 @@ class MusicianCreate extends Component
     // Пользователь
     public ?int $user_id = null;
 
-    // Профессиональные характеристики
-    public ?string $bio = null;
-
     // Личная информация
     public ?string $birth_date = null;
 
@@ -70,7 +67,6 @@ class MusicianCreate extends Component
             'name' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'user_id' => ['nullable', 'integer', 'exists:users,id'],
-            'bio' => ['nullable', 'string'],
             'birth_date' => ['nullable', 'date'],
             'gender' => ['nullable', 'in:male,female,other'],
             'education' => ['nullable', 'string'],
@@ -92,7 +88,6 @@ class MusicianCreate extends Component
             'description' => $this->description,
             'user_id' => $this->user_id,
             'active' => $this->active,
-            'bio' => $this->bio,
             'birth_date' => $this->birth_date,
             'gender' => $this->gender,
             'education' => $this->education,

@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'detect.channel' => \App\Http\Middleware\DetectAuthChannel::class,
             'ai.enabled' => \App\Http\Middleware\EnsureAiMasterEnabled::class,
+            'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -37,6 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping();
 
         $schedule->command('ai:process-scheduled-items')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule->command('music:run-matching')
             ->everyMinute()
             ->withoutOverlapping();
 

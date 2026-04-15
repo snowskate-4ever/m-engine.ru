@@ -7,17 +7,30 @@
         <flux:heading size="lg">{{ __('ui.music.profile_session_musician_title') }}</flux:heading>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <flux:description>{{ __('ui.music.profile_session_musician_hint') }}</flux:description>
-            <flux:button type="button" wire:click="toggle" variant="{{ $enabled ? 'filled' : 'primary' }}">
-                {{ $enabled ? __('ui.music.profile_disable') : __('ui.music.profile_enable') }}
-            </flux:button>
         </div>
 
-        @if (! $enabled)
-            <flux:callout variant="warning">{{ __('ui.music.profile_enable_required') }}</flux:callout>
+        @if ($enabled)
+            <div class="flex flex-wrap gap-3 pt-2">
+                <flux:button type="button" wire:click="toggle" variant="ghost" size="sm">{{ __('ui.music.profile_disable') }}</flux:button>
+            </div>
+        @else
+            <flux:callout variant="secondary">{{ __('ui.music.profile_generic_criteria_disabled') }}</flux:callout>
+            <flux:button type="button" wire:click="toggle" variant="primary">{{ __('ui.music.profile_enable') }}</flux:button>
         @endif
     </div>
 
-    @if (auth()->check())
-        <livewire:music.social-links-panel owner-kind="user" :owner-id="auth()->id()" :key="'socials-session-musician-'.auth()->id()" />
+    @if ($enabled)
+        <flux:callout variant="secondary">
+            <div class="space-y-2">
+                <p>{{ __('ui.music.profile_session_musician_criteria_hint') }}</p>
+                <div>
+                    <a
+                        href="{{ route('music.profiles', ['tab' => 'musician']) }}"
+                        class="text-sm font-medium text-blue-600 underline decoration-blue-600/30 underline-offset-2 hover:decoration-blue-600 dark:text-blue-400 dark:decoration-blue-400/30 dark:hover:decoration-blue-400"
+                        wire:navigate
+                    >{{ __('ui.music.profile_session_musician_edit_musician_tab') }}</a>
+                </div>
+            </div>
+        </flux:callout>
     @endif
 </div>

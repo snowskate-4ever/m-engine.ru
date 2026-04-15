@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\HasPublicPageLayouts;
 use App\Models\Concerns\ModeratablePublicProfile;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -23,7 +25,7 @@ class Musician extends Model
         'active',
         'photo',
         'avatar',
-        'bio',
+        'experience_started_on',
         'birth_date',
         'gender',
         'education',
@@ -50,6 +52,7 @@ class Musician extends Model
         'metadata' => 'array',
         'layout_draft' => 'array',
         'layout_published' => 'array',
+        'experience_started_on' => 'date',
         'birth_date' => 'date',
         'moderation_hidden_at' => 'datetime',
         'moderation_review_requested_at' => 'datetime',
@@ -80,6 +83,17 @@ class Musician extends Model
     {
         return $this->belongsToMany(Genre::class, 'musician_genre')
             ->withPivot('preference_level', 'is_primary')
+            ->withTimestamps();
+    }
+
+    /**
+     * Города, в которых готов работать / выступать (кроме адресов из адресной книги).
+     *
+     * @return BelongsToMany<City, Musician>
+     */
+    public function cities(): BelongsToMany
+    {
+        return $this->belongsToMany(City::class, 'musician_city')
             ->withTimestamps();
     }
 
@@ -115,5 +129,23 @@ class Musician extends Model
     public function memberships(): MorphMany
     {
         return $this->morphMany(MusicProfileMembership::class, 'entity');
+    }
+
+    /**
+     * Полных лет опыта от первого дня месяца начала до текущей даты (для публички и критериев).
+     */
+    protected function yearsOfExperience(): Attribute
+    {
+        return Attribute::make(
+            get: function (mixed $value, array $attributes): ?int {
+                $raw = $attributes['experience_started_on'] ?? null;
+                if ($raw === null || $raw === '') {
+                    return null;
+                }
+                $start = CarbonImmutable::parse((string) $raw)->startOfMonth();
+
+                return max(0, (int) $start->diffInYears(now()));
+            }
+        );
     }
 }

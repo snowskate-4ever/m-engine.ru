@@ -15,8 +15,7 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('ui.dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="calendar-days" :href="route('calendar')" :current="request()->routeIs('calendar')" wire:navigate>{{ __('ui.calendar.title') }}</flux:navlist.item>
-                    <flux:navlist.item icon="square-2-stack" :href="route('kanban')" :current="request()->routeIs('kanban') && ! request()->routeIs('kanban.logs')" wire:navigate>{{ __('ui.kanban.title') }}</flux:navlist.item>
-                    <flux:navlist.item icon="clock" :href="route('kanban.logs')" :current="request()->routeIs('kanban.logs')" wire:navigate>{{ __('ui.kanban.logs') }}</flux:navlist.item>
+                    <flux:navlist.item icon="square-2-stack" :href="route('kanban')" :current="request()->routeIs(['kanban', 'kanban.logs'])" wire:navigate>{{ __('ui.kanban.title') }}</flux:navlist.item>
                 </flux:navlist.group>
             </flux:navlist>
 

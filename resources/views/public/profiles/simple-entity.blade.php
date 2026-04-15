@@ -45,7 +45,7 @@
                         <ul class="mt-3 flex flex-wrap gap-2">
                             <li>
                                 <a
-                                    href="{{ route('public.shops.show', ['slug' => $model->slug]) }}"
+                                    href="{{ route('public.profile.show', ['slug' => $model->slug]) }}"
                                     @class([
                                         'rounded-full px-3 py-1 text-xs font-medium ring-1 transition',
                                         'bg-zinc-900 text-white ring-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-100' => ($shopListingCategoryId ?? 0) === 0,
@@ -56,7 +56,7 @@
                             @foreach($shopListingCategories as $cat)
                                 <li>
                                     <a
-                                        href="{{ route('public.shops.show', ['slug' => $model->slug, 'category' => $cat->id]) }}"
+                                        href="{{ route('public.profile.show', ['slug' => $model->slug, 'category' => $cat->id]) }}"
                                         @class([
                                             'rounded-full px-3 py-1 text-xs font-medium ring-1 transition',
                                             'bg-zinc-900 text-white ring-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-100' => (int) ($shopListingCategoryId ?? 0) === (int) $cat->id,

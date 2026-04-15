@@ -17,6 +17,7 @@
             </flux:callout>
         @endif
 
+        <div x-data="{ layoutSettingsOpen: false }">
         <form wire:submit="save" class="space-y-4">
             <flux:field>
                 <flux:label>{{ __('ui.music.fields.name') }}</flux:label>
@@ -29,23 +30,6 @@
                 <flux:textarea wire:model="description" rows="4" />
                 <flux:error name="description" />
             </flux:field>
-
-            <flux:field>
-                <flux:label>{{ __('ui.music.fields.slug') }}</flux:label>
-                <flux:input wire:model="slug" type="text" />
-                <flux:description>{{ __('ui.music.fields.slug_hint') }}</flux:description>
-                <flux:error name="slug" />
-            </flux:field>
-
-            <flux:checkbox wire:model="public_page_enabled" :label="__('ui.music.fields.public_enabled')" />
-
-            @if ($record && filled($slug))
-                <flux:callout variant="secondary" inline>
-                    <a href="{{ route('public.'.$publicUrlPrefix.'.show', ['slug' => $slug]) }}" target="_blank" rel="noopener" class="font-medium underline underline-offset-2">
-                        {{ __('ui.music.open_public_page') }}
-                    </a>
-                </flux:callout>
-            @endif
 
             @if ($kind === 'shop' && $record)
                 <flux:callout variant="secondary" inline class="flex flex-wrap gap-x-4 gap-y-1">
@@ -90,30 +74,52 @@
                 <flux:input wire:model="ogrn" type="text" />
             </flux:field>
 
-            <flux:separator />
-
-            <flux:heading size="md">{{ __('ui.music.layout_draft') }}</flux:heading>
-            <flux:description>{{ __('ui.music.layout_draft_hint') }}</flux:description>
-            <div class="flex flex-col gap-2">
-                @foreach ($blockCatalog as $row)
-                    <flux:checkbox wire:model="layoutBlockEnabled.{{ $row['id'] }}" :label="__($row['label_key'])" />
-                @endforeach
-            </div>
-
             <div class="flex flex-wrap gap-3 pt-2">
                 <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="button" variant="ghost" @click="layoutSettingsOpen = true">{{ __('ui.music.layout_draft') }}</flux:button>
                 @if ($record)
                     <flux:button type="button" wire:click="publishLayout" variant="filled">{{ __('ui.music.publish_layout') }}</flux:button>
                 @endif
             </div>
         </form>
+        <div
+            x-show="layoutSettingsOpen"
+            x-transition.opacity
+            x-cloak
+            class="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-900/50 p-4"
+            @click.self="layoutSettingsOpen = false"
+            @keydown.escape.window="layoutSettingsOpen = false"
+        >
+            <div class="w-full max-w-2xl rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.music.layout_draft') }}</h2>
+                        <p class="text-sm text-zinc-600 dark:text-zinc-300">{{ __('ui.music.layout_draft_hint') }}</p>
+                    </div>
+                    <flux:button type="button" size="sm" variant="ghost" @click="layoutSettingsOpen = false">
+                        {{ __('ui.close') }}
+                    </flux:button>
+                </div>
+                <div class="flex flex-col gap-2">
+                    @foreach ($blockCatalog as $row)
+                        <label class="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-800 dark:border-zinc-700 dark:text-zinc-100">
+                            <span>{{ __($row['label_key']) }}</span>
+                            <input
+                                type="checkbox"
+                                wire:model="layoutBlockEnabled.{{ $row['id'] }}"
+                                class="rounded border-zinc-300 text-zinc-900 focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:focus:ring-zinc-400/30"
+                            />
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        </div>
     </div>
 
     @if ($record)
         @if ($kind === 'concert_venue' && (int) ($record->owner_user_id ?? 0) === (int) auth()->id())
             <livewire:music.venue-representatives-panel :venue-id="$record->id" :key="'venue-representatives-'.$record->id" />
         @endif
-        <livewire:music.social-links-panel :owner-kind="$kind" :owner-id="$record->id" :key="'socials-venue-'.$kind.'-'.$record->id" />
-        <livewire:music.address-book-panel :owner-kind="$kind" :owner-id="$record->id" :key="'addresses-venue-'.$kind.'-'.$record->id" />
     @endif
 </div>

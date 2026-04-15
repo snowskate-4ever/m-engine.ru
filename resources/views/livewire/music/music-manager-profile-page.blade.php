@@ -7,15 +7,23 @@
         <flux:heading size="lg">{{ __('ui.music.profile_manager_title') }}</flux:heading>
         <div class="flex flex-wrap items-center justify-between gap-3">
             <flux:description>{{ __('ui.music.profile_manager_hint') }}</flux:description>
-            <flux:button type="button" wire:click="toggle" variant="{{ $enabled ? 'filled' : 'primary' }}">
-                {{ $enabled ? __('ui.music.profile_disable') : __('ui.music.profile_enable') }}
-            </flux:button>
         </div>
 
-        @if (! $enabled)
-            <flux:callout variant="warning">{{ __('ui.music.profile_enable_required') }}</flux:callout>
+        @if ($enabled)
+            <div class="flex flex-wrap gap-3 pt-2">
+                <flux:button type="button" wire:click="toggle" variant="ghost" size="sm">{{ __('ui.music.profile_disable') }}</flux:button>
+            </div>
+        @else
+            <flux:callout variant="secondary">{{ __('ui.music.profile_generic_criteria_disabled') }}</flux:callout>
+            <flux:button type="button" wire:click="toggle" variant="primary">{{ __('ui.music.profile_enable') }}</flux:button>
         @endif
     </div>
+
+    <livewire:music.music-user-json-criteria-form
+        wire:key="manager-criteria-{{ $criteriaProfileKey }}"
+        :profile-key="$criteriaProfileKey"
+        :enabled="$enabled"
+    />
 
     <div class="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:heading size="md">{{ __('ui.music.profile_manager_memberships') }}</flux:heading>
@@ -29,7 +37,4 @@
         @endforelse
     </div>
 
-    @if (auth()->check())
-        <livewire:music.social-links-panel owner-kind="user" :owner-id="auth()->id()" :key="'socials-manager-'.auth()->id()" />
-    @endif
 </div>

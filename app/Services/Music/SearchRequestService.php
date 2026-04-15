@@ -14,16 +14,19 @@ use App\Models\OrganizerRehersalInvite;
 use App\Models\OrganizerSchoolInvite;
 use App\Models\OrganizerStudioInvite;
 use App\Models\OrganizerVenueInvite;
-use App\Models\PeformerMusician;
 use App\Models\Peformer;
+use App\Models\PeformerMusician;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Rehersal;
-use App\Models\SearchRequest;
 use App\Models\School;
+use App\Models\SearchRequest;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class SearchRequestService
 {
@@ -52,6 +55,9 @@ class SearchRequestService
             Studio::class => Studio::query()->findOrFail($resolvedId),
             Rehersal::class => Rehersal::query()->findOrFail($resolvedId),
             School::class => School::query()->findOrFail($resolvedId),
+            RecordLabel::class => RecordLabel::query()->findOrFail($resolvedId),
+            ProducerCenter::class => ProducerCenter::query()->findOrFail($resolvedId),
+            Shop::class => Shop::query()->findOrFail($resolvedId),
             default => throw new \InvalidArgumentException('Unsupported initiator type.'),
         };
 
@@ -250,6 +256,9 @@ class SearchRequestService
             Studio::class => Gate::forUser($actor)->authorize('manageMatching', $initiator),
             Rehersal::class => Gate::forUser($actor)->authorize('manageMatching', $initiator),
             School::class => Gate::forUser($actor)->authorize('manageMatching', $initiator),
+            RecordLabel::class => Gate::forUser($actor)->authorize('update', $initiator),
+            ProducerCenter::class => Gate::forUser($actor)->authorize('update', $initiator),
+            Shop::class => Gate::forUser($actor)->authorize('update', $initiator),
             default => throw new \InvalidArgumentException('Unsupported initiator model.'),
         };
     }

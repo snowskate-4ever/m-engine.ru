@@ -5,13 +5,9 @@
                 <h1 class="text-2xl font-semibold tracking-tight">{{ $model->name }}</h1>
             </header>
         @endif
-        @if($model->shouldShowPublicBlock('bio'))
+        @if($model->shouldShowPublicBlock('description') && filled($model->description))
             <div class="mt-8 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                @if(filled($model->bio))
-                    <p class="whitespace-pre-wrap">{{ $model->bio }}</p>
-                @elseif(filled($model->description))
-                    <p class="whitespace-pre-wrap">{{ $model->description }}</p>
-                @endif
+                <p class="whitespace-pre-wrap">{{ $model->description }}</p>
             </div>
         @endif
         @if($model->shouldShowPublicBlock('instruments') && $model->instruments->isNotEmpty())
@@ -36,6 +32,26 @@
                         </li>
                     @endforeach
                 </ul>
+            </section>
+        @endif
+        @if($model->shouldShowPublicBlock('cities') && $model->cities->isNotEmpty())
+            <section class="mt-8">
+                <h2 class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('ui.public_profile.musician_cities') }}</h2>
+                <ul class="mt-3 flex flex-wrap gap-2">
+                    @foreach($model->cities as $city)
+                        <li class="rounded-md bg-zinc-200/70 px-2.5 py-1 text-xs font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                            {{ $city->name }}
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+        @if($model->shouldShowPublicBlock('experience') && $model->years_of_experience !== null)
+            <section class="mt-8">
+                <h2 class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('ui.public_profile.musician_experience') }}</h2>
+                <p class="mt-3 text-sm text-zinc-700 dark:text-zinc-300">
+                    {{ __('ui.public_profile.musician_experience_text', ['n' => (int) $model->years_of_experience]) }}
+                </p>
             </section>
         @endif
         @if($model->shouldShowPublicBlock('addresses') && $model->addresses->isNotEmpty())
@@ -80,7 +96,7 @@
                     @foreach($model->peformers as $peformer)
                         <li class="text-sm text-zinc-800 dark:text-zinc-200">
                             @if($peformer->public_page_enabled && filled($peformer->slug))
-                                <a href="{{ route('public.performers.show', ['slug' => $peformer->slug]) }}" class="font-medium underline-offset-2 hover:underline">
+                                <a href="{{ route('public.profile.show', ['slug' => $peformer->slug]) }}" class="font-medium underline-offset-2 hover:underline">
                                     {{ $peformer->name }}
                                 </a>
                             @else

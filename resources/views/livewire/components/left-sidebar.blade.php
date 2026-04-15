@@ -30,33 +30,19 @@
                     </a>
                 </li>
 
-                <li class="menu-divider"><span>{{ __('ui.sections.resources') }}</span></li>
+                <li class="menu-divider"><span>{{ __('ui.sections.planning') }}</span></li>
 
-                <li class="menu-item" x-data="{ open: {{ request()->routeIs('resources*') ? 'true' : 'false' }} }">
-                    <button type="button" class="menu-button w-full" @click="open = ! open" :class="{ 'menu-item--opened': open }">
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg></span>
-                        <span class="menu-text">{{ __('ui.sections.resources') }}</span>
-                        <span class="menu-arrow"><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 9-7 7-7-7"/></svg></span>
-                    </button>
-                    <ul class="menu-submenu" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
-                        @foreach($resourceTypes as $type)
-                            @php $isCurrent = request()->routeIs('resources.by_type') && request()->route('type_id') == $type->id; @endphp
-                            <li class="menu-item {{ $isCurrent ? 'is_active' : '' }}">
-                                <a href="{{ route('resources.by_type', ['type_id' => $type->id]) }}" class="menu-link" wire:navigate>
-                                    <span class="menu-icon"><svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg></span>
-                                    <span class="menu-text">{{ __('moonshine.types.values.' . $type->name) ?: $type->name }}</span>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
+                <li class="menu-item {{ request()->routeIs('calendar') ? 'is_active' : '' }}">
+                    <a href="{{ route('calendar') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.calendar.title') }}</span>
+                    </a>
                 </li>
 
-                <li class="menu-divider"><span>{{ __('ui.sections.events') }}</span></li>
-
-                <li class="menu-item {{ request()->routeIs('events') ? 'is_active' : '' }}">
-                    <a href="{{ route('events') }}" class="menu-link" wire:navigate>
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
-                        <span class="menu-text">{{ __('ui.leftside.events') }}</span>
+                <li class="menu-item {{ request()->routeIs(['kanban', 'kanban.logs']) ? 'is_active' : '' }}">
+                    <a href="{{ route('kanban') }}" class="menu-link" wire:navigate>
+                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg></span>
+                        <span class="menu-text">{{ __('ui.kanban.title') }}</span>
                     </a>
                 </li>
 
@@ -149,29 +135,6 @@
                     <a href="{{ route('music.shop.orders') }}" class="menu-link" wire:navigate>
                         <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg></span>
                         <span class="menu-text">{{ __('ui.music.sidebar_my_orders') }}</span>
-                    </a>
-                </li>
-
-                <li class="menu-divider"><span>{{ __('ui.sections.planning') }}</span></li>
-
-                <li class="menu-item {{ request()->routeIs('calendar') ? 'is_active' : '' }}">
-                    <a href="{{ route('calendar') }}" class="menu-link" wire:navigate>
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></span>
-                        <span class="menu-text">{{ __('ui.calendar.title') }}</span>
-                    </a>
-                </li>
-
-                <li class="menu-item {{ request()->routeIs('kanban') && ! request()->routeIs('kanban.logs') ? 'is_active' : '' }}">
-                    <a href="{{ route('kanban') }}" class="menu-link" wire:navigate>
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg></span>
-                        <span class="menu-text">{{ __('ui.kanban.title') }}</span>
-                    </a>
-                </li>
-
-                <li class="menu-item {{ request()->routeIs('kanban.logs') ? 'is_active' : '' }}">
-                    <a href="{{ route('kanban.logs') }}" class="menu-link" wire:navigate>
-                        <span class="menu-icon"><svg class="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
-                        <span class="menu-text">{{ __('ui.kanban.logs') }}</span>
                     </a>
                 </li>
 

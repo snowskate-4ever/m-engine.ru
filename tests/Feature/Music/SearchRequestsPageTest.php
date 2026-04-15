@@ -29,6 +29,20 @@ class SearchRequestsPageTest extends TestCase
             ->assertSee(__('ui.music.search_requests_page_title'));
     }
 
+    public function test_create_modal_opens_and_closes(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+
+        Livewire::actingAs($user)->test(SearchRequestsPage::class)
+            ->assertSet('showCreateModal', false)
+            ->call('openCreateModal')
+            ->assertSet('showCreateModal', true)
+            ->call('closeCreateModal')
+            ->assertSet('showCreateModal', false);
+    }
+
     public function test_livewire_component_creates_cancel_and_reopens_request(): void
     {
         $user = User::factory()->create([

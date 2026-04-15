@@ -11,9 +11,9 @@ use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\SearchRequest;
 use App\Models\Shop;
 use App\Models\Studio;
-use App\Models\SearchRequest;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -194,15 +194,6 @@ class VenueEditPage extends Component
             'blockCatalog' => $this->venueBlockCatalog(),
             'matchingProgress' => $this->resolveMatchingProgress(),
             'routePrefix' => match ($this->kind) {
-                'studio' => 'studios',
-                'rehearsal' => 'rehearsals',
-                'concert_venue' => 'concert-venues',
-                'school' => 'schools',
-                'record_label' => 'labels',
-                'producer_center' => 'producer-centers',
-                'shop' => 'shops',
-            },
-            'publicUrlPrefix' => match ($this->kind) {
                 'studio' => 'studios',
                 'rehearsal' => 'rehearsals',
                 'concert_venue' => 'concert-venues',

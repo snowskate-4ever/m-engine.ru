@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Enums\UserMusicProfile;
+use App\Models\Traits\HasAddresses;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -19,6 +20,8 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasAddresses;
+
     use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -39,6 +42,7 @@ class User extends Authenticatable
         'vk_token_expires_at',
         'vk_user_id',
         'music_profiles',
+        'music_profile_criteria',
         'active_music_actor_type',
         'active_music_actor_id',
     ];
@@ -75,6 +79,7 @@ class User extends Authenticatable
             'vk_user_id' => 'integer',
             'notification_preferences' => 'array',
             'music_profiles' => 'array',
+            'music_profile_criteria' => 'array',
         ];
     }
 
@@ -126,6 +131,21 @@ class User extends Authenticatable
     public function musicProfileMemberships(): HasMany
     {
         return $this->hasMany(MusicProfileMembership::class, 'member_user_id');
+    }
+
+    public function integrationApiTokens(): HasMany
+    {
+        return $this->hasMany(IntegrationApiToken::class);
+    }
+
+    public function xpLedgers(): HasMany
+    {
+        return $this->hasMany(UserXpLedger::class);
+    }
+
+    public function userAchievements(): HasMany
+    {
+        return $this->hasMany(UserAchievement::class);
     }
 
     public function invitedMusicProfileMemberships(): HasMany
@@ -416,5 +436,28 @@ class User extends Authenticatable
     public function shopOrdersAsBuyer(): HasMany
     {
         return $this->hasMany(ShopOrder::class, 'buyer_user_id');
+    }
+
+    /**
+     * Критерии для профиля пользователя (города, опыт и т.п.), хранятся в JSON по ключу профиля.
+     *
+     * @return array<string, mixed>
+     */
+    public function musicProfileCriteriaFor(string $profileKey): array
+    {
+        $all = $this->music_profile_criteria ?? [];
+        $row = $all[$profileKey] ?? [];
+
+        return is_array($row) ? $row : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $criteria
+     */
+    public function mergeMusicProfileCriteria(string $profileKey, array $criteria): void
+    {
+        $all = $this->music_profile_criteria ?? [];
+        $all[$profileKey] = $criteria;
+        $this->music_profile_criteria = $all;
     }
 }

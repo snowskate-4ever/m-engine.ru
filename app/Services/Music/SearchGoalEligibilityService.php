@@ -12,9 +12,25 @@ use App\Models\Rehersal;
 use App\Models\School;
 use App\Models\Studio;
 use App\Models\User;
+use App\Support\Music\ActorTargetMatrix;
 
 class SearchGoalEligibilityService
 {
+    /**
+     * Declarative map for ad-style targeting matrix.
+     *
+     * @return array<string, list<string>>
+     */
+    public function actorTargetMatrix(): array
+    {
+        return ActorTargetMatrix::matrix();
+    }
+
+    public function canInitiatorSearchTarget(string $initiatorKind, string $targetKind): bool
+    {
+        return ActorTargetMatrix::allows($initiatorKind, $targetKind);
+    }
+
     /**
      * @return list<class-string>
      */

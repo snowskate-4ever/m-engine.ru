@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class City extends Model
 {
@@ -42,6 +43,15 @@ class City extends Model
     public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class);
+    }
+
+    /**
+     * @return BelongsToMany<Musician, City>
+     */
+    public function musicians(): BelongsToMany
+    {
+        return $this->belongsToMany(Musician::class, 'musician_city')
+            ->withTimestamps();
     }
 
     // Для связи Many-to-Many с регионами

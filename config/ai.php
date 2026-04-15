@@ -120,4 +120,25 @@ return [
             : 0,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ads matching (admin-managed)
+    |--------------------------------------------------------------------------
+    */
+    'matching' => [
+        'enabled' => filter_var(env('AI_MATCHING_ENABLED', true), FILTER_VALIDATE_BOOL),
+        'provider' => env('AI_MATCHING_PROVIDER', 'openai'),
+        'model' => env('AI_MATCHING_MODEL', 'gpt-4o-mini'),
+        'score_threshold' => env('AI_MATCHING_SCORE_THRESHOLD') !== null
+            ? (float) env('AI_MATCHING_SCORE_THRESHOLD')
+            : 0.65,
+        'weights' => [
+            'geo' => env('AI_MATCHING_WEIGHT_GEO') !== null ? (float) env('AI_MATCHING_WEIGHT_GEO') : 0.3,
+            'genre' => env('AI_MATCHING_WEIGHT_GENRE') !== null ? (float) env('AI_MATCHING_WEIGHT_GENRE') : 0.25,
+            'rating' => env('AI_MATCHING_WEIGHT_RATING') !== null ? (float) env('AI_MATCHING_WEIGHT_RATING') : 0.15,
+            'activity' => env('AI_MATCHING_WEIGHT_ACTIVITY') !== null ? (float) env('AI_MATCHING_WEIGHT_ACTIVITY') : 0.1,
+            'text' => env('AI_MATCHING_WEIGHT_TEXT') !== null ? (float) env('AI_MATCHING_WEIGHT_TEXT') : 0.2,
+        ],
+    ],
+
 ];

@@ -6,7 +6,12 @@ namespace App\Livewire\Music;
 
 use App\Enums\SearchGoal;
 use App\Enums\SearchRequestStatus;
+use App\Enums\UserMusicProfile;
+use App\Models\City;
 use App\Models\ConcertVenue;
+use App\Models\Country;
+use App\Models\Genre;
+use App\Models\Instrument;
 use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\Rehersal;
@@ -17,13 +22,14 @@ use App\Models\User;
 use App\Services\Music\MusicActorContextService;
 use App\Services\Music\SearchGoalEligibilityService;
 use App\Services\Music\SearchRequestService;
-use Carbon\CarbonImmutable;
+use App\Support\Music\MusicProfileCriteria;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -38,7 +44,13 @@ class SearchRequestsPage extends Component
 
     public string $criteriaJson = '{}';
 
-    public string $expiresAt = '';
+    public ?int $criteriaPickerInstrumentId = null;
+
+    public ?int $criteriaPickerGenreId = null;
+
+    public ?int $criteriaPickerCityId = null;
+
+    public int $criteriaCityPickerCountryId = 0;
 
     #[Url(history: true)]
     public string $statusFilter = 'all';
@@ -49,9 +61,12 @@ class SearchRequestsPage extends Component
     #[Url(history: true)]
     public string $initiatorFilter = 'all';
 
+    public bool $showCreateModal = false;
+
     public function mount(): void
     {
         $this->criteriaValues = [];
+        $this->criteriaCityPickerCountryId = $this->defaultCountryIdForCityPicker();
 
         $initiators = $this->initiatorOptions();
         if ($initiators->isNotEmpty()) {
@@ -59,6 +74,18 @@ class SearchRequestsPage extends Component
         }
 
         $this->syncSearchGoalWithInitiator();
+    }
+
+    #[On('search-requests-open-create')]
+    public function openCreateModal(): void
+    {
+        $this->resetErrorBag();
+        $this->showCreateModal = true;
+    }
+
+    public function closeCreateModal(): void
+    {
+        $this->showCreateModal = false;
     }
 
     /**
@@ -70,7 +97,6 @@ class SearchRequestsPage extends Component
 
         [$type, $id] = $this->parseInitiatorRef();
         $criteria = $this->parseCriteria();
-        $expiresAt = $this->parseExpiresAt();
 
         try {
             app(SearchRequestService::class)->createUsingActorContext(
@@ -79,7 +105,7 @@ class SearchRequestsPage extends Component
                 $criteria,
                 $type,
                 $id,
-                $expiresAt,
+                null,
             );
         } catch (AuthorizationException) {
             $this->addError('initiatorRef', __('ui.music.search_requests_initiator_forbidden'));
@@ -96,7 +122,7 @@ class SearchRequestsPage extends Component
         }
 
         $this->criteriaJson = '{}';
-        $this->expiresAt = '';
+        $this->showCreateModal = false;
         session()->flash('success', __('ui.music.search_requests_created'));
     }
 
@@ -132,6 +158,8 @@ class SearchRequestsPage extends Component
 
     public function render(): View
     {
+        $cityIds = $this->criteriaCityIdsForView();
+
         return view('livewire.music.search-requests-page', [
             'searchGoalOptions' => SearchGoal::cases(),
             'createGoalOptions' => $this->availableSearchGoalsForInitiator(),
@@ -139,6 +167,19 @@ class SearchRequestsPage extends Component
             'initiatorOptions' => $this->initiatorOptions()->all(),
             'entityOptions' => $this->entityOptions()->all(),
             'criteriaFieldOptions' => $this->criteriaFieldOptions(),
+            'criteriaInstruments' => $this->criteriaNeedsCatalogInstruments()
+                ? Instrument::query()->where('active', true)->orderBy('sort_order')->orderBy('name')->get()
+                : collect(),
+            'criteriaGenres' => $this->criteriaNeedsCatalogGenres()
+                ? Genre::query()->where('active', true)->orderBy('sort_order')->orderBy('name')->get()
+                : collect(),
+            'criteriaCountries' => $this->criteriaNeedsCityPicker()
+                ? Country::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->get()
+                : collect(),
+            'criteriaCityPickerCities' => $this->criteriaCityPickerCities(),
+            'criteriaPickedCities' => $cityIds !== []
+                ? City::query()->whereIn('id', $cityIds)->orderBy('name')->get()
+                : collect(),
             'requests' => $this->requests(),
         ]);
     }
@@ -260,6 +301,121 @@ class SearchRequestsPage extends Component
 
         $this->syncSearchGoalWithInitiator();
         $this->criteriaValues = [];
+        $this->criteriaPickerInstrumentId = null;
+        $this->criteriaPickerGenreId = null;
+        $this->criteriaPickerCityId = null;
+        $this->criteriaCityPickerCountryId = $this->defaultCountryIdForCityPicker();
+    }
+
+    public function addCriteriaInstrument(): void
+    {
+        if ($this->criteriaPickerInstrumentId === null) {
+            return;
+        }
+
+        $instrumentId = (int) $this->criteriaPickerInstrumentId;
+        if (! Instrument::query()->whereKey($instrumentId)->where('active', true)->exists()) {
+            return;
+        }
+
+        $ids = $this->criteriaValues['instruments'] ?? [];
+        if (! is_array($ids)) {
+            $ids = [];
+        }
+        if (! in_array($instrumentId, $ids, true)) {
+            $ids[] = $instrumentId;
+            sort($ids);
+        }
+
+        $this->criteriaValues['instruments'] = $ids;
+        $this->criteriaPickerInstrumentId = null;
+    }
+
+    public function removeCriteriaInstrument(int $instrumentId): void
+    {
+        $this->criteriaValues['instruments'] ??= [];
+        if (! is_array($this->criteriaValues['instruments'])) {
+            return;
+        }
+
+        $this->criteriaValues['instruments'] = array_values(array_filter(
+            $this->criteriaValues['instruments'],
+            static fn (mixed $id): bool => (int) $id !== $instrumentId
+        ));
+    }
+
+    public function addCriteriaGenre(): void
+    {
+        if ($this->criteriaPickerGenreId === null) {
+            return;
+        }
+
+        $genreId = (int) $this->criteriaPickerGenreId;
+        if (! Genre::query()->whereKey($genreId)->where('active', true)->exists()) {
+            return;
+        }
+
+        $ids = $this->criteriaValues['genres'] ?? [];
+        if (! is_array($ids)) {
+            $ids = [];
+        }
+        if (! in_array($genreId, $ids, true)) {
+            $ids[] = $genreId;
+            sort($ids);
+        }
+
+        $this->criteriaValues['genres'] = $ids;
+        $this->criteriaPickerGenreId = null;
+    }
+
+    public function removeCriteriaGenre(int $genreId): void
+    {
+        $this->criteriaValues['genres'] ??= [];
+        if (! is_array($this->criteriaValues['genres'])) {
+            return;
+        }
+
+        $this->criteriaValues['genres'] = array_values(array_filter(
+            $this->criteriaValues['genres'],
+            static fn (mixed $id): bool => (int) $id !== $genreId
+        ));
+    }
+
+    public function addCriteriaCity(): void
+    {
+        if ($this->criteriaPickerCityId === null) {
+            return;
+        }
+
+        $cityId = (int) $this->criteriaPickerCityId;
+        if (! City::query()->whereKey($cityId)->where('is_active', true)->exists()) {
+            return;
+        }
+
+        $ids = $this->criteriaValues['cities'] ?? [];
+        if (! is_array($ids)) {
+            $ids = [];
+        }
+        if (! in_array($cityId, $ids, true)) {
+            $ids[] = $cityId;
+            sort($ids);
+        }
+
+        $this->criteriaValues['cities'] = $ids;
+        $this->criteriaPickerCityId = null;
+    }
+
+    public function removeCriteriaCity(int $cityId): void
+    {
+        $this->criteriaValues['cities'] ??= [];
+        if (! is_array($this->criteriaValues['cities'])) {
+            return;
+        }
+
+        $this->criteriaValues['cities'] = array_values(array_filter(
+            $this->criteriaValues['cities'],
+            static fn (mixed $id): bool => (int) $id !== $cityId
+        ));
     }
 
     /**
@@ -296,42 +452,44 @@ class SearchRequestsPage extends Component
      */
     private function criteriaFieldOptions(): array
     {
-        if ($this->selectedProfileKey() !== null) {
-            return $this->criteriaForProfile($this->selectedProfileKey());
-        }
-
-        return $this->criteriaForEntityType($this->selectedEntityType());
+        return $this->criteriaFieldDefinitions();
     }
 
     /**
+     * Критерии для заявки «от лица профиля» совпадают с настраиваемыми полями профиля (MusicProfileCriteria).
+     *
      * @return list<array{key: string, label: string, type: string, options?: array<int, array{value: string, label: string}>, placeholder?: string}>
      */
     private function criteriaForProfile(?string $profile): array
     {
-        return match ($profile) {
-            'manager' => [
-                ['key' => 'city', 'label' => __('ui.music.search_filters_city'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_city_placeholder')],
-                ['key' => 'genre', 'label' => __('ui.music.search_filters_genre'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_genre_placeholder')],
-                ['key' => 'collaboration_mode', 'label' => __('ui.music.search_filters_collaboration_mode'), 'type' => 'select', 'options' => [
-                    ['value' => 'session', 'label' => __('ui.music.search_filters_collaboration_session')],
-                    ['value' => 'long_term', 'label' => __('ui.music.search_filters_collaboration_long_term')],
-                ]],
-                ['key' => 'budget_from', 'label' => __('ui.music.search_filters_budget_from'), 'type' => 'number'],
-                ['key' => 'budget_to', 'label' => __('ui.music.search_filters_budget_to'), 'type' => 'number'],
-            ],
-            'venue_representative' => [
-                ['key' => 'city', 'label' => __('ui.music.search_filters_city'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_city_placeholder')],
-                ['key' => 'event_date', 'label' => __('ui.music.search_filters_event_date'), 'type' => 'date'],
-                ['key' => 'capacity_from', 'label' => __('ui.music.search_filters_capacity_from'), 'type' => 'number'],
-            ],
-            default => [
-                ['key' => 'city', 'label' => __('ui.music.search_filters_city'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_city_placeholder')],
-                ['key' => 'genre', 'label' => __('ui.music.search_filters_genre'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_genre_placeholder')],
-                ['key' => 'event_date', 'label' => __('ui.music.search_filters_event_date'), 'type' => 'date'],
-                ['key' => 'budget_from', 'label' => __('ui.music.search_filters_budget_from'), 'type' => 'number'],
-                ['key' => 'budget_to', 'label' => __('ui.music.search_filters_budget_to'), 'type' => 'number'],
-            ],
-        };
+        if ($profile === null) {
+            return [];
+        }
+
+        $enum = UserMusicProfile::tryFrom($profile);
+        if ($enum === null) {
+            return [];
+        }
+
+        return $this->expandMusicProfileCriteriaRows(MusicProfileCriteria::for($enum));
+    }
+
+    /**
+     * @param  list<array{key: string, label_key: string, type: string}>  $rows
+     * @return list<array{key: string, label: string, type: string, options?: array<int, array{value: string, label: string}>, placeholder?: string}>
+     */
+    private function expandMusicProfileCriteriaRows(array $rows): array
+    {
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'key' => $row['key'],
+                'label' => __($row['label_key']),
+                'type' => $row['type'],
+            ];
+        }
+
+        return $out;
     }
 
     /**
@@ -350,8 +508,7 @@ class SearchRequestsPage extends Component
                 ]],
             ],
             Musician::class => [
-                ['key' => 'city', 'label' => __('ui.music.search_filters_city'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_city_placeholder')],
-                ['key' => 'genre', 'label' => __('ui.music.search_filters_genre'), 'type' => 'text', 'placeholder' => __('ui.music.search_filters_genre_placeholder')],
+                ...$this->expandMusicProfileCriteriaRows(MusicProfileCriteria::for(UserMusicProfile::Musician)),
                 ['key' => 'organizer_type', 'label' => __('ui.music.search_filters_organizer_type'), 'type' => 'select', 'options' => [
                     ['value' => 'club', 'label' => __('ui.music.search_filters_organizer_type_club')],
                     ['value' => 'festival', 'label' => __('ui.music.search_filters_organizer_type_festival')],
@@ -402,6 +559,90 @@ class SearchRequestsPage extends Component
         [$type] = explode(':', $this->initiatorRef, 2);
 
         return $type !== '' ? $type : null;
+    }
+
+    private function defaultCountryIdForCityPicker(): int
+    {
+        return (int) (
+            Country::query()->where('code', 'RU')->value('id')
+            ?? Country::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->value('id')
+            ?? Country::query()->orderBy('sort_order')->orderBy('name')->value('id')
+            ?? 0
+        );
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function criteriaCityIdsForView(): array
+    {
+        $raw = $this->criteriaValues['cities'] ?? [];
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map(static fn (mixed $id): int => (int) $id, $raw)));
+    }
+
+    private function criteriaFieldDefinitions(): array
+    {
+        if ($this->selectedProfileKey() !== null) {
+            return $this->criteriaForProfile($this->selectedProfileKey());
+        }
+
+        return $this->criteriaForEntityType($this->selectedEntityType());
+    }
+
+    private function criteriaNeedsCatalogInstruments(): bool
+    {
+        foreach ($this->criteriaFieldDefinitions() as $field) {
+            if (($field['type'] ?? '') === 'catalog_multi' && ($field['key'] ?? '') === 'instruments') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function criteriaNeedsCatalogGenres(): bool
+    {
+        foreach ($this->criteriaFieldDefinitions() as $field) {
+            if (($field['type'] ?? '') === 'catalog_multi' && ($field['key'] ?? '') === 'genres') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function criteriaNeedsCityPicker(): bool
+    {
+        foreach ($this->criteriaFieldDefinitions() as $field) {
+            if (($field['type'] ?? '') === 'city_multi') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, City>
+     */
+    private function criteriaCityPickerCities(): \Illuminate\Support\Collection
+    {
+        if ($this->criteriaCityPickerCountryId <= 0) {
+            return collect();
+        }
+
+        return City::query()
+            ->where('country_id', $this->criteriaCityPickerCountryId)
+            ->where('is_active', true)
+            ->orderByDesc('is_capital')
+            ->orderByDesc('population')
+            ->orderBy('name')
+            ->limit(500)
+            ->get();
     }
 
     /**
@@ -457,7 +698,6 @@ class SearchRequestsPage extends Component
             'initiatorRef' => ['required', 'string', 'max:255'],
             'criteriaValues' => ['array'],
             'criteriaJson' => ['nullable', 'string'],
-            'expiresAt' => ['nullable', 'date'],
         ];
     }
 
@@ -494,8 +734,24 @@ class SearchRequestsPage extends Component
     private function parseCriteria(): array
     {
         $criteria = collect($this->criteriaValues)
-            ->filter(static fn ($value): bool => ! in_array($value, [null, ''], true))
+            ->filter(static function ($value): bool {
+                if (is_array($value)) {
+                    return $value !== [];
+                }
+
+                return ! in_array($value, [null, ''], true);
+            })
             ->map(static function ($value) {
+                if (is_array($value)) {
+                    return array_values(array_map(static function (mixed $v): int|string|float {
+                        if (is_numeric($v)) {
+                            return str_contains((string) $v, '.') ? (float) $v : (int) $v;
+                        }
+
+                        return (string) $v;
+                    }, $value));
+                }
+
                 if (is_numeric($value)) {
                     return str_contains((string) $value, '.') ? (float) $value : (int) $value;
                 }
@@ -524,15 +780,6 @@ class SearchRequestsPage extends Component
         }
 
         return array_merge($criteria, $decoded);
-    }
-
-    private function parseExpiresAt(): ?CarbonImmutable
-    {
-        if ($this->expiresAt === '') {
-            return null;
-        }
-
-        return CarbonImmutable::parse($this->expiresAt);
     }
 
     public function goalLabel(SearchGoal $goal): string

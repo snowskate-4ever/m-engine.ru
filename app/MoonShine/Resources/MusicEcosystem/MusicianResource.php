@@ -79,7 +79,6 @@ final class MusicianResource extends ModelResource
                     ->hint('Связь 1:1 с аккаунтом'),
                 Text::make('Slug', 'slug')->nullable(),
                 Switcher::make('Публичная страница', 'public_page_enabled')->default(false),
-                Textarea::make('Био', 'bio')->nullable(),
                 Textarea::make('Описание', 'description')->nullable(),
                 Json::make('Вёрстка (черновик)', 'layout_draft')
                     ->nullable()
@@ -130,7 +129,6 @@ final class MusicianResource extends ModelResource
                 Rule::unique('musicians', 'slug')->ignore($item->getKey()),
             ],
             'public_page_enabled' => ['boolean'],
-            'bio' => ['nullable', 'string'],
             'description' => ['nullable', 'string'],
             'layout_draft' => ['nullable', 'array'],
             'layout_published' => ['nullable', 'array'],

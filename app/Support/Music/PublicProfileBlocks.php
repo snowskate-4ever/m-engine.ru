@@ -13,9 +13,11 @@ final class PublicProfileBlocks
     {
         return [
             ['id' => 'header', 'label_key' => 'ui.music.blocks.header'],
-            ['id' => 'bio', 'label_key' => 'ui.music.blocks.bio'],
+            ['id' => 'description', 'label_key' => 'ui.music.blocks.description'],
             ['id' => 'instruments', 'label_key' => 'ui.music.blocks.instruments'],
             ['id' => 'genres', 'label_key' => 'ui.music.blocks.genres'],
+            ['id' => 'cities', 'label_key' => 'ui.music.blocks.cities'],
+            ['id' => 'experience', 'label_key' => 'ui.music.blocks.experience'],
             ['id' => 'performers', 'label_key' => 'ui.music.blocks.performers'],
             ['id' => 'links', 'label_key' => 'ui.music.blocks.links'],
             ['id' => 'addresses', 'label_key' => 'ui.music.blocks.addresses'],

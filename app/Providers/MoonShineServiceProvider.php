@@ -31,6 +31,10 @@ use App\MoonShine\Resources\Messenger\MessengerMessageAttachmentResource;
 use App\MoonShine\Resources\Messenger\MessengerMessageResource;
 use App\MoonShine\Resources\MoonShineUser\MoonShineUserResource;
 use App\MoonShine\Resources\MoonShineUserRole\MoonShineUserRoleResource;
+use App\MoonShine\Resources\MusicEcosystem\AutomationPresetSettingResource;
+use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
+use App\MoonShine\Resources\MusicEcosystem\MatchingControlSettingResource;
+use App\MoonShine\Resources\MusicEcosystem\MatchingRunLogResource;
 use App\MoonShine\Resources\MusicEcosystem\ModerationAuditResource;
 use App\MoonShine\Resources\MusicEcosystem\MusicianResource;
 use App\MoonShine\Resources\MusicEcosystem\MusicSchoolResource;
@@ -39,7 +43,6 @@ use App\MoonShine\Resources\MusicEcosystem\PeformerResource as MusicPeformerReso
 use App\MoonShine\Resources\MusicEcosystem\ProducerCenterResource as MusicProducerCenterResource;
 use App\MoonShine\Resources\MusicEcosystem\PublicProfileReportResource;
 use App\MoonShine\Resources\MusicEcosystem\RecordLabelResource as MusicRecordLabelResource;
-use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
 use App\MoonShine\Resources\MusicEcosystem\RehersalResource;
 use App\MoonShine\Resources\MusicEcosystem\TeacherResource as MusicTeacherResource;
 use App\MoonShine\Resources\Region\RegionResource;
@@ -115,6 +118,9 @@ class MoonShineServiceProvider extends ServiceProvider
                 MusicProducerCenterResource::class,
                 PublicProfileReportResource::class,
                 ModerationAuditResource::class,
+                AutomationPresetSettingResource::class,
+                MatchingControlSettingResource::class,
+                MatchingRunLogResource::class,
             ])
             ->pages([
                 ...$core->getConfig()->getPages(),

@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Public;
 use App\Enums\PerformerMembershipStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
-use App\Models\Musician;
 use App\Models\ConcertVenue;
+use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
 use App\Models\RecordLabel;
@@ -24,6 +24,86 @@ use Illuminate\Support\Facades\Lang;
 
 class PublicMusicProfileController extends Controller
 {
+    public function show(Request $request, string $slug): View|Response
+    {
+        $musician = Musician::query()
+            ->where('slug', $slug)
+            ->with([
+                'instruments',
+                'genres',
+                'cities',
+                'peformers' => fn ($q) => $q
+                    ->wherePivot('status', PerformerMembershipStatus::Accepted->value)
+                    ->wherePivot('show_on_musician_profile', true)
+                    ->orderBy('name'),
+                'addresses' => $this->eagerPublicAddresses(),
+                'socials' => $this->eagerPublicSocials(),
+            ])
+            ->first();
+        if ($musician) {
+            return $this->renderPublic($musician, 'ui.public_profile.type_musician', 'public.profiles.musician');
+        }
+
+        $teacher = Teacher::query()
+            ->where('slug', $slug)
+            ->with(['cities', 'addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
+            ->first();
+        if ($teacher) {
+            return $this->renderPublic($teacher, 'ui.public_profile.type_teacher', 'public.profiles.simple-entity');
+        }
+
+        $performer = Peformer::query()
+            ->where('slug', $slug)
+            ->with([
+                'musicians' => fn ($q) => $q->wherePivot('status', PerformerMembershipStatus::Accepted->value),
+                'addresses' => $this->eagerPublicAddresses(),
+                'socials' => $this->eagerPublicSocials(),
+            ])
+            ->first();
+        if ($performer) {
+            return $this->renderPublic($performer, 'ui.public_profile.type_performer', 'public.profiles.simple-entity');
+        }
+
+        $simpleEntityLoader = function (string $className) use ($slug): ?object {
+            return $className::query()
+                ->where('slug', $slug)
+                ->with(['addresses' => $this->eagerPublicAddresses(), 'socials' => $this->eagerPublicSocials()])
+                ->first();
+        };
+
+        $studio = $simpleEntityLoader(Studio::class);
+        if ($studio) {
+            return $this->renderPublic($studio, 'ui.public_profile.type_studio', 'public.profiles.simple-entity');
+        }
+        $rehearsal = $simpleEntityLoader(Rehersal::class);
+        if ($rehearsal) {
+            return $this->renderPublic($rehearsal, 'ui.public_profile.type_rehearsal', 'public.profiles.simple-entity');
+        }
+        $concertVenue = $simpleEntityLoader(ConcertVenue::class);
+        if ($concertVenue) {
+            return $this->renderPublic($concertVenue, 'ui.public_profile.type_concert_venue', 'public.profiles.simple-entity');
+        }
+        $school = $simpleEntityLoader(School::class);
+        if ($school) {
+            return $this->renderPublic($school, 'ui.public_profile.type_school', 'public.profiles.simple-entity');
+        }
+        $recordLabel = $simpleEntityLoader(RecordLabel::class);
+        if ($recordLabel) {
+            return $this->renderPublic($recordLabel, 'ui.public_profile.type_record_label', 'public.profiles.simple-entity');
+        }
+        $producerCenter = $simpleEntityLoader(ProducerCenter::class);
+        if ($producerCenter) {
+            return $this->renderPublic($producerCenter, 'ui.public_profile.type_producer_center', 'public.profiles.simple-entity');
+        }
+
+        $shop = Shop::query()->where('slug', $slug)->first();
+        if ($shop) {
+            return $this->shop($request, $slug);
+        }
+
+        abort(404);
+    }
+
     public function musician(string $slug): View|Response
     {
         $model = Musician::query()
@@ -31,6 +111,7 @@ class PublicMusicProfileController extends Controller
             ->with([
                 'instruments',
                 'genres',
+                'cities',
                 'peformers' => fn ($q) => $q
                     ->wherePivot('status', PerformerMembershipStatus::Accepted->value)
                     ->wherePivot('show_on_musician_profile', true)

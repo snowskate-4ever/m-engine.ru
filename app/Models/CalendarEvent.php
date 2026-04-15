@@ -7,6 +7,7 @@ namespace App\Models;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class CalendarEvent extends Model
 {
@@ -37,6 +38,10 @@ class CalendarEvent extends Model
         'all_day',
         'reminder_minutes',
         'color',
+        'source_type',
+        'source_id',
+        'status',
+        'timezone',
     ];
 
     protected function casts(): array
@@ -63,6 +68,11 @@ class CalendarEvent extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function source(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function reminderAt(): ?CarbonImmutable

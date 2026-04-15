@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Models\MatchingControlSetting;
 use App\Models\Peformer;
 use App\Models\SearchRequest;
 use App\Models\Studio;
@@ -123,5 +124,163 @@ class MusicMatchingMobileApiTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['search_goal']);
+    }
+
+    public function test_user_can_respond_to_active_ad_and_owner_sees_responses(): void
+    {
+        $owner = User::factory()->create();
+        $responder = User::factory()->create();
+
+        $performer = Peformer::query()->create([
+            'name' => 'Responses Band',
+            'owner_user_id' => $owner->id,
+            'performer_kind' => 'band',
+        ]);
+
+        $request = SearchRequest::query()->create([
+            'search_goal' => 'find_organizer_for_performer',
+            'status' => 'open',
+            'ad_status' => 'active',
+            'moderation_status' => 'approved',
+            'initiator_type' => Peformer::class,
+            'initiator_id' => $performer->id,
+            'created_by_user_id' => $owner->id,
+            'criteria' => [],
+            'submitted_at' => now(),
+            'published_at' => now(),
+        ]);
+
+        Sanctum::actingAs($responder);
+        $this->postJson("/api/music/search-requests/{$request->id}/responses", [
+            'message' => 'Can join this project.',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('ok', true);
+
+        Sanctum::actingAs($owner);
+        $this->getJson("/api/music/search-requests/{$request->id}/responses")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.responder_user_id', $responder->id);
+    }
+
+    public function test_matching_command_creates_run_log_record(): void
+    {
+        config()->set('ai.matching.score_threshold', 0.4);
+
+        $owner = User::factory()->create();
+
+        Peformer::query()->create([
+            'name' => 'Candidate Band',
+            'owner_user_id' => $owner->id,
+            'performer_kind' => 'band',
+        ]);
+
+        SearchRequest::query()->create([
+            'search_goal' => 'find_performer_for_organizer',
+            'status' => 'open',
+            'ad_status' => 'active',
+            'moderation_status' => 'approved',
+            'target_kind' => 'performer',
+            'initiator_type' => User::class,
+            'initiator_id' => $owner->id,
+            'criteria' => [],
+            'submitted_at' => now(),
+            'published_at' => now(),
+        ]);
+
+        $this->artisan('music:run-matching')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('matching_run_logs', [
+            'scope' => 'all',
+            'processed_count' => 1,
+        ]);
+
+        $this->assertDatabaseHas('search_request_matches', [
+            'search_request_id' => 1,
+        ]);
+    }
+
+    public function test_matching_control_settings_disable_automatic_but_allow_manual_runs(): void
+    {
+        $owner = User::factory()->create();
+        Peformer::query()->create([
+            'name' => 'Control Candidate Band',
+            'owner_user_id' => $owner->id,
+            'performer_kind' => 'band',
+        ]);
+
+        SearchRequest::query()->create([
+            'search_goal' => 'find_performer_for_organizer',
+            'status' => 'open',
+            'ad_status' => 'active',
+            'moderation_status' => 'approved',
+            'target_kind' => 'performer',
+            'initiator_type' => User::class,
+            'initiator_id' => $owner->id,
+            'criteria' => [],
+            'submitted_at' => now(),
+            'published_at' => now(),
+        ]);
+
+        MatchingControlSetting::query()->create([
+            'is_enabled' => false,
+            'interval_minutes' => 60,
+            'default_scope' => 'all',
+            'provider' => 'openai',
+            'model' => 'gpt-4o-mini',
+            'score_threshold' => 0.4,
+            'weights' => [],
+        ]);
+
+        $this->artisan('music:run-matching')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseCount('search_request_matches', 0);
+
+        $this->artisan('music:run-matching --manual')
+            ->assertExitCode(0);
+
+        $this->assertDatabaseHas('search_request_matches', [
+            'search_request_id' => 1,
+        ]);
+    }
+
+    public function test_manual_command_stores_dry_run_and_max_requests_in_log_meta(): void
+    {
+        $owner = User::factory()->create();
+
+        Peformer::query()->create([
+            'name' => 'Meta Candidate Band',
+            'owner_user_id' => $owner->id,
+            'performer_kind' => 'band',
+        ]);
+
+        SearchRequest::query()->create([
+            'search_goal' => 'find_performer_for_organizer',
+            'status' => 'open',
+            'ad_status' => 'active',
+            'moderation_status' => 'approved',
+            'target_kind' => 'performer',
+            'initiator_type' => User::class,
+            'initiator_id' => $owner->id,
+            'criteria' => [],
+            'submitted_at' => now(),
+            'published_at' => now(),
+        ]);
+
+        $this->artisan('music:run-matching --manual --dry-run --max-requests=1 --run-by-user-id='.$owner->id.' --explanation-level=summary')
+            ->assertExitCode(0);
+
+        $log = \App\Models\MatchingRunLog::query()->latest('id')->first();
+        $this->assertNotNull($log);
+        $this->assertFalse((bool) $log->is_automatic);
+        $this->assertSame(true, (bool) ($log->meta['dry_run'] ?? false));
+        $this->assertSame(1, (int) ($log->meta['max_requests'] ?? 0));
+        $this->assertSame('summary', (string) ($log->meta['explanation_level'] ?? ''));
+        $this->assertIsArray($log->meta['trace'] ?? null);
+        $this->assertNotEmpty($log->meta['trace'] ?? []);
+        $this->assertSame($owner->id, (int) ($log->meta['run_params']['run_by_user_id'] ?? 0));
     }
 }

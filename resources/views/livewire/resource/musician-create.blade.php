@@ -61,20 +61,6 @@
         <!-- Профессиональные характеристики -->
         <h5 class="mb-3 mt-4">{{ __('ui.professional_info') ?: 'Профессиональные характеристики' }}</h5>
 
-        <!-- Биография -->
-        <div class="mb-3">
-            <label for="bio" class="form-label">{{ __('ui.bio') ?: 'Биография' }}</label>
-            <textarea 
-                   id="bio"
-                   wire:model.blur="bio"
-                   rows="3"
-                   class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5"></textarea>
-            @error('bio')
-                <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
-            @enderror
-            <small class="text-gray-500 text-xs mt-1 block">{{ __('ui.optional') }}</small>
-        </div>
-
         <!-- Личная информация -->
         <h5 class="mb-3 mt-4">{{ __('ui.personal_info') ?: 'Личная информация' }}</h5>
 

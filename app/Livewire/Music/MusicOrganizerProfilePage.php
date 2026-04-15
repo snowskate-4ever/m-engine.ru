@@ -38,6 +38,8 @@ class MusicOrganizerProfilePage extends Component
 
     public function render(): View
     {
-        return view('livewire.music.music-organizer-profile-page');
+        return view('livewire.music.music-organizer-profile-page', [
+            'criteriaProfileKey' => UserMusicProfile::EventOrganizer->value,
+        ]);
     }
 }
