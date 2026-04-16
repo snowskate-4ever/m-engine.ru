@@ -212,9 +212,29 @@ class MessengerController extends Controller
         $user = $request->user();
         $validated = $request->validate([
             'push_enabled' => ['required', 'boolean'],
+            'in_app_enabled' => ['sometimes', 'boolean'],
+            'music_lineup_email' => ['sometimes', 'boolean'],
+            'priority_mode' => ['sometimes', 'string', Rule::in(['balanced', 'urgent_only', 'all'])],
+            'quiet_hours_start' => ['sometimes', 'nullable', 'integer', 'between:0,23'],
+            'quiet_hours_end' => ['sometimes', 'nullable', 'integer', 'between:0,23'],
         ]);
 
-        $this->messenger->updatePreferences($user, (bool) $validated['push_enabled']);
+        $this->messenger->updatePreferences(
+            $user,
+            (bool) $validated['push_enabled'],
+            (string) ($validated['priority_mode'] ?? 'balanced'),
+            isset($validated['quiet_hours_start']) ? (int) $validated['quiet_hours_start'] : null,
+            isset($validated['quiet_hours_end']) ? (int) $validated['quiet_hours_end'] : null,
+        );
+
+        if (array_key_exists('in_app_enabled', $validated)) {
+            $user->setInAppNotifications((bool) $validated['in_app_enabled']);
+        }
+        if (array_key_exists('music_lineup_email', $validated)) {
+            $user->setMusicLineupInvitationEmail((bool) $validated['music_lineup_email']);
+        }
+
+        $user->refresh();
 
         return response()->json([
             'data' => $this->messenger->preferencesToArray($user),

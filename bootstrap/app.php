@@ -16,10 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
         attributes: ['middleware' => ['web', 'auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\LogSlowApiRequests::class,
+        ]);
         $middleware->alias([
             'detect.channel' => \App\Http\Middleware\DetectAuthChannel::class,
             'ai.enabled' => \App\Http\Middleware\EnsureAiMasterEnabled::class,
             'integration.api' => \App\Http\Middleware\AuthenticateIntegrationApi::class,
+            'integration.ability' => \App\Http\Middleware\EnsureIntegrationAbility::class,
+            'integration.audit' => \App\Http\Middleware\AuditIntegrationApiRequests::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

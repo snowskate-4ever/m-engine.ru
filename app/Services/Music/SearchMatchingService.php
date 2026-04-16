@@ -15,6 +15,7 @@ use App\Models\Rehersal;
 use App\Models\School;
 use App\Models\SearchRequest;
 use App\Models\SearchRequestMatch;
+use App\Models\SearchRequestResponse;
 use App\Models\Studio;
 use App\Models\User;
 use App\Services\Ai\OpenAiChatCompletionClient;
@@ -162,7 +163,9 @@ final class SearchMatchingService
             if ($dryRun) {
                 foreach ($candidates as $candidate) {
                     $ruleScore = $this->ruleScore($request, $candidate);
-                    [$score, $explanation, $mode] = $this->scoreWithAiIfAvailable($request, $candidate, $ruleScore);
+                    $behaviorScore = $this->behaviorScore($request);
+                    $hybridScore = $this->hybridizeScore($ruleScore, $behaviorScore);
+                    [$score, $explanation, $mode] = $this->scoreWithAiIfAvailable($request, $candidate, $hybridScore);
                     $isMatch = $score >= $threshold;
                     if ($isMatch) {
                         $matched++;
@@ -179,7 +182,9 @@ final class SearchMatchingService
 
             foreach ($candidates as $candidate) {
                 $ruleScore = $this->ruleScore($request, $candidate);
-                [$score, $explanation, $mode] = $this->scoreWithAiIfAvailable($request, $candidate, $ruleScore);
+                $behaviorScore = $this->behaviorScore($request);
+                $hybridScore = $this->hybridizeScore($ruleScore, $behaviorScore);
+                [$score, $explanation, $mode] = $this->scoreWithAiIfAvailable($request, $candidate, $hybridScore);
                 $isMatch = $score >= $threshold;
                 $this->appendCandidateTrace($trace, $explanationLevel, $candidate, $ruleScore, $score, $threshold, $isMatch, $mode, $explanation);
                 if (! $isMatch) {
@@ -194,6 +199,8 @@ final class SearchMatchingService
                     'meta' => [
                         'mode' => $mode,
                         'rule_score' => $ruleScore,
+                        'behavior_score' => $behaviorScore,
+                        'hybrid_score' => $hybridScore,
                         'explanation' => $explanation,
                     ],
                 ]);
@@ -204,6 +211,45 @@ final class SearchMatchingService
         $trace['matched_count'] = $matched;
 
         return ['matched' => $matched, 'trace' => $trace];
+    }
+
+    private function behaviorScore(SearchRequest $request): float
+    {
+        $base = 0.5;
+
+        $recentOwnRequests = SearchRequest::query()
+            ->where('created_by_user_id', $request->created_by_user_id)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        if ($recentOwnRequests > 0) {
+            $base += min(0.15, $recentOwnRequests * 0.01);
+        }
+
+        $responsesForOwnRequests = SearchRequestResponse::query()
+            ->whereHas('searchRequest', function ($q) use ($request): void {
+                $q->where('created_by_user_id', $request->created_by_user_id)
+                    ->where('created_at', '>=', now()->subDays(30));
+            })
+            ->count();
+        if ($responsesForOwnRequests > 0) {
+            $base += min(0.2, $responsesForOwnRequests * 0.01);
+        }
+
+        $canceledRequests = SearchRequest::query()
+            ->where('created_by_user_id', $request->created_by_user_id)
+            ->where('status', 'canceled')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        if ($canceledRequests > 0) {
+            $base -= min(0.2, $canceledRequests * 0.03);
+        }
+
+        return max(0.0, min(1.0, $base));
+    }
+
+    private function hybridizeScore(float $ruleScore, float $behaviorScore): float
+    {
+        return max(0.0, min(1.0, ($ruleScore * 0.7) + ($behaviorScore * 0.3)));
     }
 
     /**

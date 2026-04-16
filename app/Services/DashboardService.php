@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Classes\StatClass;
 use App\Models\Event;
+use App\Services\Analytics\ProductMetricsService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,9 +15,72 @@ class DashboardService
 {
     public static function dashboard(Request $request)
     {
+        $periodDays = (int) $request->integer('days', 30);
+        $periodDays = max(1, min(365, $periodDays));
+
+        /** @var ProductMetricsService $metrics */
+        $metrics = app(ProductMetricsService::class);
+        $snapshot = $metrics->baselineSnapshot($periodDays);
+
+        $matchingCreated = (int) ($snapshot['matching']['search_requests_created'] ?? 0);
+        $matchingResponded = (int) ($snapshot['matching']['search_requests_responded'] ?? 0);
+
         return view('dashboard', [
             'data' => [
                 'stat_cards' => StatClass::dashboardStatCards(Auth::user()),
+                'baseline_metrics' => [
+                    'period_days' => $periodDays,
+                    'from' => (string) ($snapshot['from'] ?? ''),
+                    'to' => (string) ($snapshot['to'] ?? ''),
+                    'matching' => [
+                        'search_requests_created' => $matchingCreated,
+                        'search_requests_responded' => $matchingResponded,
+                        'feed_views' => (int) ($snapshot['matching']['feed_views'] ?? 0),
+                        'response_rate' => $matchingCreated > 0
+                            ? round(($matchingResponded / $matchingCreated) * 100, 1)
+                            : 0.0,
+                        'daily' => is_array($snapshot['matching']['daily'] ?? null)
+                            ? $snapshot['matching']['daily']
+                            : [],
+                    ],
+                    'integration' => [
+                        'v1_calls' => (int) ($snapshot['integration']['v1_calls'] ?? 0),
+                        'v2_calls' => (int) ($snapshot['integration']['v2_calls'] ?? 0),
+                        'token_minted' => (int) ($snapshot['integration']['token_minted'] ?? 0),
+                        'daily' => is_array($snapshot['integration']['daily'] ?? null)
+                            ? $snapshot['integration']['daily']
+                            : [],
+                    ],
+                    'ai' => [
+                        'support_chat_requests' => (int) ($snapshot['ai']['support_chat_requests'] ?? 0),
+                        'moderation_score_requests' => (int) ($snapshot['ai']['moderation_score_requests'] ?? 0),
+                        'partner_recommend_requests' => (int) ($snapshot['ai']['partner_recommend_requests'] ?? 0),
+                    ],
+                    'mobile' => [
+                        'sync_manifest_requests' => (int) ($snapshot['mobile']['sync_manifest_requests'] ?? 0),
+                        'channels' => is_array($snapshot['mobile']['channels'] ?? null)
+                            ? $snapshot['mobile']['channels']
+                            : [],
+                    ],
+                    'observability' => [
+                        'notification_delivery_failed' => (int) ($snapshot['observability']['notification_delivery_failed'] ?? 0),
+                        'notification_empty_channels' => (int) ($snapshot['observability']['notification_empty_channels'] ?? 0),
+                        'queue_job_failed' => (int) ($snapshot['observability']['queue_job_failed'] ?? 0),
+                        'slow_api_requests' => (int) ($snapshot['observability']['slow_api_requests'] ?? 0),
+                    ],
+                    'overview' => [
+                        'family_totals' => is_array($snapshot['overview']['family_totals'] ?? null)
+                            ? $snapshot['overview']['family_totals']
+                            : [],
+                        'family_shares' => is_array($snapshot['overview']['family_shares'] ?? null)
+                            ? $snapshot['overview']['family_shares']
+                            : [],
+                        'total_events' => (int) ($snapshot['overview']['total_events'] ?? 0),
+                        'top_events' => is_array($snapshot['overview']['top_events'] ?? null)
+                            ? $snapshot['overview']['top_events']
+                            : [],
+                    ],
+                ],
             ],
             'buttons' => [],
         ]);

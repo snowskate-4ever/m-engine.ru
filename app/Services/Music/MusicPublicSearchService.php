@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Music;
 
+use App\Enums\ModerationStatus;
 use App\Models\ConcertVenue;
 use App\Models\Musician;
 use App\Models\Peformer;
@@ -240,7 +241,9 @@ final class MusicPublicSearchService
         return Musician::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function teacherPublic(): Builder
@@ -248,7 +251,9 @@ final class MusicPublicSearchService
         return Teacher::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function peformerPublic(): Builder
@@ -256,7 +261,9 @@ final class MusicPublicSearchService
         return Peformer::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function studioPublic(): Builder
@@ -264,7 +271,9 @@ final class MusicPublicSearchService
         return Studio::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function rehearsalPublic(): Builder
@@ -272,7 +281,9 @@ final class MusicPublicSearchService
         return Rehersal::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function concertVenuePublic(): Builder
@@ -280,7 +291,9 @@ final class MusicPublicSearchService
         return ConcertVenue::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function schoolPublic(): Builder
@@ -288,7 +301,9 @@ final class MusicPublicSearchService
         return School::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function recordLabelPublic(): Builder
@@ -296,7 +311,9 @@ final class MusicPublicSearchService
         return RecordLabel::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function producerCenterPublic(): Builder
@@ -304,7 +321,9 @@ final class MusicPublicSearchService
         return ProducerCenter::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     private function shopPublic(): Builder
@@ -312,7 +331,9 @@ final class MusicPublicSearchService
         return Shop::query()
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
-            ->where('slug', '!=', '');
+            ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value);
     }
 
     /**

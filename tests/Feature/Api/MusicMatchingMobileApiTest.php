@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\Api;
 
 use App\Models\MatchingControlSetting;
+use App\Models\KanbanCard;
+use App\Models\AutomationPresetSetting;
 use App\Models\Peformer;
 use App\Models\SearchRequest;
 use App\Models\Studio;
@@ -162,6 +164,170 @@ class MusicMatchingMobileApiTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.responder_user_id', $responder->id);
+
+        $this->assertDatabaseHas('kanban_cards', [
+            'source_type' => \App\Models\SearchRequestResponse::class,
+        ]);
+    }
+
+    public function test_repeated_response_does_not_create_duplicate_kanban_cards(): void
+    {
+        $owner = User::factory()->create();
+        $responder = User::factory()->create();
+
+        $performer = Peformer::query()->create([
+            'name' => 'No Duplicates Band',
+            'owner_user_id' => $owner->id,
+            'performer_kind' => 'band',
+        ]);
+
+        $request = SearchRequest::query()->create([
+            'search_goal' => 'find_organizer_for_performer',
+            'status' => 'open',
+            'ad_status' => 'active',
+            'moderation_status' => 'approved',
+            'initiator_type' => Peformer::class,
+            'initiator_id' => $performer->id,
+            'created_by_user_id' => $owner->id,
+            'criteria' => [],
+            'submitted_at' => now(),
+            'published_at' => now(),
+        ]);
+
+        Sanctum::actingAs($responder);
+        $this->postJson("/api/music/search-requests/{$request->id}/responses", [
+            'message' => 'First response message.',
+        ])->assertCreated();
+        $this->postJson("/api/music/search-requests/{$request->id}/responses", [
+            'message' => 'Updated response message.',
+        ])->assertCreated();
+
+        $response = \App\Models\SearchRequestResponse::query()
+            ->where('search_request_id', $request->id)
+            ->where('responder_user_id', $responder->id)
+            ->first();
+
+        $this->assertNotNull($response);
+        $cardsCount = KanbanCard::query()
+            ->where('source_type', \App\Models\SearchRequestResponse::class)
+            ->where('source_id', $response->id)
+            ->count();
+
+        $this->assertSame(1, $cardsCount);
+    }
+
+    public function test_creating_search_request_creates_kanban_card_via_preset(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/music/search-requests', [
+            'search_goal' => 'find_performer_for_organizer',
+            'initiator_type' => User::class,
+            'initiator_id' => $user->id,
+            'target_kind' => 'performer',
+            'description' => 'Need a performer for a showcase',
+            'ad_status' => 'active',
+            'criteria' => [],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('kanban_cards', [
+            'source_type' => \App\Models\SearchRequest::class,
+        ]);
+    }
+
+    public function test_owner_scoped_preset_uses_custom_board_and_column_names(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+
+        AutomationPresetSetting::query()->create([
+            'preset_type' => 'my_ads_board',
+            'is_enabled' => true,
+            'user_id' => $user->id,
+            'settings' => [
+                'board_name' => 'Личный Ads Board',
+                'column_name' => 'К публикации',
+            ],
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/music/search-requests', [
+            'search_goal' => 'find_performer_for_organizer',
+            'initiator_type' => User::class,
+            'initiator_id' => $user->id,
+            'target_kind' => 'performer',
+            'description' => 'Scoped preset request',
+            'ad_status' => 'active',
+            'criteria' => [],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('kanban_boards', [
+            'user_id' => $user->id,
+            'name' => 'Личный Ads Board',
+        ]);
+        $this->assertDatabaseHas('kanban_columns', [
+            'name' => 'К публикации',
+        ]);
+    }
+
+    public function test_owner_type_and_owner_id_filter_selects_matching_preset_only(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['event_organizer'],
+        ]);
+        $performer = Peformer::query()->create([
+            'name' => 'Scoped owner performer',
+            'owner_user_id' => $user->id,
+            'performer_kind' => 'solo_project',
+        ]);
+
+        AutomationPresetSetting::query()->create([
+            'preset_type' => 'my_ads_board',
+            'is_enabled' => true,
+            'owner_type' => Peformer::class,
+            'owner_id' => $performer->id + 999,
+            'settings' => [
+                'board_name' => 'Wrong Board',
+                'column_name' => 'Wrong Column',
+            ],
+        ]);
+
+        AutomationPresetSetting::query()->create([
+            'preset_type' => 'my_ads_board',
+            'is_enabled' => true,
+            'owner_type' => Peformer::class,
+            'owner_id' => $performer->id,
+            'settings' => [
+                'board_name' => 'Performer Board',
+                'column_name' => 'Performer Column',
+            ],
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/music/search-requests', [
+            'search_goal' => 'find_organizer_for_performer',
+            'initiator_type' => Peformer::class,
+            'initiator_id' => $performer->id,
+            'target_kind' => 'organizer',
+            'description' => 'Owner filter request',
+            'ad_status' => 'active',
+            'criteria' => [],
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('kanban_boards', [
+            'user_id' => $user->id,
+            'name' => 'Performer Board',
+        ]);
+        $this->assertDatabaseMissing('kanban_boards', [
+            'name' => 'Wrong Board',
+        ]);
     }
 
     public function test_matching_command_creates_run_log_record(): void

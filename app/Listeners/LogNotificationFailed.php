@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
+use App\Models\User;
+use App\Services\Analytics\ProductMetricsService;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Support\Facades\Log;
 
@@ -18,6 +20,12 @@ final class LogNotificationFailed
             'channel' => $event->channel,
             'message' => $event->data['message'] ?? null,
             'exception' => isset($event->data['exception']) ? (string) $event->data['exception'] : null,
+        ]);
+
+        $userId = $event->notifiable instanceof User ? (int) $event->notifiable->getKey() : null;
+        app(ProductMetricsService::class)->track('notification.delivery_failed', $userId, 'notifications', [
+            'notification' => is_object($event->notification) ? $event->notification::class : null,
+            'channel' => $event->channel,
         ]);
     }
 }

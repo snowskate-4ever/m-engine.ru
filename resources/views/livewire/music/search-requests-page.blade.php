@@ -29,6 +29,51 @@
                 <flux:description>{{ __('ui.music.search_requests_goal_hint') }}</flux:description>
             </flux:field>
 
+            <flux:field>
+                <flux:label>{{ __('ui.music.search_requests_target_kind_label') }}</flux:label>
+                <select wire:model="targetKind" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                    <option value="">{{ __('ui.select') }}</option>
+                    @foreach ($targetKindOptions as $option)
+                        <option value="{{ $option['value'] }}">{{ $option['label'] }}</option>
+                    @endforeach
+                </select>
+                <flux:error name="targetKind" />
+            </flux:field>
+
+            <flux:field>
+                <flux:label>{{ __('ui.music.search_requests_city_label') }}</flux:label>
+                <select wire:model="cityId" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                    <option value="">{{ __('ui.select') }}</option>
+                    @foreach ($cityOptions as $city)
+                        <option value="{{ $city->id }}">{{ $city->name }}</option>
+                    @endforeach
+                </select>
+                <flux:error name="cityId" />
+            </flux:field>
+
+            <flux:field>
+                <label class="inline-flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-100">
+                    <input type="checkbox" wire:model="myCityOnly" class="rounded border-zinc-300 dark:border-zinc-600">
+                    <span>{{ __('ui.music.search_requests_my_city_only_label') }}</span>
+                </label>
+            </flux:field>
+
+            <flux:field>
+                <flux:label>{{ __('ui.music.search_requests_description_label') }}</flux:label>
+                <textarea wire:model="description" rows="4" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"></textarea>
+                <flux:error name="description" />
+            </flux:field>
+
+            <flux:field>
+                <flux:label>{{ __('ui.music.search_requests_ad_status_label') }}</flux:label>
+                <select wire:model="adStatus" class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100">
+                    <option value="draft">{{ __('ui.music.search_requests_ad_status_draft') }}</option>
+                    <option value="active">{{ __('ui.music.search_requests_ad_status_active') }}</option>
+                    <option value="closed">{{ __('ui.music.search_requests_ad_status_closed') }}</option>
+                </select>
+                <flux:error name="adStatus" />
+            </flux:field>
+
             <div class="space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-700">
                 <flux:heading size="sm">{{ __('ui.music.search_requests_criteria_label') }}</flux:heading>
                 <flux:description>{{ __('ui.music.search_requests_criteria_hint') }}</flux:description>
@@ -235,6 +280,12 @@
                         <tr>
                             <td class="px-4 py-3 text-sm text-zinc-900 dark:text-zinc-100">
                                 <div>{{ $this->goalLabel($request->search_goal) }}</div>
+                                @if (!empty($request->target_kind))
+                                    <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ __('ui.music.search_requests_target_kind_label') }}: {{ $request->target_kind }}</div>
+                                @endif
+                                @if (!empty($request->description))
+                                    <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ $request->description }}</div>
+                                @endif
                                 @if (!empty($request->criteria))
                                     <div class="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{{ json_encode($request->criteria, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) }}</div>
                                 @endif

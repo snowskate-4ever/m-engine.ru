@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Music;
 
+use App\Enums\ModerationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Musician;
 use App\Models\ConcertVenue;
@@ -65,6 +66,8 @@ final class MusicSitemapController extends Controller
             ->where('public_page_enabled', true)
             ->whereNotNull('slug')
             ->where('slug', '!=', '')
+            ->whereNull('moderation_hidden_at')
+            ->where('moderation_status', ModerationStatus::Approved->value)
             ->orderBy('id')
             ->select(['id', 'slug'])
             ->chunkById(500, function ($chunk) use ($push, $routeName): void {

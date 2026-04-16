@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Resources\MusicEcosystem;
 
+use App\Enums\ModerationStatus;
 use App\Models\Musician;
 use App\Models\User;
 use App\MoonShine\Resources\User\UserResource;
@@ -134,6 +135,7 @@ final class MusicianResource extends ModelResource
             'layout_published' => ['nullable', 'array'],
             'moderation_hidden_at' => ['nullable', 'date'],
             'moderation_review_requested_at' => ['nullable', 'date'],
+            'moderation_status' => ['required', Rule::enum(ModerationStatus::class)],
             'moderation_reason' => ['nullable', 'string'],
         ];
     }

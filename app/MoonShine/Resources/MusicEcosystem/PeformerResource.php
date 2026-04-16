@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\MoonShine\Resources\MusicEcosystem;
 
+use App\Enums\ModerationStatus;
 use App\Enums\PerformerKind;
 use App\Models\Peformer;
 use App\Models\User;
@@ -153,6 +154,7 @@ final class PeformerResource extends ModelResource
             'layout_published' => ['nullable', 'array'],
             'moderation_hidden_at' => ['nullable', 'date'],
             'moderation_review_requested_at' => ['nullable', 'date'],
+            'moderation_status' => ['required', Rule::enum(ModerationStatus::class)],
             'moderation_reason' => ['nullable', 'string'],
         ];
     }

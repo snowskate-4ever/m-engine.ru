@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\LegalEntityType;
+use App\Enums\ModerationStatus;
 use App\Models\Concerns\HasPublicPageLayouts;
 use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,7 @@ class ProducerCenter extends Model
         'moderation_hidden_at',
         'moderation_reason',
         'moderation_review_requested_at',
+        'moderation_status',
     ];
 
     protected $casts = [
@@ -40,6 +42,7 @@ class ProducerCenter extends Model
         'legal_entity_type' => LegalEntityType::class,
         'moderation_hidden_at' => 'datetime',
         'moderation_review_requested_at' => 'datetime',
+        'moderation_status' => ModerationStatus::class,
     ];
 
     public function owner(): BelongsTo

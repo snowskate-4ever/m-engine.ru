@@ -19,4 +19,19 @@ final class SupportChatResponder
 
         return 'Thanks for your message. A human will follow up if needed.';
     }
+
+    public function composeContent(string $contentType, string $brief): string
+    {
+        $brief = trim($brief);
+        if ($brief === '') {
+            return 'Опишите задачу подробнее: для кого контент и какой стиль нужен.';
+        }
+
+        return match ($contentType) {
+            'description' => "Описание проекта:\n{$brief}\n\nКлючевая ценность: живой звук, точная организация и прозрачная коммуникация.",
+            'poster' => "Афиша:\n{$brief}\n\nДата/время: уточняется. Формат: живое выступление. Следите за обновлениями.",
+            'post' => "Пост:\n{$brief}\n\nГотовим важный анонс, скоро расскажем детали и откроем запись.",
+            default => "Черновик контента:\n{$brief}",
+        };
+    }
 }

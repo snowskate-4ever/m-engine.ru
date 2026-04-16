@@ -22,6 +22,7 @@ class DashboardTest extends TestCase
         $this->actingAs($user);
 
         $response = $this->get(route('dashboard'));
-        $response->assertStatus(200);
+        $response->assertStatus(200)
+            ->assertSee(__('ui.dashboard_metrics.obs_section'), false);
     }
 }

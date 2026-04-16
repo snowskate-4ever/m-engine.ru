@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\LegalEntityType;
+use App\Enums\ModerationStatus;
 use App\Models\Concerns\HasPublicPageLayouts;
 use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
@@ -55,6 +56,7 @@ class Shop extends Model
         'moderation_hidden_at',
         'moderation_reason',
         'moderation_review_requested_at',
+        'moderation_status',
     ];
 
     protected $casts = [
@@ -65,6 +67,7 @@ class Shop extends Model
         'platform_fee_rate' => 'decimal:4',
         'moderation_hidden_at' => 'datetime',
         'moderation_review_requested_at' => 'datetime',
+        'moderation_status' => ModerationStatus::class,
     ];
 
     public function owner(): BelongsTo

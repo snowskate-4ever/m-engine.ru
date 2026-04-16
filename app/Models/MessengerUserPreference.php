@@ -12,12 +12,17 @@ class MessengerUserPreference extends Model
     protected $fillable = [
         'user_id',
         'push_enabled',
+        'priority_mode',
+        'quiet_hours_start',
+        'quiet_hours_end',
     ];
 
     protected function casts(): array
     {
         return [
             'push_enabled' => 'boolean',
+            'quiet_hours_start' => 'integer',
+            'quiet_hours_end' => 'integer',
         ];
     }
 

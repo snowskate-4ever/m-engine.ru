@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 final class PublicMusicCatalogCacheObserver
 {
     /** @var list<string> */
-    private const WATCH = ['public_page_enabled', 'slug', 'deleted_at'];
+    private const WATCH = ['public_page_enabled', 'slug', 'deleted_at', 'moderation_status', 'moderation_hidden_at'];
 
     public function saved(Model $model): void
     {

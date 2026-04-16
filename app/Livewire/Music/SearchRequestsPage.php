@@ -19,9 +19,12 @@ use App\Models\School;
 use App\Models\SearchRequest;
 use App\Models\Studio;
 use App\Models\User;
+use App\Support\Music\ActorTargetMatrix;
 use App\Services\Music\MusicActorContextService;
 use App\Services\Music\SearchGoalEligibilityService;
 use App\Services\Music\SearchRequestService;
+use App\Services\Kanban\KanbanAutomationPresetService;
+use App\Enums\AutomationPresetType;
 use App\Support\Music\MusicProfileCriteria;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
@@ -52,6 +55,16 @@ class SearchRequestsPage extends Component
 
     public int $criteriaCityPickerCountryId = 0;
 
+    public string $targetKind = '';
+
+    public ?int $cityId = null;
+
+    public bool $myCityOnly = false;
+
+    public string $description = '';
+
+    public string $adStatus = 'active';
+
     #[Url(history: true)]
     public string $statusFilter = 'all';
 
@@ -67,6 +80,8 @@ class SearchRequestsPage extends Component
     {
         $this->criteriaValues = [];
         $this->criteriaCityPickerCountryId = $this->defaultCountryIdForCityPicker();
+        $this->adStatus = 'active';
+        $this->targetKind = '';
 
         $initiators = $this->initiatorOptions();
         if ($initiators->isNotEmpty()) {
@@ -107,6 +122,19 @@ class SearchRequestsPage extends Component
                 $id,
                 null,
             );
+            $created = SearchRequest::query()->latest('id')->firstOrFail();
+            $created->forceFill([
+                'target_kind' => $this->targetKind !== '' ? $this->targetKind : null,
+                'city_id' => $this->cityId,
+                'my_city_only' => $this->myCityOnly,
+                'description' => $this->description !== '' ? $this->description : null,
+                'ad_status' => $this->adStatus,
+            ])->save();
+            app(KanbanAutomationPresetService::class)->execute(
+                AutomationPresetType::MyAdsBoard,
+                $created,
+                ['user_id' => (int) Auth::id()]
+            );
         } catch (AuthorizationException) {
             $this->addError('initiatorRef', __('ui.music.search_requests_initiator_forbidden'));
 
@@ -122,6 +150,11 @@ class SearchRequestsPage extends Component
         }
 
         $this->criteriaJson = '{}';
+        $this->description = '';
+        $this->cityId = null;
+        $this->myCityOnly = false;
+        $this->adStatus = 'active';
+        $this->targetKind = '';
         $this->showCreateModal = false;
         session()->flash('success', __('ui.music.search_requests_created'));
     }
@@ -167,6 +200,8 @@ class SearchRequestsPage extends Component
             'initiatorOptions' => $this->initiatorOptions()->all(),
             'entityOptions' => $this->entityOptions()->all(),
             'criteriaFieldOptions' => $this->criteriaFieldOptions(),
+            'targetKindOptions' => $this->targetKindOptions(),
+            'cityOptions' => City::query()->where('is_active', true)->orderByDesc('population')->orderBy('name')->limit(300)->get(['id', 'name']),
             'criteriaInstruments' => $this->criteriaNeedsCatalogInstruments()
                 ? Instrument::query()->where('active', true)->orderBy('sort_order')->orderBy('name')->get()
                 : collect(),
@@ -305,6 +340,60 @@ class SearchRequestsPage extends Component
         $this->criteriaPickerGenreId = null;
         $this->criteriaPickerCityId = null;
         $this->criteriaCityPickerCountryId = $this->defaultCountryIdForCityPicker();
+        $this->targetKind = '';
+    }
+
+    /**
+     * @return list<array{value:string,label:string}>
+     */
+    private function targetKindOptions(): array
+    {
+        $initiatorKind = $this->currentInitiatorKind();
+        $matrix = ActorTargetMatrix::matrix();
+        $allowed = $matrix[$initiatorKind] ?? [];
+        if ($allowed === ['*']) {
+            $allowed = array_keys($matrix);
+        }
+
+        $labels = [
+            'musician' => __('ui.music.search_initiator_musician'),
+            'session' => __('ui.music.profile_tab_session_musician'),
+            'teacher' => __('ui.music.search_initiator_teacher'),
+            'organizer' => __('ui.music.profile_tab_organizer'),
+            'agent' => __('ui.music.profile_tab_agent'),
+            'performer' => __('ui.music.search_initiator_performer'),
+            'studio' => __('ui.music.search_initiator_studio'),
+            'rehearsal' => __('ui.music.search_initiator_rehersal'),
+            'school' => __('ui.music.search_initiator_school'),
+            'label' => __('ui.music.search_initiator_record_label'),
+            'production' => __('ui.music.search_initiator_producer_center'),
+            'venue' => __('ui.music.search_initiator_concert_venue'),
+            'sound_engineer' => __('ui.music.profile_tab_sound_engineer'),
+            'arranger' => __('ui.music.profile_tab_arranger'),
+            'live_sound' => __('ui.music.profile_tab_live_sound'),
+            'lighting_designer' => __('ui.music.profile_tab_lighting_designer'),
+            'videographer' => __('ui.music.profile_tab_videographer'),
+            'photographer' => __('ui.music.profile_tab_photographer'),
+            'journalist' => __('ui.music.profile_tab_journalist'),
+            'venue_manager' => __('ui.music.profile_tab_venue_manager'),
+            'merchandiser' => __('ui.music.profile_tab_merchandiser'),
+            'tour_manager' => __('ui.music.profile_tab_tour_manager'),
+            'promoter' => __('ui.music.profile_tab_promoter'),
+            'recording_engineer' => __('ui.music.profile_tab_recording_engineer'),
+            'mastering_engineer' => __('ui.music.profile_tab_mastering_engineer'),
+            'session_producer' => __('ui.music.profile_tab_session_producer'),
+            'tech_rider' => __('ui.music.profile_tab_tech_rider'),
+            'backline_tech' => __('ui.music.profile_tab_backline_tech'),
+            'graphic_designer' => __('ui.music.profile_tab_graphic_designer'),
+            'smm_manager' => __('ui.music.profile_tab_smm_manager'),
+            'music_lawyer' => __('ui.music.profile_tab_music_lawyer'),
+            'accountant' => __('ui.music.profile_tab_accountant'),
+        ];
+
+        return array_values(array_map(static fn (string $kind): array => [
+            'value' => $kind,
+            'label' => $labels[$kind] ?? ucfirst(str_replace('_', ' ', $kind)),
+        ], $allowed));
     }
 
     public function addCriteriaInstrument(): void
@@ -561,6 +650,30 @@ class SearchRequestsPage extends Component
         return $type !== '' ? $type : null;
     }
 
+    private function currentInitiatorKind(): string
+    {
+        $profile = $this->selectedProfileKey();
+        if ($profile !== null) {
+            return match ($profile) {
+                'event_organizer' => 'organizer',
+                'manager' => 'agent',
+                'venue_representative' => 'venue_manager',
+                'session_musician' => 'session',
+                default => 'musician',
+            };
+        }
+
+        return match ($this->selectedEntityType()) {
+            Peformer::class => 'performer',
+            Musician::class => 'musician',
+            ConcertVenue::class => 'venue',
+            Studio::class => 'studio',
+            Rehersal::class => 'rehearsal',
+            School::class => 'school',
+            default => 'musician',
+        };
+    }
+
     private function defaultCountryIdForCityPicker(): int
     {
         return (int) (
@@ -696,6 +809,11 @@ class SearchRequestsPage extends Component
         return [
             'searchGoal' => ['required', Rule::in($allowedGoals)],
             'initiatorRef' => ['required', 'string', 'max:255'],
+            'targetKind' => ['required', 'string', 'max:64'],
+            'cityId' => ['nullable', 'integer', 'min:1'],
+            'myCityOnly' => ['boolean'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'adStatus' => ['required', Rule::in(['draft', 'active', 'closed'])],
             'criteriaValues' => ['array'],
             'criteriaJson' => ['nullable', 'string'],
         ];

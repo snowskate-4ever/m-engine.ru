@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\Billing\PaymentGatewayContract;
 use App\Contracts\PlatformPayments\PlatformAcquiringDriverContract;
 use App\Listeners\LogNotificationFailed;
+use App\Listeners\RecordQueueJobFailedMetric;
 use App\Listeners\Notifications\BroadcastDatabaseNotification;
 use App\Listeners\Notifications\MirrorDatabaseNotificationToSystemChat;
 use App\Models\ConcertVenue;
@@ -43,6 +44,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Events\NotificationFailed;
 use Illuminate\Notifications\Events\NotificationSent;
+use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Support\Facades\Event as EventFacade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -114,6 +116,7 @@ class AppServiceProvider extends ServiceProvider
         EventFacade::listen(NotificationSent::class, BroadcastDatabaseNotification::class);
         EventFacade::listen(NotificationSent::class, MirrorDatabaseNotificationToSystemChat::class);
         EventFacade::listen(NotificationFailed::class, LogNotificationFailed::class);
+        EventFacade::listen(JobFailed::class, RecordQueueJobFailedMetric::class);
 
         RateLimiter::for('integration', function (Request $request): Limit {
             $token = $request->attributes->get('integration_api_token');
@@ -122,6 +125,14 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(max(10, min(6000, $perMinute)))->by(
                 $token ? 'int_token:'.$token->id : 'int_ip:'.$request->ip(),
+            );
+        });
+
+        RateLimiter::for('integration-webhook', function (Request $request): Limit {
+            $perMinute = (int) config('integration.webhooks_rate_limit_per_minute', 120);
+
+            return Limit::perMinute(max(1, min(6000, $perMinute)))->by(
+                'int_webhook:'.$request->ip(),
             );
         });
     }

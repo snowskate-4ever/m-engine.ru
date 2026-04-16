@@ -10,6 +10,8 @@ use Livewire\Component;
 
 class MessengerNotificationSettings extends Component
 {
+    public bool $inAppEnabled = true;
+
     public bool $pushEnabled = true;
 
     public bool $musicLineupEmail = true;
@@ -17,8 +19,15 @@ class MessengerNotificationSettings extends Component
     public function mount(MessengerService $messenger): void
     {
         $user = Auth::user();
-        $this->pushEnabled = $messenger->preferencesToArray($user)['push_enabled'];
-        $this->musicLineupEmail = $user->wantsMusicLineupInvitationEmail();
+        $prefs = $messenger->preferencesToArray($user);
+        $this->inAppEnabled = $prefs['in_app_enabled'];
+        $this->pushEnabled = $prefs['push_enabled'];
+        $this->musicLineupEmail = $prefs['music_lineup_email'];
+    }
+
+    public function updatedInAppEnabled(mixed $value): void
+    {
+        Auth::user()->setInAppNotifications((bool) $value);
     }
 
     public function updatedPushEnabled(mixed $value): void

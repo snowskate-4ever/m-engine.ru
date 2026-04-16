@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Music;
 
+use App\Enums\ModerationStatus;
 use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\Teacher;
@@ -133,5 +134,30 @@ final class MusicPublicSearchServiceTest extends TestCase
         $results = $this->search->search($token, 'performer');
         $this->assertCount(1, $results);
         $this->assertSame('performer', $results->first()['type']);
+    }
+
+    public function test_excludes_profiles_not_in_approved_moderation_status(): void
+    {
+        $token = 'ModGate'.uniqid();
+
+        Musician::query()->create([
+            'name' => 'Pending '.$token,
+            'description' => 'Bio',
+            'slug' => 'pend-'.uniqid('', true),
+            'public_page_enabled' => true,
+            'moderation_status' => ModerationStatus::Pending->value,
+        ]);
+
+        Musician::query()->create([
+            'name' => 'Live '.$token,
+            'description' => 'Bio',
+            'slug' => 'live-'.uniqid('', true),
+            'public_page_enabled' => true,
+            'moderation_status' => ModerationStatus::Approved->value,
+        ]);
+
+        $results = $this->search->search($token, MusicPublicSearchService::CATEGORY_ALL);
+        $this->assertCount(1, $results);
+        $this->assertStringContainsString('Live', $results->first()['name']);
     }
 }

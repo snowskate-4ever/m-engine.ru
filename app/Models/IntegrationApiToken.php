@@ -16,6 +16,7 @@ class IntegrationApiToken extends Model
         'abilities',
         'rate_limit_per_minute',
         'last_used_at',
+        'revoked_at',
     ];
 
     protected function casts(): array
@@ -23,6 +24,7 @@ class IntegrationApiToken extends Model
         return [
             'abilities' => 'array',
             'last_used_at' => 'datetime',
+            'revoked_at' => 'datetime',
         ];
     }
 

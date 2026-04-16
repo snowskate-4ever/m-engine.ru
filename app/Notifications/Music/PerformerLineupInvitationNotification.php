@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Notifications\Music;
 
+use App\Enums\NotificationTopic;
 use App\Models\User;
+use App\Services\Notifications\NotificationGateway;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -22,12 +24,11 @@ class PerformerLineupInvitationNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-        if ($notifiable instanceof User && $notifiable->wantsMusicLineupInvitationEmail()) {
-            $channels[] = 'mail';
+        if (! $notifiable instanceof User) {
+            return ['database'];
         }
 
-        return $channels;
+        return app(NotificationGateway::class)->channels($notifiable, NotificationTopic::LineupInvitation);
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -52,6 +52,9 @@ class SearchRequestsPageTest extends TestCase
         Livewire::actingAs($user)->test(SearchRequestsPage::class)
             ->set('searchGoal', SearchGoal::FindPerformerForOrganizer->value)
             ->set('initiatorRef', User::class.':'.$user->id)
+            ->set('targetKind', 'performer')
+            ->set('description', 'Need performers for summer events')
+            ->set('adStatus', 'active')
             ->set('criteriaJson', '{"genre":"rock"}')
             ->call('createRequest')
             ->assertHasNoErrors();
@@ -87,6 +90,8 @@ class SearchRequestsPageTest extends TestCase
         Livewire::actingAs($user)->test(SearchRequestsPage::class)
             ->set('initiatorRef', 'profile:manager')
             ->set('searchGoal', SearchGoal::FindPerformerForOrganizer->value)
+            ->set('targetKind', 'performer')
+            ->set('adStatus', 'active')
             ->set('criteriaValues', ['city' => 'Moscow', 'budget_from' => 25000])
             ->call('createRequest')
             ->assertHasNoErrors();

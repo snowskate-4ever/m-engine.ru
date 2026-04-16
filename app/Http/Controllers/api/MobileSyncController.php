@@ -6,7 +6,10 @@ namespace App\Http\Controllers\api;
 
 use App\Enums\AdStatus;
 use App\Http\Controllers\Controller;
+use App\Models\CalendarEvent;
+use App\Models\Conversation;
 use App\Models\SearchRequest;
+use App\Services\Analytics\ProductMetricsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,7 +20,7 @@ use Illuminate\Http\Request;
  */
 final class MobileSyncController extends Controller
 {
-    public function manifest(Request $request): JsonResponse
+    public function manifest(Request $request, ProductMetricsService $metrics): JsonResponse
     {
         $user = $request->user();
         abort_unless($user, 401);
@@ -35,6 +38,25 @@ final class MobileSyncController extends Controller
         }
 
         $drafts = $draftQuery->limit(100)->get(['id', 'updated_at', 'ad_status']);
+        $conversations = Conversation::query()
+            ->whereHas('participants', fn ($q) => $q->where('users.id', $user->id))
+            ->when($sinceTs !== null, fn ($q) => $q->where('updated_at', '>', $sinceTs))
+            ->orderByDesc('updated_at')
+            ->limit(100)
+            ->get(['id', 'updated_at', 'type', 'title']);
+        $calendarEvents = CalendarEvent::query()
+            ->where('user_id', $user->id)
+            ->when($sinceTs !== null, fn ($q) => $q->where('updated_at', '>', $sinceTs))
+            ->orderByDesc('updated_at')
+            ->limit(100)
+            ->get(['id', 'updated_at', 'starts_at', 'ends_at', 'title', 'status']);
+
+        $metrics->track('mobile.sync_manifest.requested', $user->id, 'mobile', [
+            'since' => $sinceTs,
+            'drafts_count' => $drafts->count(),
+            'conversations_count' => $conversations->count(),
+            'calendar_events_count' => $calendarEvents->count(),
+        ]);
 
         return response()->json([
             'api_version' => 'mobile_sync_v1',
@@ -44,6 +66,16 @@ final class MobileSyncController extends Controller
                     'name' => 'search_request_drafts',
                     'cursor_field' => 'updated_at',
                     'items' => $drafts,
+                ],
+                [
+                    'name' => 'conversations',
+                    'cursor_field' => 'updated_at',
+                    'items' => $conversations,
+                ],
+                [
+                    'name' => 'calendar_events',
+                    'cursor_field' => 'updated_at',
+                    'items' => $calendarEvents,
                 ],
             ],
             'hints' => [

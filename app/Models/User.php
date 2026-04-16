@@ -163,9 +163,27 @@ class User extends Authenticatable
             ->exists();
     }
 
+    public function getNotificationPreference(string $key, mixed $default = null): mixed
+    {
+        return ($this->notification_preferences ?? [])[$key] ?? $default;
+    }
+
+    public function wantsInAppNotifications(): bool
+    {
+        return (bool) $this->getNotificationPreference('in_app', true);
+    }
+
+    public function setInAppNotifications(bool $enabled): void
+    {
+        $prefs = $this->notification_preferences ?? [];
+        $prefs['in_app'] = $enabled;
+        $this->notification_preferences = $prefs;
+        $this->save();
+    }
+
     public function wantsMusicLineupInvitationEmail(): bool
     {
-        return (bool) (($this->notification_preferences ?? [])['music_lineup_email'] ?? true);
+        return (bool) $this->getNotificationPreference('music_lineup_email', true);
     }
 
     public function setMusicLineupInvitationEmail(bool $enabled): void

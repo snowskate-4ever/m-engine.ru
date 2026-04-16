@@ -13,6 +13,7 @@ class Review extends Model
 {
     protected $fillable = [
         'author_user_id',
+        'verified_booking_id',
         'reviewable_type',
         'reviewable_id',
         'contextable_type',
@@ -25,6 +26,11 @@ class Review extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_user_id');
+    }
+
+    public function verifiedBooking(): BelongsTo
+    {
+        return $this->belongsTo(Booking::class, 'verified_booking_id');
     }
 
     public function reviewable(): MorphTo

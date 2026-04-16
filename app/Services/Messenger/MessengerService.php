@@ -39,26 +39,40 @@ final class MessengerService
     {
         return MessengerUserPreference::firstOrCreate(
             ['user_id' => $user->id],
-            ['push_enabled' => true],
+            ['push_enabled' => true, 'priority_mode' => 'balanced'],
         );
     }
 
     /**
-     * @return array{push_enabled: bool}
+     * @return array{in_app_enabled: bool, music_lineup_email: bool, push_enabled: bool, priority_mode: string, quiet_hours_start: ?int, quiet_hours_end: ?int}
      */
     public function preferencesToArray(User $user): array
     {
         $p = $this->getOrCreatePreferences($user);
 
         return [
+            'in_app_enabled' => $user->wantsInAppNotifications(),
+            'music_lineup_email' => $user->wantsMusicLineupInvitationEmail(),
             'push_enabled' => $p->push_enabled,
+            'priority_mode' => (string) ($p->priority_mode ?? 'balanced'),
+            'quiet_hours_start' => $p->quiet_hours_start,
+            'quiet_hours_end' => $p->quiet_hours_end,
         ];
     }
 
-    public function updatePreferences(User $user, bool $pushEnabled): MessengerUserPreference
+    public function updatePreferences(
+        User $user,
+        bool $pushEnabled,
+        string $priorityMode = 'balanced',
+        ?int $quietHoursStart = null,
+        ?int $quietHoursEnd = null,
+    ): MessengerUserPreference
     {
         $p = $this->getOrCreatePreferences($user);
         $p->push_enabled = $pushEnabled;
+        $p->priority_mode = $priorityMode;
+        $p->quiet_hours_start = $quietHoursStart;
+        $p->quiet_hours_end = $quietHoursEnd;
         $p->save();
 
         return $p;

@@ -257,6 +257,16 @@ class PublicMusicProfileController extends Controller
             ], 200);
         }
 
+        $overlay = method_exists($model, 'publicModerationOverlay')
+            ? $model->publicModerationOverlay()
+            : null;
+        if ($overlay !== null) {
+            return response()->view('public.profiles.moderation_status', [
+                'entityTypeLabel' => $typeLabel,
+                'overlay' => $overlay,
+            ], 200);
+        }
+
         return view($publicView, array_merge(['model' => $model], $extraViewData));
     }
 

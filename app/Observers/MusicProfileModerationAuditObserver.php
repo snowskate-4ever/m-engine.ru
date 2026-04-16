@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Observers;
 
+use App\Enums\ModerationStatus;
 use App\Support\Moderation\ModerationAuditRecorder;
 use Illuminate\Database\Eloquent\Model;
 
 final class MusicProfileModerationAuditObserver
 {
     /** @var list<string> */
-    private const TRACK = ['moderation_hidden_at', 'moderation_reason', 'moderation_review_requested_at'];
+    private const TRACK = ['moderation_hidden_at', 'moderation_reason', 'moderation_review_requested_at', 'moderation_status'];
 
     public function created(Model $model): void
     {
@@ -56,7 +57,15 @@ final class MusicProfileModerationAuditObserver
      */
     private function allEmptyModeration(array $snapshot): bool
     {
-        foreach ($snapshot as $v) {
+        foreach ($snapshot as $key => $v) {
+            if ($key === 'moderation_status') {
+                $status = $v instanceof ModerationStatus ? $v : ModerationStatus::tryFrom((string) $v);
+                if ($status !== null && $status !== ModerationStatus::Approved) {
+                    return false;
+                }
+
+                continue;
+            }
             if ($v !== null && $v !== '') {
                 return false;
             }

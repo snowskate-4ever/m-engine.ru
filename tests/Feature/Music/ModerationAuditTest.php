@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Music;
 
+use App\Enums\ModerationStatus;
 use App\Models\ModerationAudit;
 use App\Models\Musician;
 use App\Models\PublicProfileReport;
@@ -37,6 +38,29 @@ final class ModerationAuditTest extends TestCase
             'action' => 'music_profile.moderation_updated',
             'actor_type' => User::class,
             'actor_id' => $user->id,
+        ]);
+    }
+
+    public function test_moderation_status_change_writes_audit(): void
+    {
+        $user = User::factory()->create();
+        $musician = Musician::query()->create([
+            'name' => 'Status Musician',
+            'description' => null,
+            'user_id' => $user->id,
+            'slug' => 'st-m-'.uniqid('', true),
+            'public_page_enabled' => true,
+            'moderation_status' => ModerationStatus::Approved->value,
+        ]);
+
+        $this->actingAs($user);
+        $musician->moderation_status = ModerationStatus::Pending;
+        $musician->save();
+
+        $this->assertDatabaseHas('moderation_audits', [
+            'auditable_type' => $musician->getMorphClass(),
+            'auditable_id' => $musician->id,
+            'action' => 'music_profile.moderation_updated',
         ]);
     }
 

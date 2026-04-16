@@ -1,6 +1,6 @@
 # Дальнейшее развитие музыкального сервиса (дорожная карта)
 
-Обновлено: 2026-04-11.  
+Обновлено: 2026-04-16.  
 Документ дополняет закрытый чеклист в `music-ecosystem-plan.md` (п.1–11) и фиксирует **следующие эпики** без обязательства к срокам.
 
 ---
@@ -57,11 +57,9 @@
 
 **Роли:** доступ к разделам MoonShine по-прежнему задаётся учётками и ролями MoonShine (см. ресурс ролей в админке). Отдельная роль «поддержка» оформляется выдачей прав на нужные ресурсы в этом интерфейсе, без связки с `Gate` приложения.
 
-**Состав работ (оставшееся / улучшения):**
+**Статус (2026-04-16): чеклист §3 по сути закрыт** — в `app/MoonShine/Resources/MusicEcosystem/*` есть ресурсы публичных сущностей (включая `ConcertVenueResource`): просмотр/редактирование, `slug`, переключатель публикации (`public_page_enabled`), модерация через `MusicModerationForm` (в т.ч. `moderation_status`). `AddressResource`: `MorphTo` владельца покрывает музыкие профили, магазин, лейбл, продюсерский центр, **концертную площадку** и прочие типы из модели `Address`.
 
-- Ресурсы или расширение существующих: `Musician`, `Teacher`, `Peformer`, `Studio`, `Rehersal`, `School`, `Shop`, `RecordLabel`, `ProducerCenter` — просмотр, мягкое отключение публикации, правка slug при конфликтах.
-- Связанные `Address` для музыких сущностей (полиморфный владелец уже есть в модели `Address`; в MoonShine MorphTo может потребовать расширения типов).
-- Роли: доступ только админам MoonShine, без смешения с пользовательскими политиками `Gate`.
+**Опционально позже:** отдельный сценарный UI «очереди модерации» сверх индекса/фильтров MoonShine; политика ролей «поддержка» остаётся на стороне MoonShine (без `Gate` приложения) — без изменений к архитектуре.
 
 **Статус (2026-04-11):** ресурс `PublicProfileReportResource` (жалобы пользователей); в заказах магазина в форме MoonShine — режим доставки и адрес.
 
@@ -71,13 +69,21 @@
 
 ## 4. Интеграции и дополнительные каналы уведомлений
 
+**Статус (2026-04-16): частично реализовано (Integration API v2 foundation)**  
+Добавлены:
+- `GET /api/integration/v2/me` + ability-check (`me:read`);
+- `GET /api/integration/v2/analytics/*` + ability-check (`analytics:read`, `analytics:export`);
+- `POST /api/integration/v2/webhooks/events` с `Idempotency-Key` и HMAC-подписью (`X-Integration-Signature`);
+- middleware `integration.ability`, расширение конфигурации `config/integration.php`.
+
+**Статус (2026-04-16, шлюз уведомлений):** реализованы `App\Services\Notifications\NotificationGateway` и `NotificationTopic`; каналы доставки выбираются по настройкам пользователя (in-app / почта для приглашения в состав и т.д.). Подключено в `PerformerLineupInvitationNotification`, `MatchingLifecycleNotification`. Тесты: `tests/Feature/Notifications/NotificationGatewayTest.php`, `tests/Feature/Api/MessengerPreferencesGatewayTest.php` (поля smart notifications в preferences).
+
 **Зачем:** в спецификации п.8 заложены «чат, уведомления» и расширение на контакт; сейчас есть сайт + БД + почта.
 
-**Возможные направления:**
+**Возможные направления (ещё не продуктовый must-have):**
 
-- **Мессенджер:** при приглашении создавать системное сообщение / карточку в существующем чате (если есть общий канал с пользователем) — продуктово сложнее, нужны правила (только при существующем диалоге или всегда «бот»).
+- **Мессенджер:** при приглашении создавать системное сообщение / карточку в существующем чате (если есть общий канал с пользователем) — продуктово сложнее, нужны правила (только при существующем диалоге или всегда «бот»). *Частично закрыто для состава и заказов через notice-ленту (см. фаза 8).*
 - **Telegram / VK:** опциональная привязка аккаунта и отправка короткого уведомления (в проекте уже есть зачатки VK у пользователя — оценить переиспользование).
-- Единый **шлюз уведомлений** (какие каналы включены в `notification_preferences` наряду с `music_lineup_email`).
 
 **Зависимости:** политика приватности, лимиты внешних API, очереди.
 
@@ -85,15 +91,13 @@
 
 ## 5. Модерация публичного контента
 
-**Статус (2026-04-10): частично сделано** — `moderation_hidden_at` / `moderation_reason` на публичных сущностях (магазин, музыкант, учитель, исполнитель, студия, репточка, школа, лейбл, продюсерский центр); публичная заглушка `moderation_hidden`; поля в MoonShine + колонка на индексе (минимальная «очередь» по дате скрытия).
+**Статус (2026-04-10 → 2026-04-16):** базовое скрытие — `moderation_hidden_at` / `moderation_reason` на публичных сущностях (магазин, музыкант, учитель, исполнитель, студия, репточка, школа, лейбл, продюсерский центр, концертная площадка); публичная заглушка `moderation_hidden`; поля в MoonShine + колонки на индексе. Расширение roadmap (жалобы, статусы, аудит, витрина) — в статусе 2026-04-16 ниже.
 
 **Зачем (расширение):** при росте сообщества — полноценный контроль.
 
-**Состав работ (оставшееся):**
+**Статус (2026-04-16): расширение §5 из roadmap закрыто в коде** — жалобы (`public_profile_reports`, `music/report-profile`), состояния публичного профиля через `moderation_status` (в MoonShine и на витрине — заглушка `moderation_status.blade.php`), публичный поиск/sitemap только для `moderation_status = approved`, аудит (`moderation_audits`, `MusicProfileModerationAuditObserver`, `ModerationAuditResource`).
 
-- Флаги / жалобы от пользователей.
-- Состояния профиля: например «на проверке» (отдельно от бинарного скрытия).
-- Выделенная очередь/фильтр модерации, аудит действий.
+**Опционально позже:** отдельный операторский дашборд модерации с SLA и эскалациями (сверх фильтров в MoonShine).
 
 **Зависимости:** юридические формулировки, политика хранения причин.
 
@@ -103,11 +107,47 @@
 
 ## 6. Качество и сопровождение
 
-- **Тесты:** feature-тесты для `PerformerMembershipService`, публичного поиска, создания адреса; публичные страницы и поиск для `RecordLabel` / `ProducerCenter` (`RecordLabelAndProducerCenterPublicTest`), адрес у лейбла (`AddressBookPanelTest`); **магазин:** `PublicShopListingsTest`, `ShopInventoryTest`, **`ShopCheckoutPaymentTotalsTest`**, **`PublicProfileModerationTest`**, фильтр категорий на витрине; **2026-04-11:** `MusicDiscoverAndSitemapTest`, `PublicProfileReportTest`, расширение `ShopCheckoutPaymentTotalsTest` (доставка); **доп.:** `PublicMusicCatalogCacheInvalidationTest`, `ModerationAuditTest`.
+- **Тесты:** feature-тесты для `PerformerMembershipService`, публичного поиска, создания адреса; публичные страницы и поиск для `RecordLabel` / `ProducerCenter` (`RecordLabelAndProducerCenterPublicTest`), адрес у лейбла (`AddressBookPanelTest`); **магазин:** `PublicShopListingsTest`, `ShopInventoryTest`, **`ShopCheckoutPaymentTotalsTest`**, **`PublicProfileModerationTest`**, фильтр категорий на витрине; **2026-04-11:** `MusicDiscoverAndSitemapTest`, `PublicProfileReportTest`, расширение `ShopCheckoutPaymentTotalsTest` (доставка); **доп.:** `PublicMusicCatalogCacheInvalidationTest`, `ModerationAuditTest`; **2026-04-16:** `NotificationGatewayTest`, `MessengerPreferencesGatewayTest`, `ProductMetricsObservabilitySnapshotTest`, расширения API matching/mobile/integration (см. git и `phpunit.xml`).
 - **Наблюдаемость:** логирование ошибок отправки почты, метрики по приглашениям.
 - **Документация:** чеклист п.1–11 в `music-ecosystem-plan.md`; актуальные доработки — этот roadmap и блок «Дополнения в коде» в плане.
 
 **Статус (2026-04-11):** слушатель `LogNotificationFailed` → `Log::warning('notification.channel_failed', …)`; при приглашении в состав — `Log::info('music.lineup_invite.sent', …)`.
+
+**Статус (2026-04-16):** добавлен baseline telemetry-контур:
+- таблица `product_metric_events`;
+- сервис `ProductMetricsService` (`track`, `baselineSnapshot`);
+- команда `php artisan metrics:baseline-snapshot --days=30`;
+- трекинг ключевых событий matching/integration/ai/mobile.
+
+---
+
+## 10. Non-monetization roadmap (Q2) — status update
+
+### Этап 1 (Foundation + Quick Wins)
+**Статус: выполнено (2026-04-16)**
+- Quality score + anti-spam flags для search requests (`SearchRequestQualityService`).
+- Explainable matching в API (`explainable_matching.top_candidates`).
+- Mobile sync manifest расширен: `search_request_drafts`, `conversations`, `calendar_events`.
+- Integration API v2 foundation (versioning/scopes/idempotency/signature).
+
+### Этап 2 (Core Product Lift)
+**Статус: выполнено (2026-04-16)**
+- Гибридный скоринг matching (rule + behavioral signals) в `SearchMatchingService`.
+- AI quality gate + трекинг для expansion endpoints.
+- Calendar sync foundation:
+  - `GET /api/music/calendar-sync/connectors`
+  - `GET /api/music/calendar-sync/feed`
+- Smart notifications:
+  - `priority_mode`, `quiet_hours_start`, `quiet_hours_end` в `messenger_user_preferences`.
+
+### Этап 3 (Expansion + Stabilization)
+**Статус: выполнено (2026-04-16)**
+- Verified reviews: `POST /api/music/reviews/verified`, `reviews.verified_booking_id`.
+- Activity feed: `GET /api/music/activity-feed` + базовая персонализация.
+- AI content assistant: `POST /api/ai/expansion/compose-content`.
+- Runbook и A/B docs:
+  - `docs/OPERATIONS_MATCHING_RUNBOOK.md`
+  - `docs/AB_EXPERIMENTS_MATCHING_UGC.md`
 
 ---
 
@@ -117,10 +157,10 @@
 |-----------|------|-------------|
 | Высокий | §1 Центр уведомлений | Прямой эффект на UX приглашений и будущих событий |
 | Высокий | §2 Публичный каталог | Рост охвата и ссылочности без перегруза кабинета |
-| Средний | §3 Админка | Нужен рост пользовательской базы или инциденты |
-| Средний | §6 Тесты + док | Снижение регрессий при доработках |
-| По необходимости | §4 Интеграции | После явного запроса продукта / аудитории |
-| По необходимости | §5 Модерация (расширение) | Жалобы, статусы «на проверке», аудит — после базового скрытия |
+| Средний | §3 Админка | Базовый контур закрыт (2026-04-16); дальше — только UX/роли по операционке |
+| Средний | §6 Тесты + док | Снижение регрессий при доработках; baseline метрик и шлюз уведомлений покрыты тестами |
+| По необходимости | §4 Интеграции | API v2 + webhooks + шлюз уведомлений; внешние каналы (TG/VK) — по запросу продукта |
+| По необходимости | §5 Модерация (расширение) | Расширенный контур (статусы, жалобы, аудит) закрыт; опционально — отдельный дашборд |
 
 ---
 

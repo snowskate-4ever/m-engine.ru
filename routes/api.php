@@ -21,12 +21,16 @@ use App\Http\Controllers\api\GamificationController;
 use App\Http\Controllers\api\Integration\IntegrationAnalyticsController;
 use App\Http\Controllers\api\Integration\IntegrationMeController;
 use App\Http\Controllers\api\Integration\IntegrationTokenController;
+use App\Http\Controllers\api\Integration\IntegrationWebhookController;
 use App\Http\Controllers\api\MessengerAttachmentDownloadController;
 use App\Http\Controllers\api\MessengerController;
 use App\Http\Controllers\api\MessengerConversationSkillController;
 use App\Http\Controllers\api\MobileSyncController;
 use App\Http\Controllers\api\MusicActorContextController;
+use App\Http\Controllers\api\MusicActivityFeedController;
+use App\Http\Controllers\api\MusicCalendarSyncController;
 use App\Http\Controllers\api\MusicProfileMembershipController;
+use App\Http\Controllers\api\MusicReviewController;
 use App\Http\Controllers\api\MusicResourceCatalogController;
 use App\Http\Controllers\api\MusicSearchRequestController;
 use App\Http\Controllers\api\PlatformPaymentController;
@@ -46,7 +50,7 @@ Route::get('/public/blog-posts/detail', [PublicBlogController::class, 'show'])
     ->middleware('throttle:120,1')
     ->name('api_public_blog_posts_show');
 
-Route::prefix('integration/v1')->middleware(['integration.api', 'throttle:integration'])->group(function (): void {
+Route::prefix('integration/v1')->middleware(['integration.api', 'integration.audit', 'throttle:integration'])->group(function (): void {
     Route::get('/me', IntegrationMeController::class)->name('api_integration_v1_me');
     Route::get('/analytics/bookings/summary', [IntegrationAnalyticsController::class, 'bookingsSummary'])
         ->name('api_integration_v1_analytics_bookings_summary');
@@ -55,6 +59,25 @@ Route::prefix('integration/v1')->middleware(['integration.api', 'throttle:integr
     Route::get('/analytics/bookings/export.csv', [IntegrationAnalyticsController::class, 'exportBookingsCsv'])
         ->name('api_integration_v1_analytics_bookings_export_csv');
 });
+
+Route::prefix('integration/v2')->middleware(['integration.api', 'integration.audit', 'throttle:integration'])->group(function (): void {
+    Route::get('/me', IntegrationMeController::class)
+        ->middleware('integration.ability:me:read')
+        ->name('api_integration_v2_me');
+    Route::get('/analytics/bookings/summary', [IntegrationAnalyticsController::class, 'bookingsSummary'])
+        ->middleware('integration.ability:analytics:read')
+        ->name('api_integration_v2_analytics_bookings_summary');
+    Route::get('/analytics/bookings/by-month', [IntegrationAnalyticsController::class, 'bookingsByMonth'])
+        ->middleware('integration.ability:analytics:read')
+        ->name('api_integration_v2_analytics_bookings_by_month');
+    Route::get('/analytics/bookings/export.csv', [IntegrationAnalyticsController::class, 'exportBookingsCsv'])
+        ->middleware('integration.ability:analytics:export')
+        ->name('api_integration_v2_analytics_bookings_export_csv');
+});
+
+Route::post('/integration/v2/webhooks/events', [IntegrationWebhookController::class, 'store'])
+    ->middleware('throttle:integration-webhook')
+    ->name('api_integration_v2_webhooks_events_store');
 
 // Устаревший маршрут для обратной совместимости
 Route::post('/login', [ApiAuthController::class, 'login'])->name('login');
@@ -162,6 +185,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/memberships/{membership}/revoke', [MusicProfileMembershipController::class, 'revoke'])->name('api_music_memberships_revoke');
 
         Route::get('/resources/catalog', [MusicResourceCatalogController::class, 'catalog'])->name('api_music_resources_catalog');
+        Route::get('/calendar-sync/feed', [MusicCalendarSyncController::class, 'feed'])->name('api_music_calendar_sync_feed');
+        Route::get('/calendar-sync/connectors', [MusicCalendarSyncController::class, 'connectors'])->name('api_music_calendar_sync_connectors');
 
         Route::get('/search-requests', [MusicSearchRequestController::class, 'index'])->name('api_music_search_requests_index');
         Route::get('/search-requests-feed', [MusicSearchRequestController::class, 'feed'])->name('api_music_search_requests_feed');
@@ -170,6 +195,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/search-requests/{searchRequest}/reopen', [MusicSearchRequestController::class, 'reopen'])->name('api_music_search_requests_reopen');
         Route::post('/search-requests/{searchRequest}/responses', [MusicSearchRequestController::class, 'respond'])->name('api_music_search_requests_respond');
         Route::get('/search-requests/{searchRequest}/responses', [MusicSearchRequestController::class, 'responses'])->name('api_music_search_requests_responses');
+        Route::get('/activity-feed', [MusicActivityFeedController::class, 'index'])->name('api_music_activity_feed');
+        Route::post('/reviews/verified', [MusicReviewController::class, 'storeVerified'])->name('api_music_reviews_verified_store');
     });
 
     Route::post('/platform/bookings/{booking}/payments', [PlatformPaymentController::class, 'storeForBooking'])
@@ -208,9 +235,18 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('throttle:60,1')
         ->name('api_blog_comments_store');
 
+    Route::get('/integration/tokens', [IntegrationTokenController::class, 'index'])
+        ->middleware('throttle:30,1')
+        ->name('api_integration_tokens_index');
     Route::post('/integration/tokens', [IntegrationTokenController::class, 'store'])
         ->middleware('throttle:20,1')
         ->name('api_integration_tokens_store');
+    Route::delete('/integration/tokens/{integrationApiToken}', [IntegrationTokenController::class, 'destroy'])
+        ->middleware('throttle:30,1')
+        ->name('api_integration_tokens_destroy');
+    Route::post('/integration/tokens/{integrationApiToken}/rotate', [IntegrationTokenController::class, 'rotate'])
+        ->middleware('throttle:20,1')
+        ->name('api_integration_tokens_rotate');
 
     Route::get('/gamification/xp', [GamificationController::class, 'meXp'])->name('api_gamification_xp');
     Route::get('/gamification/leaderboard', [GamificationController::class, 'leaderboard'])
@@ -229,6 +265,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ai/expansion/support-chat', [AiExpansionController::class, 'supportChat'])
         ->middleware('throttle:30,1')
         ->name('api_ai_expansion_support_chat');
+    Route::post('/ai/expansion/compose-content', [AiExpansionController::class, 'composeContent'])
+        ->middleware('throttle:30,1')
+        ->name('api_ai_expansion_compose_content');
 
     Route::get('/mobile/v1/sync/manifest', [MobileSyncController::class, 'manifest'])
         ->middleware('throttle:60,1')

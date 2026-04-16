@@ -55,7 +55,10 @@ use App\MoonShine\Resources\Shop\ShopResource;
 use App\MoonShine\Resources\Social\SocialResource;
 use App\MoonShine\Resources\Type\TypeResource;
 use App\MoonShine\Resources\User\UserResource;
+use App\Http\Controllers\MoonShine\AutomationPresetOwnerSearchController;
 use App\MoonShine\Resources\VkTracking\VkTrackingResource;
+use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use MoonShine\Contracts\Core\DependencyInjection\CoreContract;
 use MoonShine\Laravel\DependencyInjection\MoonShineConfigurator;
@@ -125,5 +128,14 @@ class MoonShineServiceProvider extends ServiceProvider
             ->pages([
                 ...$core->getConfig()->getPages(),
             ]);
+
+        if (moonshineConfig()->isUseRoutes()) {
+            Route::moonshine(function (Router $router): void {
+                $router->middleware(moonshineConfig()->getAuthMiddleware())->group(function (Router $router): void {
+                    $router->get('async/automation-preset-owner', AutomationPresetOwnerSearchController::class)
+                        ->name('async.automation-preset-owner');
+                });
+            });
+        }
     }
 }

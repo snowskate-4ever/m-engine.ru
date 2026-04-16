@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Notifications\Music;
 
+use App\Enums\NotificationTopic;
+use App\Models\User;
+use App\Services\Notifications\NotificationGateway;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -22,7 +25,11 @@ class MatchingLifecycleNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        if (! $notifiable instanceof User) {
+            return ['database'];
+        }
+
+        return app(NotificationGateway::class)->channels($notifiable, NotificationTopic::MatchingLifecycle);
     }
 
     /**
