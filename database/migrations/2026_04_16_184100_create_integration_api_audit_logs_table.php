@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('ip', 45)->nullable();
             $table->timestamps();
 
-            $table->index(['integration_api_token_id', 'created_at']);
+            $table->index(['integration_api_token_id', 'created_at'], 'iaal_token_created_idx');
         });
     }
 
