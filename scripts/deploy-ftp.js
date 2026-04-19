@@ -1,12 +1,14 @@
 /**
- * FTP deploy: uploads project to server (excluding node_modules, vendor, .git, .env, etc.)
+ * FTP deploy: uploads files to server (excluding node_modules, vendor, .git, .env, etc.)
  * Reads settings from sync_config.jsonc (first profile or --profile=name).
  * При ошибке "maximum number of clients" автоматически повторяет попытку после паузы.
  *
- * Run: npm run deploy
+ * Run: npm run deploy:assets
  * Только фронт после локального `npm run build` (Vite → public/build):
  *   npm run deploy -- public/build
  *   npm run deploy:assets
+ * Полная выгрузка по FTP (обычно не нужна, т.к. код деплоится через Git):
+ *   node scripts/deploy-ftp.js --all
  */
 import { Client } from 'basic-ftp';
 import { readFileSync, existsSync, statSync } from 'fs';
@@ -118,6 +120,7 @@ function collectFilesFromArg(arg) {
 
 async function main() {
   const profileName = process.argv.find((a) => a.startsWith('--profile='))?.slice('--profile='.length);
+  const includeAll = process.argv.includes('--all');
   const onlyArgs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const cfg = loadSyncConfig(profileName);
   if (!cfg || !cfg.host || !cfg.username || !cfg.password) {
@@ -154,9 +157,12 @@ async function main() {
       const deployRoot = await client.pwd();
       const files = onlyArgs.length
         ? onlyArgs.flatMap((a) => collectFilesFromArg(a))
-        : [...walk(rootDir)];
+        : includeAll
+          ? [...walk(rootDir)]
+          : [];
       if (files.length === 0) {
-        console.error('No files to upload. For Vite assets run `npm run build` then e.g. `npm run deploy -- public/build`.');
+        console.error('No files to upload. Use `npm run deploy:assets` (recommended) or pass path(s), e.g. `npm run deploy -- public/build`.');
+        console.error('For full FTP upload (not recommended when project deploys via Git), run `node scripts/deploy-ftp.js --all`.');
         process.exit(1);
       }
 

@@ -3,9 +3,10 @@
  * Использует sync_config.jsonc (первый профиль или --profile=name).
  * Исключает node_modules, vendor, .git, .env и т.д. (как deploy-ftp.js).
  *
- * Запуск: node scripts/deploy-ftp-curl.js
+ * Запуск: npm run deploy:assets:curl
  *        node scripts/deploy-ftp-curl.js --profile=handyhost
  *        node scripts/deploy-ftp-curl.js app/Http path/to/file.php  (только указанные файлы/папки)
+ *        node scripts/deploy-ftp-curl.js --all                      (полная выгрузка, обычно не нужна)
  */
 import { readFileSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
@@ -82,6 +83,7 @@ function collectFilesFromArg(arg) {
 
 function main() {
   const profileName = process.argv.find((a) => a.startsWith('--profile='))?.slice('--profile='.length);
+  const includeAll = process.argv.includes('--all');
   const onlyArgs = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const cfg = loadSyncConfig(profileName);
   if (!cfg || !cfg.host || !cfg.username || !cfg.password) {
@@ -99,10 +101,13 @@ function main() {
 
   const files = onlyArgs.length
     ? onlyArgs.flatMap((a) => collectFilesFromArg(a))
-    : [...walk(rootDir)];
+    : includeAll
+      ? [...walk(rootDir)]
+      : [];
 
   if (files.length === 0) {
-    console.log('No files to upload.');
+    console.log('No files to upload. Use `npm run deploy:assets:curl` (recommended) or pass path(s), e.g. `node scripts/deploy-ftp-curl.js public/build`.');
+    console.log('For full FTP upload (not recommended when project deploys via Git), run `node scripts/deploy-ftp-curl.js --all`.');
     return;
   }
 

@@ -5,8 +5,8 @@
     "scripts": {
         "build": "vite build",
         "dev": "vite",
-        "deploy": "node scripts/deploy-ftp.js",
-        "deploy:curl": "node scripts/deploy-ftp-curl.js",
+        "deploy": "npm run deploy:assets",
+        "deploy:curl": "npm run deploy:assets:curl",
         "deploy:assets": "npm run build && node scripts/deploy-ftp.js public/build",
         "deploy:assets:curl": "npm run build && node scripts/deploy-ftp-curl.js public/build"
     },

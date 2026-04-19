@@ -7,7 +7,6 @@ namespace App\Console\Commands;
 use App\Models\MatchingRunLog;
 use App\Models\User;
 use App\Services\Music\MatchingControlSettingsService;
-use App\Services\Music\SearchMatchingService;
 use Illuminate\Console\Command;
 
 class RunSearchMatchingCommand extends Command
@@ -17,7 +16,6 @@ class RunSearchMatchingCommand extends Command
     protected $description = 'Run ads/search-request matching pipeline and write run logs';
 
     public function __construct(
-        private readonly SearchMatchingService $matchingService,
         private readonly MatchingControlSettingsService $controlSettingsService,
     ) {
         parent::__construct();
@@ -56,8 +54,18 @@ class RunSearchMatchingCommand extends Command
         config()->set('ai.matching.score_threshold', (float) $settings->score_threshold);
         config()->set('ai.matching.weights', is_array($settings->weights) ? $settings->weights : []);
 
+        $matchingServiceClass = 'App\\Services\\Music\\SearchMatchingService';
+        if (! class_exists($matchingServiceClass)) {
+            $this->error('Search matching service is unavailable in this build.');
+
+            return self::FAILURE;
+        }
+
+        /** @var \App\Services\Music\SearchMatchingService $matchingService */
+        $matchingService = app($matchingServiceClass);
+
         /** @var MatchingRunLog $log */
-        $log = $this->matchingService->run(
+        $log = $matchingService->run(
             scope: $scope,
             runBy: $runBy,
             isAutomatic: $isAutomatic,
