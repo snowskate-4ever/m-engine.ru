@@ -2,7 +2,7 @@
     :title="__('ui.music.performers_index')"
     :buttons="[]"
     :top-bar-button="[
-        'href' => route('music.performers.create'),
+        'dispatch' => 'music-performers-open-create',
         'label' => '+',
         'title' => __('ui.music.performer_create'),
     ]"

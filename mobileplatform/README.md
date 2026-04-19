@@ -49,3 +49,11 @@ mobileplatform/
 ```
 
 Дальше при появлении iOS или общего кода можно добавить, например, `mobileplatform/ios/` или `mobileplatform/shared/` (KMM) — без ломки текущего Android-модуля.
+
+## Flutter
+
+Добавлен каркас кроссплатформенного клиента:
+
+- `mobileplatform/flutter/` — Flutter-приложение (login + базовые экраны сервиса)
+
+Документация и запуск: [flutter/README.md](flutter/README.md).
