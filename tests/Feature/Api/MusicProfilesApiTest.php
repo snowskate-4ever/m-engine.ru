@@ -85,4 +85,24 @@ class MusicProfilesApiTest extends TestCase
 
         $this->assertNotContains('musician', $user->fresh()->music_profiles ?? []);
     }
+
+    public function test_music_profiles_index_normalizes_legacy_map_flags(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => [
+                'musician' => '1',
+                'teacher' => 1,
+                'agent' => 'true',
+                'manager' => 0,
+                'session_musician' => '0',
+            ],
+        ]);
+
+        Sanctum::actingAs($user);
+        $this->getJson('/api/music/profiles')
+            ->assertOk()
+            ->assertJsonPath('data.enabled.0', 'musician')
+            ->assertJsonPath('data.enabled.1', 'teacher')
+            ->assertJsonPath('data.enabled.2', 'agent');
+    }
 }

@@ -117,12 +117,45 @@ class MusicProfilesController extends Controller
                 continue;
             }
 
+            // Формат списка объектов: [{'key':'musician','enabled':true}]
+            if (is_int($key) && is_array($value)) {
+                $profileKey = isset($value['key']) && is_string($value['key'])
+                    ? $value['key']
+                    : (isset($value['profile']) && is_string($value['profile']) ? $value['profile'] : null);
+                if ($profileKey !== null && in_array($profileKey, $keys, true) && $this->isEnabledFlag($value['enabled'] ?? true)) {
+                    $result[] = $profileKey;
+                }
+                continue;
+            }
+
             // Формат map: {'musician': true, 'agent': false}
-            if (is_string($key) && in_array($key, $keys, true) && (bool) $value === true) {
+            if (is_string($key) && in_array($key, $keys, true) && $this->isEnabledFlag($value)) {
                 $result[] = $key;
             }
         }
 
         return array_values(array_unique($result));
+    }
+
+    private function isEnabledFlag(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+        if (is_int($value) || is_float($value)) {
+            return (int) $value === 1;
+        }
+        if (is_string($value)) {
+            $normalized = mb_strtolower(trim($value));
+            return in_array($normalized, ['1', 'true', 'yes', 'on', 'enabled'], true);
+        }
+        if (is_array($value)) {
+            if (array_key_exists('enabled', $value)) {
+                return $this->isEnabledFlag($value['enabled']);
+            }
+            return ! empty($value);
+        }
+
+        return false;
     }
 }
