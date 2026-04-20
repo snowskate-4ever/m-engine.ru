@@ -54,12 +54,12 @@ class _LoginPageState extends State<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Sign in',
+                      'Вход',
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Use your m-engine credentials (POST /api/login)',
+                      'Используйте учетные данные m-engine (POST /api/login)',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
@@ -67,12 +67,12 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'Эл. почта',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Email is required';
+                          return 'Укажите email';
                         }
                         return null;
                       },
@@ -82,12 +82,12 @@ class _LoginPageState extends State<LoginPage> {
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(
-                        labelText: 'Password',
+                        labelText: 'Пароль',
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Password is required';
+                          return 'Укажите пароль';
                         }
                         return null;
                       },
@@ -104,7 +104,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: widget.isLoading ? null : _submit,
-                      child: Text(widget.isLoading ? 'Signing in...' : 'Sign in'),
+                      child: Text(widget.isLoading ? 'Выполняется вход...' : 'Войти'),
                     ),
                   ],
                 ),

@@ -48,4 +48,41 @@ class MusicProfilesApiTest extends TestCase
             ->assertJsonPath('current.type', User::class)
             ->assertJsonPath('current.id', $owner->id);
     }
+
+    public function test_user_can_fetch_music_profiles_for_mobile(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['musician', 'agent'],
+        ]);
+
+        Sanctum::actingAs($user);
+        $this->getJson('/api/music/profiles')
+            ->assertOk()
+            ->assertJsonPath('data.enabled.0', 'musician')
+            ->assertJsonPath('data.enabled.1', 'agent');
+    }
+
+    public function test_user_can_enable_and_disable_music_profile_for_mobile(): void
+    {
+        $user = User::factory()->create([
+            'music_profiles' => ['musician'],
+        ]);
+
+        Sanctum::actingAs($user);
+        $this->patchJson('/api/music/profiles', [
+            'profile' => 'agent',
+            'enabled' => true,
+        ])
+            ->assertOk()
+            ->assertJsonPath('ok', true);
+
+        $this->assertContains('agent', $user->fresh()->music_profiles ?? []);
+
+        $this->patchJson('/api/music/profiles', [
+            'profile' => 'musician',
+            'enabled' => false,
+        ])->assertOk();
+
+        $this->assertNotContains('musician', $user->fresh()->music_profiles ?? []);
+    }
 }

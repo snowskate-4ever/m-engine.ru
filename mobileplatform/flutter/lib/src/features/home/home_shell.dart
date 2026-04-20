@@ -28,18 +28,16 @@ class _HomeShellState extends State<HomeShell> {
     final tabs = <Widget>[
       _ProfilesTab(apiClient: widget.apiClient, token: widget.token),
       _ResourcesTab(apiClient: widget.apiClient, token: widget.token),
-      _PlanningTab(apiClient: widget.apiClient, token: widget.token),
       _MessengerTab(apiClient: widget.apiClient, token: widget.token),
       _WorkTab(apiClient: widget.apiClient, token: widget.token),
-      const _MoreTab(),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('M-Engine: ${widget.displayName ?? 'user'}'),
+        title: Text('M-Engine: ${widget.displayName ?? 'пользователь'}'),
         actions: [
           IconButton(
-            tooltip: 'Logout',
+            tooltip: 'Выйти',
             onPressed: widget.onLogout,
             icon: const Icon(Icons.logout),
           ),
@@ -50,12 +48,10 @@ class _HomeShellState extends State<HomeShell> {
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.person), label: 'Profiles'),
-          NavigationDestination(icon: Icon(Icons.apps), label: 'Resources'),
-          NavigationDestination(icon: Icon(Icons.event), label: 'Planning'),
-          NavigationDestination(icon: Icon(Icons.chat), label: 'Messenger'),
-          NavigationDestination(icon: Icon(Icons.checklist), label: 'Work'),
-          NavigationDestination(icon: Icon(Icons.more_horiz), label: 'More'),
+          NavigationDestination(icon: Icon(Icons.person), label: 'Профили'),
+          NavigationDestination(icon: Icon(Icons.apps), label: 'Ресурсы'),
+          NavigationDestination(icon: Icon(Icons.chat), label: 'Чаты'),
+          NavigationDestination(icon: Icon(Icons.checklist), label: 'Работа'),
         ],
       ),
     );
@@ -73,29 +69,34 @@ class _ProfilesTab extends StatefulWidget {
 }
 
 class _ProfilesTabState extends State<_ProfilesTab> {
-  late Future<List<ActorOption>> _future;
-  int? _selectedId;
+  late Future<MusicProfilesData> _future;
+  String? _selectedProfileKey;
   bool _updating = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
-    _future = widget.apiClient.getActorOptions(widget.token);
+    _future = widget.apiClient.getMusicProfiles(widget.token);
   }
 
-  Future<void> _select(ActorOption option) async {
+  Future<void> _setProfile(String profileKey, bool enabled) async {
     setState(() {
       _updating = true;
       _error = null;
     });
     try {
-      await widget.apiClient.setActor(
+      await widget.apiClient.setMusicProfileEnabled(
         widget.token,
-        type: option.type,
-        id: option.id,
+        profile: profileKey,
+        enabled: enabled,
       );
-      setState(() => _selectedId = option.id);
+      setState(() {
+        _future = widget.apiClient.getMusicProfiles(widget.token);
+        if (!enabled && _selectedProfileKey == profileKey) {
+          _selectedProfileKey = null;
+        }
+      });
     } catch (e) {
       setState(() => _error = '$e');
     } finally {
@@ -107,7 +108,7 @@ class _ProfilesTabState extends State<_ProfilesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ActorOption>>(
+    return FutureBuilder<MusicProfilesData>(
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
@@ -116,37 +117,123 @@ class _ProfilesTabState extends State<_ProfilesTab> {
         if (snapshot.hasError) {
           return _ErrorView(
             message: '${snapshot.error}',
-            onRetry: () => setState(() => _future = widget.apiClient.getActorOptions(widget.token)),
+            onRetry: () => setState(() {
+              _future = widget.apiClient.getMusicProfiles(widget.token);
+            }),
           );
         }
-        final items = snapshot.data ?? const <ActorOption>[];
-        if (items.isEmpty) {
-          return const _EmptyState(text: 'No profiles available yet.');
+        final data = snapshot.data ??
+            MusicProfilesData(
+              enabled: const <String>[],
+              available: const <MusicProfileOption>[],
+              supportsEnabledState: false,
+              supportsProfileUpdate: false,
+            );
+        final enabledKeys = data.enabled.toSet();
+        final availableToAdd = data.available.where((item) => !enabledKeys.contains(item.key)).toList();
+        if (data.available.isEmpty) {
+          return const _EmptyState(text: 'Пока нет доступных профилей.');
         }
+        if (_selectedProfileKey != null &&
+            !availableToAdd.any((item) => item.key == _selectedProfileKey)) {
+          _selectedProfileKey = null;
+        }
+
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const Text('Profile selection', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const Text('Профили', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
+            const Text(
+              'Текущие включенные',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            if (!data.supportsEnabledState)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text('Текущие включенные профили недоступны на этой версии API'),
+                  subtitle: Text('Обновите серверный API для отображения фактического списка'),
+                ),
+              ),
+            if (data.supportsEnabledState && data.enabled.isEmpty)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text('Нет включенных профилей'),
+                ),
+              ),
+            for (final key in data.supportsEnabledState ? data.enabled : const <String>[])
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.verified_user),
+                  title: Text(_profileLabel(data.available, key)),
+                  subtitle: Text(key),
+                  trailing: IconButton(
+                    tooltip: 'Отключить профиль',
+                    onPressed: _updating || !data.supportsProfileUpdate
+                        ? null
+                        : () => _setProfile(key, false),
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 12),
+            const Text(
+              'Добавить профиль из списка',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            DropdownButtonFormField<String>(
+              value: _selectedProfileKey,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Профиль',
+              ),
+              items: availableToAdd
+                  .map(
+                    (option) => DropdownMenuItem<String>(
+                      value: option.key,
+                      child: Text(option.label),
+                    ),
+                  )
+                  .toList(),
+              onChanged: _updating
+                  || !data.supportsProfileUpdate
+                  ? null
+                  : (value) {
+                      setState(() => _selectedProfileKey = value);
+                    },
+            ),
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: _updating || _selectedProfileKey == null || !data.supportsProfileUpdate
+                  ? null
+                  : () => _setProfile(_selectedProfileKey!, true),
+              icon: const Icon(Icons.add),
+              label: const Text('Включить выбранный профиль'),
+            ),
+            const SizedBox(height: 12),
             if (_error != null)
               Text(
                 _error!,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            for (final option in items)
-              Card(
-                child: ListTile(
-                  title: Text(option.label),
-                  subtitle: Text(option.type),
-                  trailing: _selectedId == option.id ? const Icon(Icons.check_circle) : null,
-                  onTap: _updating ? null : () => _select(option),
-                ),
               ),
           ],
         );
       },
     );
   }
+}
+
+String _profileLabel(List<MusicProfileOption> available, String key) {
+  for (final option in available) {
+    if (option.key == key) {
+      return option.label;
+    }
+  }
+  return key;
 }
 
 class _ResourcesTab extends StatefulWidget {
@@ -179,12 +266,14 @@ class _ResourcesTabState extends State<_ResourcesTab> {
         if (snapshot.hasError) {
           return _ErrorView(
             message: '${snapshot.error}',
-            onRetry: () => setState(() => _future = widget.apiClient.getResourceSections(widget.token)),
+            onRetry: () => setState(() {
+              _future = widget.apiClient.getResourceSections(widget.token);
+            }),
           );
         }
         final sections = snapshot.data ?? const <ResourceSection>[];
         if (sections.isEmpty) {
-          return const _EmptyState(text: 'No resources returned by API.');
+          return const _EmptyState(text: 'API не вернуло ресурсов.');
         }
 
         return ListView.builder(
@@ -242,12 +331,14 @@ class _PlanningTabState extends State<_PlanningTab> {
         if (snapshot.hasError) {
           return _ErrorView(
             message: '${snapshot.error}',
-            onRetry: () => setState(() => _future = widget.apiClient.getMatchingFeed(widget.token)),
+            onRetry: () => setState(() {
+              _future = widget.apiClient.getMatchingFeed(widget.token);
+            }),
           );
         }
         final requests = snapshot.data ?? const <MatchingRequest>[];
         if (requests.isEmpty) {
-          return const _EmptyState(text: 'No matching requests found.');
+          return const _EmptyState(text: 'Заявки на подбор не найдены.');
         }
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -256,7 +347,7 @@ class _PlanningTabState extends State<_PlanningTab> {
               Card(
                 child: ListTile(
                   title: Text(request.searchGoal),
-                  subtitle: Text('Status: ${request.status}\nInitiator: ${request.initiatorLabel}'),
+                  subtitle: Text('Статус: ${_translateStatus(request.status)}\nИнициатор: ${request.initiatorLabel}'),
                   isThreeLine: true,
                 ),
               ),
@@ -342,12 +433,14 @@ class _MessengerTabState extends State<_MessengerTab> {
           if (snapshot.hasError) {
             return _ErrorView(
               message: '${snapshot.error}',
-              onRetry: () => setState(() => _conversationsFuture = widget.apiClient.getConversations(widget.token)),
+              onRetry: () => setState(() {
+                _conversationsFuture = widget.apiClient.getConversations(widget.token);
+              }),
             );
           }
           final conversations = snapshot.data ?? const <ConversationItem>[];
           if (conversations.isEmpty) {
-            return const _EmptyState(text: 'No conversations yet.');
+            return const _EmptyState(text: 'Пока нет диалогов.');
           }
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -356,7 +449,7 @@ class _MessengerTabState extends State<_MessengerTab> {
                 Card(
                   child: ListTile(
                     title: Text(item.title),
-                    subtitle: Text('Unread: ${item.unreadCount}'),
+                    subtitle: Text('Непрочитанных: ${item.unreadCount}'),
                     onTap: () => _openConversation(item),
                   ),
                 ),
@@ -401,7 +494,7 @@ class _MessengerTabState extends State<_MessengerTab> {
                   for (final message in messages.reversed)
                     Card(
                       child: ListTile(
-                        title: Text(message.authorName ?? (message.userId == null ? 'System' : 'You')),
+                        title: Text(message.authorName ?? (message.userId == null ? 'Система' : 'Вы')),
                         subtitle: Text(message.body),
                       ),
                     ),
@@ -426,7 +519,7 @@ class _MessengerTabState extends State<_MessengerTab> {
                 child: TextField(
                   controller: _messageController,
                   decoration: const InputDecoration(
-                    hintText: 'Message...',
+                    hintText: 'Сообщение...',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -477,8 +570,8 @@ class _WorkTabState extends State<_WorkTab> {
   Future<void> _createTask() async {
     final title = await _showInputDialog(
       context,
-      title: 'New task',
-      label: 'Task title',
+      title: 'Новая задача',
+      label: 'Название задачи',
     );
     if (title == null || title.trim().isEmpty) {
       return;
@@ -494,8 +587,8 @@ class _WorkTabState extends State<_WorkTab> {
   Future<void> _createEvent() async {
     final title = await _showInputDialog(
       context,
-      title: 'New event',
-      label: 'Event name',
+      title: 'Новое событие',
+      label: 'Название события',
     );
     if (title == null || title.trim().isEmpty) {
       return;
@@ -542,17 +635,17 @@ class _WorkTabState extends State<_WorkTab> {
             children: [
               const Expanded(
                 child: Text(
-                  'Work: tasks & events',
+                  'Работа: задачи и события',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ),
               IconButton(
-                tooltip: 'Create task',
+                tooltip: 'Создать задачу',
                 onPressed: _createTask,
                 icon: const Icon(Icons.add_task),
               ),
               IconButton(
-                tooltip: 'Create event',
+                tooltip: 'Создать событие',
                 onPressed: _createEvent,
                 icon: const Icon(Icons.event_available),
               ),
@@ -565,7 +658,7 @@ class _WorkTabState extends State<_WorkTab> {
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           const SizedBox(height: 8),
-          const Text('Tasks', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('Задачи', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           FutureBuilder<List<TaskItem>>(
             future: _tasksFuture,
@@ -581,7 +674,7 @@ class _WorkTabState extends State<_WorkTab> {
               }
               final tasks = snapshot.data ?? const <TaskItem>[];
               if (tasks.isEmpty) {
-                return const _EmptyState(text: 'No tasks yet.');
+                return const _EmptyState(text: 'Пока нет задач.');
               }
               return Column(
                 children: [
@@ -590,15 +683,15 @@ class _WorkTabState extends State<_WorkTab> {
                       child: ListTile(
                         title: Text(task.title),
                         subtitle: Text(
-                          'Status: ${task.status}${task.assigneeName == null ? '' : '\nAssignee: ${task.assigneeName}'}',
+                          'Статус: ${_translateStatus(task.status)}${task.assigneeName == null ? '' : '\nИсполнитель: ${task.assigneeName}'}',
                         ),
                         isThreeLine: task.assigneeName != null,
                         trailing: PopupMenuButton<String>(
                           onSelected: (status) => _changeTaskStatus(task, status),
                           itemBuilder: (context) => const [
-                            PopupMenuItem(value: 'planned', child: Text('planned')),
-                            PopupMenuItem(value: 'in_progress', child: Text('in_progress')),
-                            PopupMenuItem(value: 'done', child: Text('done')),
+                            PopupMenuItem(value: 'planned', child: Text('Запланирована')),
+                            PopupMenuItem(value: 'in_progress', child: Text('В работе')),
+                            PopupMenuItem(value: 'done', child: Text('Готово')),
                           ],
                         ),
                       ),
@@ -608,7 +701,7 @@ class _WorkTabState extends State<_WorkTab> {
             },
           ),
           const SizedBox(height: 12),
-          const Text('Events', style: TextStyle(fontWeight: FontWeight.w600)),
+          const Text('События', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
           FutureBuilder<List<EventItem>>(
             future: _eventsFuture,
@@ -624,7 +717,7 @@ class _WorkTabState extends State<_WorkTab> {
               }
               final events = snapshot.data ?? const <EventItem>[];
               if (events.isEmpty) {
-                return const _EmptyState(text: 'No events yet.');
+                return const _EmptyState(text: 'Пока нет событий.');
               }
               return Column(
                 children: [
@@ -633,9 +726,9 @@ class _WorkTabState extends State<_WorkTab> {
                       child: ListTile(
                         title: Text(event.name),
                         subtitle: Text(
-                          'Status: ${event.status}\n'
-                          'Start: ${event.startAt ?? '-'}\n'
-                          'Booking: ${event.isBooking ? 'yes' : 'no'}',
+                          'Статус: ${_translateStatus(event.status)}\n'
+                          'Начало: ${event.startAt ?? '-'}\n'
+                          'Бронирование: ${event.isBooking ? 'да' : 'нет'}',
                         ),
                         isThreeLine: true,
                       ),
@@ -656,24 +749,24 @@ class _MoreTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      'Blog and comments',
-      'Contracts and payments',
-      'Integration API tokens',
-      'Calendar sync and connectors',
-      'Music memberships and search requests',
-      'AI preferences and AI subscriptions',
+      'Блог и комментарии',
+      'Договоры и платежи',
+      'Токены интеграционного API',
+      'Синхронизация календаря и коннекторы',
+      'Музыкальные подписки и заявки на подбор',
+      'Настройки ИИ и подписки на ИИ',
     ];
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         const Text(
-          'Site parity roadmap',
+          'План достижения паритета с сайтом',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         const Text(
-          'These modules are planned next to fully duplicate site functionality.',
+          'Эти модули запланированы для полного дублирования функциональности сайта.',
         ),
         const SizedBox(height: 10),
         for (final item in items)
@@ -726,11 +819,11 @@ Future<String?> _showInputDialog(
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel'),
+            child: const Text('Отмена'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Save'),
+            child: const Text('Сохранить'),
           ),
         ],
       );
@@ -765,7 +858,7 @@ class _ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: onRetry,
-              child: const Text('Retry'),
+              child: const Text('Повторить'),
             ),
           ],
         ),
@@ -787,5 +880,24 @@ class _EmptyState extends StatelessWidget {
         child: Text(text, textAlign: TextAlign.center),
       ),
     );
+  }
+}
+
+String _translateStatus(String status) {
+  switch (status) {
+    case 'planned':
+      return 'Запланирована';
+    case 'in_progress':
+      return 'В работе';
+    case 'done':
+      return 'Готово';
+    case 'pending':
+      return 'Ожидает';
+    case 'confirmed':
+      return 'Подтверждена';
+    case 'proposed':
+      return 'Предложена';
+    default:
+      return status;
   }
 }

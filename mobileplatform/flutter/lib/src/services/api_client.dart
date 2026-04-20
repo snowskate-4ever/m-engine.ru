@@ -31,6 +31,53 @@ class ActorOption {
   final String type;
   final int id;
   final String label;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is ActorOption && other.type == type && other.id == id;
+  }
+
+  @override
+  int get hashCode => Object.hash(type, id);
+}
+
+class ActorContext {
+  ActorContext({
+    required this.actors,
+    this.currentType,
+    this.currentId,
+  });
+
+  final List<ActorOption> actors;
+  final String? currentType;
+  final int? currentId;
+}
+
+class MusicProfileOption {
+  const MusicProfileOption({
+    required this.key,
+    required this.label,
+  });
+
+  final String key;
+  final String label;
+}
+
+class MusicProfilesData {
+  MusicProfilesData({
+    required this.enabled,
+    required this.available,
+    required this.supportsEnabledState,
+    required this.supportsProfileUpdate,
+  });
+
+  final List<String> enabled;
+  final List<MusicProfileOption> available;
+  final bool supportsEnabledState;
+  final bool supportsProfileUpdate;
 }
 
 class ResourceSection {
@@ -167,9 +214,9 @@ class ApiClient {
       throw ApiException(message);
     }
     if (response.statusCode == 401) {
-      throw ApiException('Invalid email or password');
+      throw ApiException('Неверный email или пароль');
     }
-    throw ApiException('Login failed (${response.statusCode})');
+    throw ApiException('Не удалось выполнить вход (${response.statusCode})');
   }
 
   Future<bool> hasValidSession(String token) async {
@@ -180,24 +227,154 @@ class ApiClient {
     return response.statusCode == 200;
   }
 
-  Future<List<ActorOption>> getActorOptions(String token) async {
+  Future<ActorContext> getActorContext(String token) async {
     final response = await _httpClient.get(
       _uri('api/music/actor-context'),
       headers: _auth(token),
     );
     _throwIfError(response);
-    final data = _decodeMap(response.body)['data'];
-    final actors = data is Map<String, dynamic> ? data['actors'] : null;
-    if (actors is! List) {
-      return const [];
+    final body = _decodeMap(response.body);
+    final data = body['data'];
+    final list = data is List
+        ? data.whereType<Map<String, dynamic>>().map((row) {
+            return ActorOption(
+              type: row['type']?.toString() ?? 'unknown',
+              id: _toInt(row['id']),
+              label: row['label']?.toString() ?? 'Без названия',
+            );
+          }).toList()
+        : const <ActorOption>[];
+
+    final current = body['current'];
+    final currentType =
+        current is Map<String, dynamic> ? current['type']?.toString() : null;
+    final currentId = current is Map<String, dynamic>
+        ? _toInt(current['id'])
+        : null;
+
+    return ActorContext(
+      actors: list,
+      currentType: currentType,
+      currentId: currentId,
+    );
+  }
+
+  Future<List<ActorOption>> getActorOptions(String token) async {
+    final context = await getActorContext(token);
+    return context.actors;
+  }
+
+  Future<ActorOption?> getCurrentActorOption(String token) async {
+    final context = await getActorContext(token);
+    if (context.currentType == null || context.currentId == null) {
+      return null;
     }
-    return actors.whereType<Map<String, dynamic>>().map((row) {
-      return ActorOption(
-        type: row['type']?.toString() ?? 'unknown',
-        id: _toInt(row['id']),
-        label: row['label']?.toString() ?? 'No name',
+    for (final actor in context.actors) {
+      if (actor.type == context.currentType && actor.id == context.currentId) {
+        return actor;
+      }
+    }
+    return null;
+  }
+
+  Future<MusicProfilesData> getMusicProfiles(String token) async {
+    http.Response response;
+    try {
+      response = await _httpClient.get(
+        _uri('api/music/profiles'),
+        headers: _auth(token),
       );
-    }).toList();
+      _throwIfError(response);
+    } on ApiException catch (e) {
+      if (!_isNotFoundError(e)) {
+        rethrow;
+      }
+
+      // Backward compatibility: older backend may not expose /api/music/profiles.
+      return MusicProfilesData(
+        enabled: const <String>[],
+        available: _fallbackMusicProfileCatalog(),
+        supportsEnabledState: false,
+        supportsProfileUpdate: false,
+      );
+    }
+
+    final body = _decodeMap(response.body);
+    final data = body['data'];
+    if (data is! Map<String, dynamic>) {
+      return MusicProfilesData(
+        enabled: const <String>[],
+        available: const <MusicProfileOption>[],
+        supportsEnabledState: true,
+        supportsProfileUpdate: true,
+      );
+    }
+
+    final enabledRaw = data['enabled'];
+    final enabled = enabledRaw is List
+        ? enabledRaw.map((item) => item.toString()).where((item) => item.isNotEmpty).toList()
+        : const <String>[];
+
+    final availableRaw = data['available'];
+    final available = availableRaw is List
+        ? availableRaw.whereType<Map<String, dynamic>>().map((row) {
+            return MusicProfileOption(
+              key: row['key']?.toString() ?? '',
+              label: row['label']?.toString() ?? '',
+            );
+          }).where((row) => row.key.isNotEmpty).toList()
+        : const <MusicProfileOption>[];
+
+    return MusicProfilesData(
+      enabled: enabled,
+      available: available,
+      supportsEnabledState: true,
+      supportsProfileUpdate: true,
+    );
+  }
+
+  Future<void> setMusicProfileEnabled(
+    String token, {
+    required String profile,
+    required bool enabled,
+  }) async {
+    try {
+      final response = await _httpClient.patch(
+        _uri('api/music/profiles'),
+        headers: {
+          ..._auth(token),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'profile': profile,
+          'enabled': enabled,
+        }),
+      );
+      _throwIfError(response);
+    } on ApiException catch (e) {
+      if (!_isNotFoundError(e)) {
+        rethrow;
+      }
+      final parts = profile.split(':');
+      if (parts.length != 2) {
+        throw ApiException(
+          'Текущая версия API не поддерживает изменение music_profiles из мобильного приложения',
+        );
+      }
+      final type = parts[0];
+      final id = int.tryParse(parts[1]);
+      if (type.isEmpty || id == null) {
+        throw ApiException('Некорректный профиль');
+      }
+      if (enabled) {
+        await setActor(token, type: type, id: id);
+      } else {
+        final current = await getActorContext(token);
+        if (current.currentType == type && current.currentId == id) {
+          await setActor(token, type: null, id: null);
+        }
+      }
+    }
   }
 
   Future<void> setActor(String token, {String? type, int? id}) async {
@@ -228,7 +405,7 @@ class ApiClient {
 
     return types.map((typeRow) {
       final typeId = _toInt(typeRow['id']);
-      final typeName = typeRow['name']?.toString() ?? 'Unknown';
+      final typeName = typeRow['name']?.toString() ?? 'Неизвестно';
       final rows = byType[typeId] ?? const <Map<String, dynamic>>[];
       return ResourceSection(
         label: typeName,
@@ -273,7 +450,7 @@ class ApiClient {
             : hasProposed
                 ? 'proposed'
                 : (event['status']?.toString() ?? 'pending'),
-        initiatorLabel: event['name']?.toString() ?? 'Unknown',
+        initiatorLabel: event['name']?.toString() ?? 'Неизвестно',
       );
     }).toList();
   }
@@ -292,7 +469,7 @@ class ApiClient {
     return list.whereType<Map<String, dynamic>>().map((row) {
       return ConversationItem(
         id: _toInt(row['id']),
-        title: row['title']?.toString() ?? 'Chat',
+        title: row['title']?.toString() ?? 'Чат',
         unreadCount: _toInt(row['unread_count']),
       );
     }).toList();
@@ -362,7 +539,7 @@ class ApiClient {
       final assignee = row['assignee'];
       return TaskItem(
         id: _toInt(row['id']),
-        title: row['title']?.toString() ?? 'Untitled task',
+        title: row['title']?.toString() ?? 'Задача без названия',
         status: row['status']?.toString() ?? 'planned',
         description: row['description']?.toString(),
         assigneeName: assignee is Map<String, dynamic> ? assignee['name']?.toString() : null,
@@ -421,7 +598,7 @@ class ApiClient {
     return events.map((row) {
       return EventItem(
         id: _toInt(row['id']),
-        name: row['name']?.toString() ?? 'Untitled event',
+        name: row['name']?.toString() ?? 'Событие без названия',
         status: row['status']?.toString() ?? 'pending',
         startAt: row['start_at']?.toString(),
         endAt: row['end_at']?.toString(),
@@ -469,7 +646,7 @@ class ApiClient {
     } catch (_) {
       message = null;
     }
-    throw ApiException(message ?? 'Request failed (${response.statusCode})');
+    throw ApiException(message ?? 'Запрос завершился ошибкой (${response.statusCode})');
   }
 
   List<Map<String, dynamic>> _extractList(String body, String key) {
@@ -485,7 +662,7 @@ class ApiClient {
   Map<String, dynamic> _decodeMap(String body) {
     final decoded = jsonDecode(body);
     if (decoded is! Map<String, dynamic>) {
-      throw ApiException('Invalid response format');
+      throw ApiException('Некорректный формат ответа');
     }
     return decoded;
   }
@@ -495,5 +672,40 @@ class ApiClient {
       return value;
     }
     return int.tryParse('$value') ?? 0;
+  }
+
+  bool _isNotFoundError(ApiException error) {
+    return error.message.contains('(404)');
+  }
+
+  List<MusicProfileOption> _fallbackMusicProfileCatalog() {
+    return const [
+      MusicProfileOption(key: 'musician', label: 'Музыкант'),
+      MusicProfileOption(key: 'teacher', label: 'Преподаватель'),
+      MusicProfileOption(key: 'event_organizer', label: 'Организатор мероприятий'),
+      MusicProfileOption(key: 'manager', label: 'Менеджер'),
+      MusicProfileOption(key: 'session_musician', label: 'Сессионный музыкант'),
+      MusicProfileOption(key: 'agent', label: 'Агент'),
+      MusicProfileOption(key: 'sound_engineer', label: 'Звукорежиссер'),
+      MusicProfileOption(key: 'arranger', label: 'Аранжировщик'),
+      MusicProfileOption(key: 'live_sound', label: 'Концертный звук'),
+      MusicProfileOption(key: 'lighting_designer', label: 'Светорежиссер'),
+      MusicProfileOption(key: 'videographer', label: 'Видеограф'),
+      MusicProfileOption(key: 'photographer', label: 'Фотограф'),
+      MusicProfileOption(key: 'journalist', label: 'Журналист'),
+      MusicProfileOption(key: 'venue_manager', label: 'Менеджер площадки'),
+      MusicProfileOption(key: 'merchandiser', label: 'Мерчендайзер'),
+      MusicProfileOption(key: 'tour_manager', label: 'Тур-менеджер'),
+      MusicProfileOption(key: 'promoter', label: 'Промоутер'),
+      MusicProfileOption(key: 'recording_engineer', label: 'Инженер записи'),
+      MusicProfileOption(key: 'mastering_engineer', label: 'Мастеринг-инженер'),
+      MusicProfileOption(key: 'session_producer', label: 'Сессионный продюсер'),
+      MusicProfileOption(key: 'tech_rider', label: 'Технический райдер'),
+      MusicProfileOption(key: 'backline_tech', label: 'Бэклайн-техник'),
+      MusicProfileOption(key: 'graphic_designer', label: 'Графический дизайнер'),
+      MusicProfileOption(key: 'smm_manager', label: 'SMM-менеджер'),
+      MusicProfileOption(key: 'music_lawyer', label: 'Музыкальный юрист'),
+      MusicProfileOption(key: 'accountant', label: 'Бухгалтер'),
+    ];
   }
 }

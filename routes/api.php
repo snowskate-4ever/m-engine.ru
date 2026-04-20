@@ -30,6 +30,7 @@ use App\Http\Controllers\api\MusicActorContextController;
 use App\Http\Controllers\api\MusicActivityFeedController;
 use App\Http\Controllers\api\MusicCalendarSyncController;
 use App\Http\Controllers\api\MusicProfileMembershipController;
+use App\Http\Controllers\api\MusicProfilesController;
 use App\Http\Controllers\api\MusicReviewController;
 use App\Http\Controllers\api\MusicResourceCatalogController;
 use App\Http\Controllers\api\MusicSearchRequestController;
@@ -178,6 +179,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('music')->group(function () {
         Route::get('/actor-context', [MusicActorContextController::class, 'index'])->name('api_music_actor_context_index');
         Route::patch('/actor-context', [MusicActorContextController::class, 'update'])->name('api_music_actor_context_update');
+        Route::get('/profiles', [MusicProfilesController::class, 'index'])->name('api_music_profiles_index');
+        Route::patch('/profiles', [MusicProfilesController::class, 'update'])->name('api_music_profiles_update');
 
         Route::get('/memberships', [MusicProfileMembershipController::class, 'index'])->name('api_music_memberships_index');
         Route::post('/memberships', [MusicProfileMembershipController::class, 'store'])->name('api_music_memberships_store');
