@@ -3,26 +3,31 @@
         <flux:callout variant="success">{{ session('success') }}</flux:callout>
     @endif
 
-    <div class="rounded-xl border border-zinc-200 bg-zinc-100 p-1 dark:border-zinc-700 dark:bg-zinc-800/60">
-        <label for="music-profile-tab-select" class="sr-only">{{ __('ui.music.profiles_tabs_label') }}</label>
-        <select
-            id="music-profile-tab-select"
-            wire:model.live="tab"
-            aria-label="{{ __('ui.music.profiles_tabs_label') }}"
-            class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
-        >
-            @foreach ($tabOptions as $row)
-                <option value="{{ $row['value'] }}">{{ $row['label'] }}</option>
-            @endforeach
-        </select>
+    <div class="space-y-3 rounded-xl border border-zinc-200 bg-zinc-100 p-3 dark:border-zinc-700 dark:bg-zinc-800/60">
+        @if ($hasAnyEnabledProfile)
+            <div>
+                <label for="music-profile-enabled-select" class="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    {{ __('ui.music.profiles_enabled_tabs_label') }}
+                </label>
+                <select
+                    id="music-profile-enabled-select"
+                    wire:model.live="quickSwitchTab"
+                    aria-label="{{ __('ui.music.profiles_enabled_tabs_label') }}"
+                    class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
+                >
+                    @foreach ($enabledTabOptions as $row)
+                        <option value="{{ $row['value'] }}">{{ $row['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+        @else
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('ui.music.profiles_no_enabled_hint') }}</p>
+        @endif
     </div>
-    <p class="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-200">
-        {{ $profileDescription }}
-    </p>
 
     <div tabindex="0">
         @if ($tab === 'musician')
-            <livewire:music.musician-profile-page wire:key="profile-musician" />
+            <livewire:music.musician-profile-page wire:key="profile-musician" :embedded-in-profiles-hub="true" />
         @elseif ($tab === 'teacher')
             <livewire:music.teacher-profile-page wire:key="profile-teacher" />
         @elseif ($tab === 'organizer')

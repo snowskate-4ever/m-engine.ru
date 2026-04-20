@@ -172,7 +172,7 @@ Route::middleware(['auth'])->group(function () {
     Route::view('calendar', 'calendar')->name('calendar');
 
     Route::view('music/profiles', 'music.profiles')->name('music.profiles');
-    Route::get('music/musician', fn () => redirect()->route('music.profiles', ['tab' => 'musician']))->name('music.musician');
+    Route::view('music/musician', 'music.musician')->name('music.musician');
     Route::get('music/teacher', fn () => redirect()->route('music.profiles', ['tab' => 'teacher']))->name('music.teacher');
     Route::view('music/search-requests', 'music.search-requests')->name('music.search-requests.index');
     Route::view('music/discover', 'music.discover')->name('music.discover');

@@ -9,14 +9,17 @@
     $registrationInvitesLabel = __('ui.auth.registration_invites.menu');
     $messengerNotifLabel = __('ui.top_bar.messenger_notification_settings');
     $publicPagesLabel = __('ui.music.public_pages_settings');
+    $musicProfileRolesLabel = __('ui.music.music_profile_roles_menu');
     $logoutLabel = __('ui.auth.logout.log_out');
 @endphp
 <div
     id="app-second-level-top-bar"
     class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center gap-3 border-b border-zinc-200 bg-zinc-50 pe-3 ps-14 dark:border-zinc-700 dark:bg-zinc-900 lg:w-[calc(100%-4rem)] lg:px-3"
     wire:poll.keep-alive.120s="refreshPreview"
-    x-data="{ notificationsOpen: false, accountOpen: false, publicPagesOpen: false }"
-    @keydown.escape.window="notificationsOpen = false; accountOpen = false; publicPagesOpen = false"
+    x-data="{ notificationsOpen: false, accountOpen: false, userProfilesModalOpen: false, publicPagesModalOpen: false }"
+    @open-user-profiles-modal.window="userProfilesModalOpen = true; publicPagesModalOpen = false"
+    @open-public-pages-modal.window="publicPagesModalOpen = true; userProfilesModalOpen = false"
+    @keydown.escape.window="notificationsOpen = false; accountOpen = false; userProfilesModalOpen = false; publicPagesModalOpen = false"
 >
     @if (filled($title))
         <h1 class="ml-[15px] min-w-0 truncate text-lg font-medium text-zinc-800 dark:text-white">
@@ -48,6 +51,17 @@
         >
             {{ $titleButton['label'] ?? '+' }}
         </flux:button>
+    @elseif (is_array($titleButton) && filled($titleButton['window_event'] ?? null))
+        {{-- Flux может не прокидывать x-on:click; нативная кнопка + window CustomEvent для Alpine @ ... .window на корне топ-бара --}}
+        <button
+            type="button"
+            title="{{ $titleButton['title'] ?? '' }}"
+            aria-label="{{ $titleButton['title'] ?? '' }}"
+            class="relative inline-flex h-8 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-black/10 bg-[var(--color-accent)] px-3 text-sm font-medium text-[var(--color-accent-foreground)] shadow-[inset_0px_1px_var(--color-white\/0.2)] hover:bg-[color-mix(in_oklab,var(--color-accent),transparent_10%)] disabled:cursor-default disabled:opacity-75 dark:border-0 dark:disabled:opacity-75"
+            onclick="window.dispatchEvent(new CustomEvent('{{ e($titleButton['window_event']) }}',{bubbles:true}))"
+        >
+            {{ $titleButton['label'] ?? '+' }}
+        </button>
     @endif
 
     <div class="ms-auto flex min-w-0 items-center justify-end gap-2">
@@ -195,7 +209,14 @@
                 <button
                     type="button"
                     class="block w-full px-3 py-2 text-start text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-700/50"
-                    @click="accountOpen = false; publicPagesOpen = true"
+                    @click="accountOpen = false; userProfilesModalOpen = true; publicPagesModalOpen = false"
+                >
+                    {{ $musicProfileRolesLabel }}
+                </button>
+                <button
+                    type="button"
+                    class="block w-full px-3 py-2 text-start text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-700/50"
+                    @click="accountOpen = false; publicPagesModalOpen = true; userProfilesModalOpen = false"
                 >
                     {{ $publicPagesLabel }}
                 </button>
@@ -215,20 +236,38 @@
     </div>
 
     <div
-        x-show="publicPagesOpen"
+        x-show="userProfilesModalOpen"
         x-transition.opacity
         x-cloak
         class="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-900/50 p-4"
-        @click.self="publicPagesOpen = false"
+        @click.self="userProfilesModalOpen = false"
     >
         <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
             <div class="mb-4 flex items-center justify-between gap-3">
-                <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ $publicPagesLabel }}</h2>
-                <flux:button type="button" size="sm" variant="ghost" @click="publicPagesOpen = false">
+                <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.music.music_profile_roles_modal_title') }}</h2>
+                <flux:button type="button" size="sm" variant="ghost" @click="userProfilesModalOpen = false">
                     {{ __('ui.close') }}
                 </flux:button>
             </div>
-            <livewire:music.public-page-settings-modal />
+            <livewire:music.public-page-settings-modal wire:key="modal-user-profiles" panel="user_profiles" />
+        </div>
+    </div>
+
+    <div
+        x-show="publicPagesModalOpen"
+        x-transition.opacity
+        x-cloak
+        class="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-900/50 p-4"
+        @click.self="publicPagesModalOpen = false"
+    >
+        <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.music.public_pages_entity_modal_title') }}</h2>
+                <flux:button type="button" size="sm" variant="ghost" @click="publicPagesModalOpen = false">
+                    {{ __('ui.close') }}
+                </flux:button>
+            </div>
+            <livewire:music.public-page-settings-modal wire:key="modal-public-pages" panel="public_pages" />
         </div>
     </div>
 

@@ -25,6 +25,11 @@ use Livewire\Component;
 
 class MusicianProfilePage extends Component
 {
+    /**
+     * Встроен в /music/profiles: без блока состава и без формулировок «публичная страница».
+     */
+    public bool $embeddedInProfilesHub = false;
+
     public bool $enabled = false;
 
     public ?Musician $record = null;

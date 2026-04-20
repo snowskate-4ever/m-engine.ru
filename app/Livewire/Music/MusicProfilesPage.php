@@ -21,6 +21,11 @@ class MusicProfilesPage extends Component
     #[Url(history: true)]
     public string $tab = 'musician';
 
+    /**
+     * Переключатель между включёнными профилями (только включённые в UI).
+     */
+    public string $quickSwitchTab = 'musician';
+
     public ?string $activeActorRef = null;
 
     public function mount(): void
@@ -31,15 +36,40 @@ class MusicProfilesPage extends Component
 
         /** @var User $user */
         $user = Auth::user();
-        $selectable = $this->tabsForSelect($user);
-        if (! in_array($this->tab, $selectable, true)) {
-            $this->tab = $selectable[0] ?? 'musician';
+        $enabled = $this->enabledTabKeys($user);
+        if ($enabled !== [] && ! $this->tabIsEnabled($user, $this->tab)) {
+            $this->tab = $enabled[0];
         }
+
+        $this->syncQuickSwitchFromUser($user);
 
         $current = app(MusicActorContextService::class)->currentActor(Auth::user());
         if ($current !== null) {
             $this->activeActorRef = $current['type'].':'.$current['id'];
         }
+    }
+
+    public function updatedTab(string $value): void
+    {
+        if (! in_array($value, $this->allowedTabs(), true)) {
+            return;
+        }
+
+        /** @var User|null $user */
+        $user = Auth::user();
+        if ($user === null) {
+            return;
+        }
+
+        $enabled = $this->enabledTabKeys($user);
+        if ($enabled !== [] && in_array($value, $enabled, true)) {
+            $this->quickSwitchTab = $value;
+        }
+    }
+
+    public function updatedQuickSwitchTab(string $value): void
+    {
+        $this->tab = $value;
     }
 
     public function saveActiveActor(): void
@@ -70,10 +100,12 @@ class MusicProfilesPage extends Component
 
         $user->refresh();
 
-        $selectable = $this->tabsForSelect($user);
-        if (! in_array($this->tab, $selectable, true)) {
-            $this->tab = $selectable[0] ?? 'musician';
+        $enabled = $this->enabledTabKeys($user);
+        if ($enabled !== [] && ! $this->tabIsEnabled($user, $this->tab)) {
+            $this->tab = $enabled[0];
         }
+
+        $this->syncQuickSwitchFromUser($user);
     }
 
     public function render(): View
@@ -82,18 +114,19 @@ class MusicProfilesPage extends Component
         $user = Auth::user();
         $actorOptions = app(MusicActorContextService::class)->availableActors($user);
         $labels = $this->tabLabels();
-        $tabOptions = array_map(
-            static fn (string $tab): array => [
-                'value' => $tab,
-                'label' => $labels[$tab] ?? $tab,
-            ],
-            $this->tabsForSelect($user)
+
+        $enabledKeys = $this->enabledTabKeys($user);
+        $hasAnyEnabled = $enabledKeys !== [];
+
+        $enabledTabOptions = array_map(
+            static fn (string $tab): array => ['value' => $tab, 'label' => $labels[$tab] ?? $tab],
+            $enabledKeys
         );
 
         return view('livewire.music.music-profiles-page', [
             'actorOptions' => $actorOptions,
-            'profileDescription' => $this->profileDescription($this->tab),
-            'tabOptions' => $tabOptions,
+            'hasAnyEnabledProfile' => $hasAnyEnabled,
+            'enabledTabOptions' => $enabledTabOptions,
         ]);
     }
 
@@ -132,22 +165,15 @@ class MusicProfilesPage extends Component
         ];
     }
 
-    private function profileDescription(string $tab): string
-    {
-        return (string) __('ui.music.profile_description_'.$tab);
-    }
-
     /**
      * @return list<string>
      */
-    private function tabsForSelect(User $user): array
+    private function enabledTabKeys(User $user): array
     {
-        $enabled = array_values(array_filter(
+        return array_values(array_filter(
             $this->allowedTabs(),
             fn (string $tab): bool => $this->tabIsEnabled($user, $tab)
         ));
-
-        return $enabled !== [] ? $enabled : $this->allowedTabs();
     }
 
     private function tabIsEnabled(User $user, string $tab): bool
@@ -155,6 +181,22 @@ class MusicProfilesPage extends Component
         $profile = MusicProfileCriteriaMatrix::profileFromTab($tab);
 
         return $profile !== null && $user->hasMusicProfile($profile);
+    }
+
+    private function syncQuickSwitchFromUser(User $user): void
+    {
+        $enabled = $this->enabledTabKeys($user);
+        if ($enabled === []) {
+            $this->quickSwitchTab = $this->tab;
+
+            return;
+        }
+
+        if (in_array($this->tab, $enabled, true)) {
+            $this->quickSwitchTab = $this->tab;
+        } else {
+            $this->quickSwitchTab = $enabled[0];
+        }
     }
 
     /**

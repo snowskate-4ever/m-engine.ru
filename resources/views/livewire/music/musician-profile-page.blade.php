@@ -7,10 +7,20 @@
         <div x-data="{ layoutSettingsOpen: false }">
         <form wire:submit="save" class="space-y-8">
     <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-        <flux:heading size="lg">{{ __('ui.music.musician_card') }}</flux:heading>
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <flux:description>{{ __('ui.music.profile_musician_hint') }}</flux:description>
-        </div>
+        @unless ($embeddedInProfilesHub)
+            <flux:heading size="lg">{{ __('ui.music.musician_card') }}</flux:heading>
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <flux:description>{{ __('ui.music.profile_musician_hint') }}</flux:description>
+            </div>
+        @else
+            <flux:heading size="lg">{{ __('ui.music.musician_hub_editor_title') }}</flux:heading>
+            <div class="flex flex-col gap-2">
+                <flux:description>{{ __('ui.music.musician_hub_editor_hint') }}</flux:description>
+                <flux:link :href="route('music.musician')" wire:navigate class="text-sm font-medium">
+                    {{ __('ui.music.musician_hub_full_page_link') }}
+                </flux:link>
+            </div>
+        @endunless
 
             <div class="space-y-4">
             <flux:field>
@@ -242,16 +252,16 @@
             </div>
         </div>
         </div>
-        @else
+        @elseif (! $embeddedInProfilesHub)
         <div class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('ui.music.musician_card') }}</flux:heading>
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <flux:description>{{ __('ui.music.profile_musician_hint') }}</flux:description>
+                <flux:description>{{ __('ui.music.musician_page_enable_hint') }}</flux:description>
             </div>
         </div>
         @endif
 
-    @if ($record)
+    @if ($record && ! $embeddedInProfilesHub)
         <div id="music-musician-lineup" class="scroll-mt-24 space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('ui.music.lineup_musician_section') }}</flux:heading>
             <flux:description>{{ __('ui.music.lineup_musician_section_hint') }}</flux:description>

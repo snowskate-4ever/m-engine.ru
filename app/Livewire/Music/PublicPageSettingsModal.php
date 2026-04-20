@@ -26,6 +26,13 @@ use Livewire\Component;
 
 class PublicPageSettingsModal extends Component
 {
+    /**
+     * user_profiles — только роли (music_profiles); public_pages — публичные страницы сущностей без user_profile:*.
+     *
+     * @var 'user_profiles'|'public_pages'
+     */
+    public string $panel = 'public_pages';
+
     /** @var array<string, array{key: string, id: int, type: string, label: string, name: string, slug: string, enabled: bool}> */
     public array $rows = [];
 
@@ -48,6 +55,10 @@ class PublicPageSettingsModal extends Component
 
     public function mount(): void
     {
+        if (! in_array($this->panel, ['user_profiles', 'public_pages'], true)) {
+            $this->panel = 'public_pages';
+        }
+
         $this->reloadRows();
     }
 
@@ -127,6 +138,10 @@ class PublicPageSettingsModal extends Component
 
     public function toggleUserProfileRow(string $key): void
     {
+        if ($this->panel !== 'user_profiles') {
+            return;
+        }
+
         if (! str_starts_with($key, 'user_profile:')) {
             return;
         }
@@ -148,6 +163,10 @@ class PublicPageSettingsModal extends Component
 
     private function saveUserProfileRow(string $key): void
     {
+        if ($this->panel !== 'user_profiles') {
+            return;
+        }
+
         $profile = $this->extractUserProfileFromKey($key);
         if ($profile === null) {
             return;
@@ -202,6 +221,8 @@ class PublicPageSettingsModal extends Component
                 $musician->save();
             }
         }
+
+        $this->dispatch('music-profiles-updated');
     }
 
     public function addLayoutBlock(string $key): void
@@ -296,43 +317,45 @@ class PublicPageSettingsModal extends Component
         $userId = (int) Auth::id();
         $rows = [];
 
-        foreach ($this->userProfileRows() as $profileRow) {
-            $rows[] = $profileRow;
-        }
+        if ($this->panel === 'user_profiles') {
+            foreach ($this->userProfileRows() as $profileRow) {
+                $rows[] = $profileRow;
+            }
+        } else {
+            $musician = Musician::query()->where('user_id', $userId)->first();
+            if ($musician) {
+                $rows[] = $this->buildRow('musician', $musician, __('ui.public_profile.type_musician'));
+            }
 
-        $musician = Musician::query()->where('user_id', $userId)->first();
-        if ($musician) {
-            $rows[] = $this->buildRow('musician', $musician, __('ui.public_profile.type_musician'));
-        }
+            $teacher = Teacher::query()->where('user_id', $userId)->first();
+            if ($teacher) {
+                $rows[] = $this->buildRow('teacher', $teacher, __('ui.public_profile.type_teacher'));
+            }
 
-        $teacher = Teacher::query()->where('user_id', $userId)->first();
-        if ($teacher) {
-            $rows[] = $this->buildRow('teacher', $teacher, __('ui.public_profile.type_teacher'));
-        }
-
-        foreach (Peformer::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('performer', $model, __('ui.public_profile.type_performer'));
-        }
-        foreach (Studio::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('studio', $model, __('ui.public_profile.type_studio'));
-        }
-        foreach (Rehersal::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('rehearsal', $model, __('ui.public_profile.type_rehearsal'));
-        }
-        foreach (ConcertVenue::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('concert_venue', $model, __('ui.public_profile.type_concert_venue'));
-        }
-        foreach (School::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('school', $model, __('ui.public_profile.type_school'));
-        }
-        foreach (RecordLabel::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('record_label', $model, __('ui.public_profile.type_record_label'));
-        }
-        foreach (ProducerCenter::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('producer_center', $model, __('ui.public_profile.type_producer_center'));
-        }
-        foreach (Shop::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
-            $rows[] = $this->buildRow('shop', $model, __('ui.public_profile.type_shop'));
+            foreach (Peformer::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('performer', $model, __('ui.public_profile.type_performer'));
+            }
+            foreach (Studio::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('studio', $model, __('ui.public_profile.type_studio'));
+            }
+            foreach (Rehersal::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('rehearsal', $model, __('ui.public_profile.type_rehearsal'));
+            }
+            foreach (ConcertVenue::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('concert_venue', $model, __('ui.public_profile.type_concert_venue'));
+            }
+            foreach (School::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('school', $model, __('ui.public_profile.type_school'));
+            }
+            foreach (RecordLabel::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('record_label', $model, __('ui.public_profile.type_record_label'));
+            }
+            foreach (ProducerCenter::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('producer_center', $model, __('ui.public_profile.type_producer_center'));
+            }
+            foreach (Shop::query()->where('owner_user_id', $userId)->orderBy('name')->get() as $model) {
+                $rows[] = $this->buildRow('shop', $model, __('ui.public_profile.type_shop'));
+            }
         }
 
         $this->rows = [];
