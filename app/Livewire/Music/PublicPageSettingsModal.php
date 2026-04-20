@@ -20,6 +20,7 @@ use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
@@ -177,7 +178,24 @@ class PublicPageSettingsModal extends Component
         $user->music_profiles = $profiles->unique()->values()->all();
         $user->save();
 
+        if ($enabled) {
+            if ($profile === UserMusicProfile::Musician && $user->musician === null && Gate::allows('create', Musician::class)) {
+                Musician::create([
+                    'user_id' => $user->id,
+                    'name' => (string) $user->name,
+                    'is_session' => $user->hasMusicProfile(UserMusicProfile::SessionMusician),
+                ]);
+            }
+            if ($profile === UserMusicProfile::Teacher && $user->teacher === null && Gate::allows('create', Teacher::class)) {
+                Teacher::create([
+                    'user_id' => $user->id,
+                    'name' => (string) $user->name,
+                ]);
+            }
+        }
+
         if ($profile === UserMusicProfile::SessionMusician) {
+            $user->load('musician');
             $musician = $user->musician;
             if ($musician !== null) {
                 $musician->is_session = $user->hasMusicProfile(UserMusicProfile::SessionMusician);
@@ -602,6 +620,8 @@ class PublicPageSettingsModal extends Component
     private function managedUserProfiles(): array
     {
         return [
+            UserMusicProfile::Musician,
+            UserMusicProfile::Teacher,
             UserMusicProfile::EventOrganizer,
             UserMusicProfile::Manager,
             UserMusicProfile::SessionMusician,
