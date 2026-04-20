@@ -300,34 +300,15 @@ class ApiClient {
     }
 
     final body = _decodeMap(response.body);
-    final data = body['data'];
-    if (data is! Map<String, dynamic>) {
-      return MusicProfilesData(
-        enabled: const <String>[],
-        available: const <MusicProfileOption>[],
-        supportsEnabledState: true,
-        supportsProfileUpdate: true,
-      );
-    }
-
-    final enabledRaw = data['enabled'];
-    final enabled = enabledRaw is List
-        ? enabledRaw.map((item) => item.toString()).where((item) => item.isNotEmpty).toList()
-        : const <String>[];
-
-    final availableRaw = data['available'];
-    final available = availableRaw is List
-        ? availableRaw.whereType<Map<String, dynamic>>().map((row) {
-            return MusicProfileOption(
-              key: row['key']?.toString() ?? '',
-              label: row['label']?.toString() ?? '',
-            );
-          }).where((row) => row.key.isNotEmpty).toList()
-        : const <MusicProfileOption>[];
+    final payload = body['data'] is Map<String, dynamic>
+        ? body['data'] as Map<String, dynamic>
+        : body;
+    final enabled = _parseEnabledProfiles(payload);
+    final available = _parseAvailableProfiles(payload);
 
     return MusicProfilesData(
       enabled: enabled,
-      available: available,
+      available: available.isEmpty ? _fallbackMusicProfileCatalog() : available,
       supportsEnabledState: true,
       supportsProfileUpdate: true,
     );
@@ -676,6 +657,66 @@ class ApiClient {
 
   bool _isNotFoundError(ApiException error) {
     return error.message.contains('(404)');
+  }
+
+  List<String> _parseEnabledProfiles(Map<String, dynamic> payload) {
+    final candidates = <Object?>[
+      payload['enabled'],
+      payload['enabled_profiles'],
+      payload['music_profiles'],
+      payload['profiles'],
+    ];
+    for (final raw in candidates) {
+      if (raw is List) {
+        final list = raw
+            .map((item) {
+              if (item is Map<String, dynamic>) {
+                return item['key']?.toString() ??
+                    item['profile']?.toString() ??
+                    item['value']?.toString() ??
+                    '';
+              }
+              return item.toString();
+            })
+            .where((item) => item.isNotEmpty)
+            .toList();
+        if (list.isNotEmpty) {
+          return list;
+        }
+      }
+    }
+    return const <String>[];
+  }
+
+  List<MusicProfileOption> _parseAvailableProfiles(Map<String, dynamic> payload) {
+    final raw = payload['available'] ?? payload['available_profiles'] ?? payload['catalog'];
+    if (raw is List) {
+      final list = raw.whereType<Map<String, dynamic>>().map((row) {
+        final key = row['key']?.toString() ??
+            row['profile']?.toString() ??
+            row['value']?.toString() ??
+            '';
+        final label = row['label']?.toString() ??
+            row['name']?.toString() ??
+            key;
+        return MusicProfileOption(key: key, label: label);
+      }).where((row) => row.key.isNotEmpty).toList();
+      if (list.isNotEmpty) {
+        return list;
+      }
+    }
+    if (raw is Map<String, dynamic>) {
+      final list = raw.entries.map((entry) {
+        return MusicProfileOption(
+          key: entry.key,
+          label: entry.value?.toString() ?? entry.key,
+        );
+      }).toList();
+      if (list.isNotEmpty) {
+        return list;
+      }
+    }
+    return const <MusicProfileOption>[];
   }
 
   List<MusicProfileOption> _fallbackMusicProfileCatalog() {

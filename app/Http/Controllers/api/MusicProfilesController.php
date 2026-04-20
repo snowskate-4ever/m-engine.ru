@@ -13,10 +13,7 @@ class MusicProfilesController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $enabled = collect($request->user()->music_profiles ?? [])
-            ->filter(fn ($value) => is_string($value) && $value !== '')
-            ->values()
-            ->all();
+        $enabled = $this->normalizeProfiles($request->user()->music_profiles);
 
         return response()->json([
             'data' => [
@@ -41,8 +38,7 @@ class MusicProfilesController extends Controller
         $enabledFlag = (bool) $validated['enabled'];
         $user = $request->user();
 
-        $profiles = collect($user->music_profiles ?? [])
-            ->filter(fn ($value) => is_string($value) && $value !== '');
+        $profiles = collect($this->normalizeProfiles($user->music_profiles));
 
         if ($enabledFlag) {
             $profiles->push($profile);
@@ -56,7 +52,7 @@ class MusicProfilesController extends Controller
         return response()->json([
             'ok' => true,
             'data' => [
-                'enabled' => $user->music_profiles ?? [],
+                'enabled' => $this->normalizeProfiles($user->music_profiles),
                 'available' => $this->availableProfiles(),
             ],
         ]);
@@ -95,5 +91,38 @@ class MusicProfilesController extends Controller
             ['key' => UserMusicProfile::MusicLawyer->value, 'label' => (string) __('ui.music.profile_tab_music_lawyer')],
             ['key' => UserMusicProfile::Accountant->value, 'label' => (string) __('ui.music.profile_tab_accountant')],
         ];
+    }
+
+    /**
+     * Нормализует music_profiles из старого/нового формата в список ключей профилей.
+     *
+     * @param  mixed  $raw
+     * @return list<string>
+     */
+    private function normalizeProfiles(mixed $raw): array
+    {
+        if (! is_array($raw)) {
+            return [];
+        }
+
+        $keys = collect($this->availableProfiles())
+            ->pluck('key')
+            ->all();
+
+        $result = [];
+        foreach ($raw as $key => $value) {
+            // Формат списка: ['musician', 'agent']
+            if (is_int($key) && is_string($value) && $value !== '') {
+                $result[] = $value;
+                continue;
+            }
+
+            // Формат map: {'musician': true, 'agent': false}
+            if (is_string($key) && in_array($key, $keys, true) && (bool) $value === true) {
+                $result[] = $key;
+            }
+        }
+
+        return array_values(array_unique($result));
     }
 }
