@@ -43,6 +43,7 @@ class MusicGenericProfilePage extends Component
         $user->save();
 
         $this->enabled = $this->currentEnabled();
+        $this->dispatch('music-profiles-updated');
         session()->flash('success', __('ui.music.saved'));
     }
 

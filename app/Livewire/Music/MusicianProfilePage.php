@@ -141,6 +141,7 @@ class MusicianProfilePage extends Component
         $user->music_profiles = $profiles->unique()->values()->all();
         $user->save();
         $this->enabled = $user->canActAsMusician();
+        $this->dispatch('music-profiles-updated');
         session()->flash('success', __('ui.music.saved'));
     }
 

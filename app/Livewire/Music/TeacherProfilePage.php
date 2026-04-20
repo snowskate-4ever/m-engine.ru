@@ -107,6 +107,7 @@ class TeacherProfilePage extends Component
         $user->music_profiles = $profiles->unique()->values()->all();
         $user->save();
         $this->enabled = $user->canActAsTeacher();
+        $this->dispatch('music-profiles-updated');
 
         if ($this->enabled && $this->record === null) {
             $this->record = Teacher::create([

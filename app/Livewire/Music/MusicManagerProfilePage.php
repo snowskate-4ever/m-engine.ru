@@ -34,6 +34,7 @@ class MusicManagerProfilePage extends Component
         $user->music_profiles = $profiles->unique()->values()->all();
         $user->save();
         $this->enabled = $user->canActAsManager();
+        $this->dispatch('music-profiles-updated');
         session()->flash('success', __('ui.music.saved'));
     }
 

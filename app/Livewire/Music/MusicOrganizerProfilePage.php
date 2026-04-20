@@ -33,6 +33,7 @@ class MusicOrganizerProfilePage extends Component
         $user->music_profiles = $profiles->unique()->values()->all();
         $user->save();
         $this->enabled = $user->canActAsEventOrganizer();
+        $this->dispatch('music-profiles-updated');
         session()->flash('success', __('ui.music.saved'));
     }
 

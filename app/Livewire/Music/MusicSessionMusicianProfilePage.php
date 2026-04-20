@@ -44,6 +44,7 @@ class MusicSessionMusicianProfilePage extends Component
         }
 
         $this->enabled = $user->canActAsSessionMusician();
+        $this->dispatch('music-profiles-updated');
         session()->flash('success', __('ui.music.saved'));
     }
 
