@@ -28,6 +28,11 @@ class MusicProfilesPage extends Component
 
     public ?string $activeActorRef = null;
 
+    /**
+     * Инкрементируем при смене профиля, чтобы дочерний компонент точно пересобрался с сервера.
+     */
+    public int $profileRequestVersion = 1;
+
     public function mount(): void
     {
         if (! in_array($this->tab, $this->allowedTabs(), true)) {
@@ -65,11 +70,30 @@ class MusicProfilesPage extends Component
         if ($enabled !== [] && in_array($value, $enabled, true)) {
             $this->quickSwitchTab = $value;
         }
+
+        $this->profileRequestVersion++;
     }
 
-    public function updatedQuickSwitchTab(string $value): void
+    public function switchProfile(string $value): void
     {
+        if (! in_array($value, $this->allowedTabs(), true)) {
+            return;
+        }
+
+        /** @var User|null $user */
+        $user = Auth::user();
+        if ($user === null) {
+            return;
+        }
+
+        $enabled = $this->enabledTabKeys($user);
+        if ($enabled !== [] && ! in_array($value, $enabled, true)) {
+            return;
+        }
+
+        $this->quickSwitchTab = $value;
         $this->tab = $value;
+        $this->profileRequestVersion++;
     }
 
     public function saveActiveActor(): void
@@ -106,6 +130,7 @@ class MusicProfilesPage extends Component
         }
 
         $this->syncQuickSwitchFromUser($user);
+        $this->profileRequestVersion++;
     }
 
     public function render(): View

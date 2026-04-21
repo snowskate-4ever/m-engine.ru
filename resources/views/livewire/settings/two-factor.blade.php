@@ -72,7 +72,7 @@ new class extends Component {
             $this->qrCodeSvg = $user?->twoFactorQrCodeSvg();
             $this->manualSetupKey = decrypt($user->two_factor_secret);
         } catch (Exception) {
-            $this->addError('setupData', 'Failed to fetch setup data.');
+            $this->addError('setupData', __('ui.account_settings.two_factor_setup_failed'));
 
             $this->reset('qrCodeSvg', 'manualSetupKey');
         }
@@ -155,42 +155,39 @@ new class extends Component {
     {
         if ($this->twoFactorEnabled) {
             return [
-                'title' => __('Two-Factor Authentication Enabled'),
-                'description' => __('Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.'),
-                'buttonText' => __('Close'),
+                'title' => __('ui.account_settings.two_factor_modal_enabled_title'),
+                'description' => __('ui.account_settings.two_factor_modal_enabled_body'),
+                'buttonText' => __('ui.close'),
             ];
         }
 
         if ($this->showVerificationStep) {
             return [
-                'title' => __('Verify Authentication Code'),
-                'description' => __('Enter the 6-digit code from your authenticator app.'),
-                'buttonText' => __('Continue'),
+                'title' => __('ui.account_settings.two_factor_modal_verify_title'),
+                'description' => __('ui.account_settings.two_factor_modal_verify_body'),
+                'buttonText' => __('ui.account_settings.continue_btn'),
             ];
         }
 
         return [
-            'title' => __('Enable Two-Factor Authentication'),
-            'description' => __('To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app.'),
-            'buttonText' => __('Continue'),
+            'title' => __('ui.account_settings.two_factor_modal_enable_title'),
+            'description' => __('ui.account_settings.two_factor_modal_enable_body'),
+            'buttonText' => __('ui.account_settings.continue_btn'),
         ];
     }
 } ?>
 
 <section class="w-full">
-    <x-settings.layout
-        :heading="__('Two Factor Authentication')"
-        :subheading="__('Manage your two-factor authentication settings')"
-    >
-        <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
+    <x-settings.layout :subheading="__('ui.account_settings.two_factor_subheading')">
+        <div class="flex w-full flex-col space-y-6 text-sm">
             @if ($twoFactorEnabled)
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <flux:badge color="green">{{ __('Enabled') }}</flux:badge>
+                        <flux:badge color="green">{{ __('ui.account_settings.two_factor_status_enabled') }}</flux:badge>
                     </div>
 
                     <flux:text>
-                        {{ __('With two-factor authentication enabled, you will be prompted for a secure, random pin during login, which you can retrieve from the TOTP-supported application on your phone.') }}
+                        {{ __('ui.account_settings.two_factor_body_enabled') }}
                     </flux:text>
 
                     <livewire:settings.two-factor.recovery-codes :$requiresConfirmation/>
@@ -202,18 +199,18 @@ new class extends Component {
                             icon:variant="outline"
                             wire:click="disable"
                         >
-                            {{ __('Disable 2FA') }}
+                            {{ __('ui.account_settings.two_factor_disable') }}
                         </flux:button>
                     </div>
                 </div>
             @else
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <flux:badge color="red">{{ __('Disabled') }}</flux:badge>
+                        <flux:badge color="red">{{ __('ui.account_settings.two_factor_status_disabled') }}</flux:badge>
                     </div>
 
                     <flux:text variant="subtle">
-                        {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
+                        {{ __('ui.account_settings.two_factor_body_disabled') }}
                     </flux:text>
 
                     <flux:button
@@ -222,7 +219,7 @@ new class extends Component {
                         icon:variant="outline"
                         wire:click="enable"
                     >
-                        {{ __('Enable 2FA') }}
+                        {{ __('ui.account_settings.two_factor_enable') }}
                     </flux:button>
                 </div>
             @endif
@@ -280,7 +277,7 @@ new class extends Component {
                             class="flex-1"
                             wire:click="resetVerification"
                         >
-                            {{ __('Back') }}
+                            {{ __('ui.back') }}
                         </flux:button>
 
                         <flux:button
@@ -289,7 +286,7 @@ new class extends Component {
                             wire:click="confirmTwoFactor"
                             x-bind:disabled="$wire.code.length < 6"
                         >
-                            {{ __('Confirm') }}
+                            {{ __('ui.confirm') }}
                         </flux:button>
                     </div>
                 </div>
@@ -329,7 +326,7 @@ new class extends Component {
                     <div class="relative flex items-center justify-center w-full">
                         <div class="absolute inset-0 w-full h-px top-1/2 bg-stone-200 dark:bg-stone-600"></div>
                         <span class="relative px-2 text-sm bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400">
-                            {{ __('or, enter the code manually') }}
+                            {{ __('ui.account_settings.two_factor_modal_manual_hint') }}
                         </span>
                     </div>
 

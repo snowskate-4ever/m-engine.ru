@@ -46,21 +46,14 @@
                     @enderror
                 </div>
 
-                    <button type="submit" class="bg-teal-400"> Сохранить </button>
-
-                <!-- Кнопки -->
-                <div class="d-flex justify-content-between">
-                    <button type="submit" 
-                            wire:loading.attr="disabled"
-                            class="btn btn-primary p-2 border rounded-lg appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] bg-teal-500 text-zinc-600 placeholder-zinc-400  dark:text-zinc-300 shadow-xs border-zinc-200 border-b-teal-500/80 hover:bg-teal-800/5 hover:text-zinc-800 dark:hover:bg-white/[7%] dark:hover:text-white">
-                        <span wire:loading.remove wire:target="save">
-                            <i class="fas fa-save me-1"></i> Сохранить
-                        </span>
-                        <span wire:loading wire:target="save">
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                            Сохранение...
-                        </span>
-                    </button>
+                <div class="d-flex justify-content-start">
+                    <flux:button
+                        type="submit"
+                        variant="primary"
+                        square
+                        icon="save-floppy"
+                        :title="__('ui.save')"
+                    />
                 </div>
             </form>
         </div>

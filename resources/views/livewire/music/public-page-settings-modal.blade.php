@@ -25,24 +25,41 @@
                 >
                     <div class="mb-2 flex items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $row['name'] }}</p>
-                            <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ $row['label'] }}</p>
+                            @if ($isUserProfileRow)
+                                <p class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $row['label'] }}</p>
+                            @else
+                                <p class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $row['name'] }}</p>
+                                <p class="text-xs text-zinc-500 dark:text-zinc-400">{{ $row['label'] }}</p>
+                            @endif
                         </div>
                         @if ($isUserProfileRow)
-                            <flux:button
-                                type="button"
-                                size="sm"
-                                variant="primary"
-                                class="shrink-0"
-                                wire:click="toggleUserProfileRow('{{ $key }}')"
-                                wire:loading.attr="disabled"
-                                wire:target="toggleUserProfileRow('{{ $key }}')"
-                            >
-                                <span wire:loading.remove wire:target="toggleUserProfileRow('{{ $key }}')">
-                                    {{ ($profileEnabled[$key] ?? false) ? __('ui.music.profile_disable') : __('ui.music.profile_enable') }}
-                                </span>
-                                <span wire:loading wire:target="toggleUserProfileRow('{{ $key }}')">{{ __('ui.loading') }}</span>
-                            </flux:button>
+                            @if ($profileEnabled[$key] ?? false)
+                                <flux:button
+                                    type="button"
+                                    size="sm"
+                                    variant="primary"
+                                    class="shrink-0"
+                                    icon="x-mark"
+                                    wire:click="toggleUserProfileRow('{{ $key }}')"
+                                    wire:loading.attr="disabled"
+                                    wire:target="toggleUserProfileRow('{{ $key }}')"
+                                    :title="__('ui.music.profile_disable')"
+                                    :aria-label="__('ui.music.profile_disable')"
+                                />
+                            @else
+                                <flux:button
+                                    type="button"
+                                    size="sm"
+                                    variant="primary"
+                                    class="shrink-0"
+                                    icon="power"
+                                    wire:click="toggleUserProfileRow('{{ $key }}')"
+                                    wire:loading.attr="disabled"
+                                    wire:target="toggleUserProfileRow('{{ $key }}')"
+                                    :title="__('ui.music.profile_enable')"
+                                    :aria-label="__('ui.music.profile_enable')"
+                                />
+                            @endif
                         @else
                             <flux:checkbox wire:model.live="enabled.{{ $key }}" :label="__('ui.music.fields.public_enabled')" />
                         @endif
@@ -56,9 +73,15 @@
                                 <flux:error :name="'slugs.'.$key" />
                             </flux:field>
                             <div class="flex shrink-0 flex-wrap items-center gap-2 pb-0.5 sm:pb-1">
-                                <flux:button type="button" size="sm" wire:click="saveRow('{{ $key }}')">
-                                    {{ __('ui.save') }}
-                                </flux:button>
+                                <flux:button
+                                    type="button"
+                                    size="sm"
+                                    variant="primary"
+                                    square
+                                    icon="save-floppy"
+                                    wire:click="saveRow('{{ $key }}')"
+                                    :title="__('ui.save')"
+                                />
                                 @if ($slug !== '')
                                     <flux:button
                                         size="sm"
@@ -95,11 +118,50 @@
                                             'shop' => \App\Support\Music\PublicProfileBlocks::shopCatalog(),
                                             default => \App\Support\Music\PublicProfileBlocks::venueCatalog(),
                                         };
+                                        $criteriaBlocks = match ($row['type']) {
+                                            'musician' => [
+                                                'instruments' => __('ui.music.fields.instruments'),
+                                                'genres' => __('ui.music.fields.genres'),
+                                                'cities' => __('ui.music.fields.work_cities'),
+                                                'experience' => __('ui.music.fields.experience_since'),
+                                            ],
+                                            'teacher' => [
+                                                'cities' => __('ui.music.fields.work_cities'),
+                                            ],
+                                            default => [],
+                                        };
+                                        $criteriaBlockIds = array_keys($criteriaBlocks);
                                         $enabledBlocks = collect($catalog)->filter(
                                             fn (array $block): bool => (bool) ($layoutBlockEnabled[$key][$block['id']] ?? false)
                                         );
+                                        $enabledNonCriteriaBlocks = $enabledBlocks->filter(
+                                            fn (array $block): bool => ! in_array($block['id'], $criteriaBlockIds, true)
+                                        );
                                     @endphp
                                     <div class="mt-2 space-y-3">
+                                        @if ($criteriaBlocks !== [])
+                                            <div class="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                                                <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                                    {{ __('ui.music.criteria_visibility_title') }}
+                                                </p>
+                                                <p class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                                    {{ __('ui.music.criteria_visibility_hint') }}
+                                                </p>
+                                                <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                                    @foreach ($criteriaBlocks as $criteriaBlockId => $criteriaBlockLabel)
+                                                        <label class="flex items-center gap-2 rounded-md border border-zinc-200 px-2 py-1.5 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-200">
+                                                            <input
+                                                                type="checkbox"
+                                                                wire:model.live="layoutBlockEnabled.{{ $key }}.{{ $criteriaBlockId }}"
+                                                                class="rounded border-zinc-300 text-zinc-900 focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:focus:ring-zinc-400/30"
+                                                            />
+                                                            <span>{{ $criteriaBlockLabel }}</span>
+                                                        </label>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+
                                         <div class="flex flex-col gap-2 sm:flex-row">
                                             <select
                                                 wire:model="selectedLayoutBlockId.{{ $key }}"
@@ -107,6 +169,7 @@
                                             >
                                                 <option value="">{{ __('ui.select') }}</option>
                                                 @foreach ($catalog as $block)
+                                                    @continue(in_array($block['id'], $criteriaBlockIds, true))
                                                     <option
                                                         value="{{ $block['id'] }}"
                                                         @disabled((bool) ($layoutBlockEnabled[$key][$block['id']] ?? false))
@@ -120,9 +183,9 @@
                                             </flux:button>
                                         </div>
 
-                                        @if ($enabledBlocks->isNotEmpty())
+                                        @if ($enabledNonCriteriaBlocks->isNotEmpty())
                                             <div class="flex flex-wrap gap-2">
-                                                @foreach ($enabledBlocks as $block)
+                                                @foreach ($enabledNonCriteriaBlocks as $block)
                                                     <button
                                                         type="button"
                                                         wire:click="removeLayoutBlock('{{ $key }}', '{{ $block['id'] }}')"

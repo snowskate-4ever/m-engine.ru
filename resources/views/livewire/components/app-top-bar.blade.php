@@ -17,8 +17,7 @@
     class="sticky top-0 z-50 flex h-14 w-full min-w-0 shrink-0 items-center gap-3 border-b border-zinc-200 bg-zinc-50 pe-3 ps-14 dark:border-zinc-700 dark:bg-zinc-900 lg:w-[calc(100%-4rem)] lg:px-3"
     wire:poll.keep-alive.120s="refreshPreview"
     x-data="{ notificationsOpen: false, accountOpen: false, userProfilesModalOpen: false, publicPagesModalOpen: false }"
-    @open-user-profiles-modal.window="userProfilesModalOpen = true; publicPagesModalOpen = false"
-    @open-public-pages-modal.window="publicPagesModalOpen = true; userProfilesModalOpen = false"
+    @open-user-profiles-modal.window="userProfilesModalOpen = true"
     @keydown.escape.window="notificationsOpen = false; accountOpen = false; userProfilesModalOpen = false; publicPagesModalOpen = false"
 >
     @if (filled($title))
@@ -209,14 +208,14 @@
                 <button
                     type="button"
                     class="block w-full px-3 py-2 text-start text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-700/50"
-                    @click="accountOpen = false; userProfilesModalOpen = true; publicPagesModalOpen = false"
+                    @click="accountOpen = false; userProfilesModalOpen = true"
                 >
                     {{ $musicProfileRolesLabel }}
                 </button>
                 <button
                     type="button"
                     class="block w-full px-3 py-2 text-start text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-700/50"
-                    @click="accountOpen = false; publicPagesModalOpen = true; userProfilesModalOpen = false"
+                    @click="accountOpen = false; publicPagesModalOpen = true"
                 >
                     {{ $publicPagesLabel }}
                 </button>
@@ -245,9 +244,13 @@
         <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
             <div class="mb-4 flex items-center justify-between gap-3">
                 <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.music.music_profile_roles_modal_title') }}</h2>
-                <flux:button type="button" size="sm" variant="ghost" @click="userProfilesModalOpen = false">
+                <button
+                    type="button"
+                    class="inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium text-zinc-800 hover:bg-zinc-800/5 disabled:pointer-events-none disabled:cursor-default disabled:opacity-75 dark:text-white dark:hover:bg-white/15 dark:disabled:opacity-75"
+                    @click="userProfilesModalOpen = false"
+                >
                     {{ __('ui.close') }}
-                </flux:button>
+                </button>
             </div>
             <livewire:music.public-page-settings-modal wire:key="modal-user-profiles" panel="user_profiles" />
         </div>
@@ -263,9 +266,13 @@
         <div class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
             <div class="mb-4 flex items-center justify-between gap-3">
                 <h2 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.music.public_pages_entity_modal_title') }}</h2>
-                <flux:button type="button" size="sm" variant="ghost" @click="publicPagesModalOpen = false">
+                <button
+                    type="button"
+                    class="inline-flex h-8 items-center justify-center rounded-md px-3 text-sm font-medium text-zinc-800 hover:bg-zinc-800/5 disabled:pointer-events-none disabled:cursor-default disabled:opacity-75 dark:text-white dark:hover:bg-white/15 dark:disabled:opacity-75"
+                    @click="publicPagesModalOpen = false"
+                >
                     {{ __('ui.close') }}
-                </flux:button>
+                </button>
             </div>
             <livewire:music.public-page-settings-modal wire:key="modal-public-pages" panel="public_pages" />
         </div>

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 /**
- * Где на /music/profiles редактируются критерии (города, стаж и т.д.).
+ * Где на /profiles редактируются критерии (города, стаж и т.д.).
  */
 enum MusicProfileCriteriaFormSink: string
 {

@@ -70,26 +70,26 @@ new class extends Component {
 }; ?>
 
 <section class="w-full">
-    <x-settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
-        <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+    <x-settings.layout :subheading="__('ui.account_settings.profile_subheading')">
+        <form wire:submit="updateProfileInformation" class="w-full space-y-6">
+            <flux:input wire:model="name" :label="__('ui.account_settings.profile_name_label')" type="text" required autofocus autocomplete="name" />
 
             <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                <flux:input wire:model="email" :label="__('ui.account_settings.profile_email_label')" type="email" required autocomplete="email" />
 
                 @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&! auth()->user()->hasVerifiedEmail())
                     <div>
                         <flux:text class="mt-4">
-                            {{ __('Your email address is unverified.') }}
+                            {{ __('ui.account_settings.email_unverified') }}
 
                             <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
-                                {{ __('Click here to re-send the verification email.') }}
+                                {{ __('ui.account_settings.email_resend') }}
                             </flux:link>
                         </flux:text>
 
                         @if (session('status') === 'verification-link-sent')
                             <flux:text class="mt-2 font-medium !dark:text-green-400 !text-green-600">
-                                {{ __('A new verification link has been sent to your email address.') }}
+                                {{ __('ui.account_settings.email_verification_sent') }}
                             </flux:text>
                         @endif
                     </div>
@@ -98,13 +98,18 @@ new class extends Component {
 
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">
-                    <flux:button variant="primary" type="submit" class="w-full" data-test="update-profile-button">
-                        {{ __('Save') }}
-                    </flux:button>
+                    <flux:button
+                        variant="primary"
+                        type="submit"
+                        square
+                        icon="save-floppy"
+                        :title="__('ui.save')"
+                        data-test="update-profile-button"
+                    />
                 </div>
 
                 <x-action-message class="me-3" on="profile-updated">
-                    {{ __('Saved.') }}
+                    {{ __('ui.saved') }}
                 </x-action-message>
             </div>
         </form>

@@ -74,4 +74,6 @@
             </div>
         </div>
     @endunless
+
+    @livewire('messenger.messenger-new-chat-modal')
 @endauth

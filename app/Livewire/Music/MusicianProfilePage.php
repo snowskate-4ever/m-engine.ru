@@ -26,7 +26,7 @@ use Livewire\Component;
 class MusicianProfilePage extends Component
 {
     /**
-     * Встроен в /music/profiles: без блока состава и без формулировок «публичная страница».
+     * Встроен в /profiles: без блока состава и без формулировок «публичная страница».
      */
     public bool $embeddedInProfilesHub = false;
 
@@ -69,6 +69,8 @@ class MusicianProfilePage extends Component
     public ?string $lineupNotice = null;
 
     public ?string $lineupError = null;
+
+    public ?int $lineupRequestPerformerId = null;
 
     public function mount(): void
     {
@@ -428,6 +430,49 @@ class MusicianProfilePage extends Component
         $this->lineupNotice = __('ui.music.lineup_left');
     }
 
+    public function requestLineupJoin(): void
+    {
+        $this->requireMusician();
+        Gate::authorize('update', $this->record);
+        $this->lineupError = null;
+
+        $validated = $this->validate([
+            'lineupRequestPerformerId' => ['required', 'integer', 'exists:peformers,id'],
+        ], [], [
+            'lineupRequestPerformerId' => __('ui.music.lineup_request_label'),
+        ]);
+
+        try {
+            app(PerformerMembershipService::class)->requestJoin(
+                Peformer::findOrFail((int) $validated['lineupRequestPerformerId']),
+                $this->record,
+                Auth::user(),
+            );
+        } catch (ValidationException $e) {
+            $this->lineupError = $e->errors()['lineup'][0] ?? null;
+
+            return;
+        }
+
+        $this->lineupRequestPerformerId = null;
+        $this->lineupNotice = __('ui.music.lineup_request_sent');
+    }
+
+    public function cancelLineupRequest(int $peformerId): void
+    {
+        $this->requireMusician();
+        Gate::authorize('update', $this->record);
+        $this->lineupError = null;
+
+        app(PerformerMembershipService::class)->cancelOwnRequest(
+            Peformer::findOrFail($peformerId),
+            $this->record,
+            Auth::user(),
+        );
+
+        $this->lineupNotice = __('ui.music.lineup_request_cancelled');
+    }
+
     public function setLineupShowOnProfile(bool $show, int $peformerId): void
     {
         $this->requireMusician();
@@ -533,8 +578,38 @@ class MusicianProfilePage extends Component
             'pendingLineupInvites' => $this->record
                 ? $this->record->peformers()->wherePivot('status', PerformerMembershipStatus::Pending->value)->orderBy('name')->get()
                 : collect(),
+            'lineupJoinRequests' => $this->record
+                ? $this->record->peformers()
+                    ->wherePivot('status', PerformerMembershipStatus::Pending->value)
+                    ->wherePivot('invited_by_user_id', Auth::id())
+                    ->orderBy('name')
+                    ->get()
+                : collect(),
+            'lineupInviteInbox' => $this->record
+                ? $this->record->peformers()
+                    ->wherePivot('status', PerformerMembershipStatus::Pending->value)
+                    ->wherePivot('invited_by_user_id', '!=', Auth::id())
+                    ->orderBy('name')
+                    ->get()
+                : collect(),
             'acceptedLineup' => $this->record
                 ? $this->record->peformers()->wherePivot('status', PerformerMembershipStatus::Accepted->value)->orderBy('name')->get()
+                : collect(),
+            'lineupRequestOptions' => $this->record
+                ? Peformer::query()
+                    ->where('owner_user_id', '!=', Auth::id())
+                    ->whereNotIn(
+                        'id',
+                        $this->record->peformers()
+                            ->wherePivotIn('status', [
+                                PerformerMembershipStatus::Pending->value,
+                                PerformerMembershipStatus::Accepted->value,
+                            ])
+                            ->pluck('peformers.id')
+                    )
+                    ->orderBy('name')
+                    ->limit(400)
+                    ->get(['id', 'name'])
                 : collect(),
             'experienceMonthOptions' => $experienceMonthOptions,
             'experienceYearOptions' => $experienceYearOptions,

@@ -171,8 +171,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::view('calendar', 'calendar')->name('calendar');
 
-    Route::view('music/profiles', 'music.profiles')->name('music.profiles');
+    Route::view('profiles', 'music.profiles')->name('music.profiles');
     Route::view('music/musician', 'music.musician')->name('music.musician');
+    Route::view('public_pages', 'music.public-pages')->name('music.public-pages');
     Route::get('music/teacher', fn () => redirect()->route('music.profiles', ['tab' => 'teacher']))->name('music.teacher');
     Route::view('music/search-requests', 'music.search-requests')->name('music.search-requests.index');
     Route::view('music/discover', 'music.discover')->name('music.discover');

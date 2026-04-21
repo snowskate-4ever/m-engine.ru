@@ -146,7 +146,7 @@
                     <flux:input wire:model="skillTitle" type="text" :label="__('ui.messenger.skill_title_field')" />
                     <flux:textarea wire:model="skillInstruction" rows="4" :label="__('ui.messenger.skill_instruction_field')" />
                     <div class="flex flex-wrap gap-2">
-                        <flux:button variant="primary" type="submit">{{ __('ui.save') }}</flux:button>
+                        <flux:button variant="primary" type="submit" square :title="__('ui.save')" icon="save-floppy" />
                         <flux:button variant="ghost" type="button" wire:click="cancelSkillEdit">{{ __('ui.cancel') }}</flux:button>
                     </div>
                 </form>

@@ -163,6 +163,70 @@ class PerformerMembershipService
         $peformer->musicians()->updateExistingPivot($musician->id, ['show_on_musician_profile' => $show]);
     }
 
+    public function requestJoin(Peformer $peformer, Musician $musician, User $requester): void
+    {
+        $this->assertMusicianOwner($musician, $requester);
+
+        if ((int) $peformer->owner_user_id === (int) $requester->id) {
+            throw ValidationException::withMessages([
+                'lineup' => __('ui.music.lineup_request_own_performer'),
+            ]);
+        }
+
+        $existing = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($existing !== null) {
+            $status = $this->pivotMembershipStatus($existing->pivot->status);
+
+            if ($status === PerformerMembershipStatus::Accepted) {
+                throw ValidationException::withMessages([
+                    'lineup' => __('ui.music.lineup_already_member'),
+                ]);
+            }
+
+            if ($status === PerformerMembershipStatus::Pending) {
+                $invitedBy = (int) ($existing->pivot->invited_by_user_id ?? 0);
+                $message = $invitedBy === (int) $requester->id
+                    ? __('ui.music.lineup_request_pending')
+                    : __('ui.music.lineup_invite_pending');
+
+                throw ValidationException::withMessages([
+                    'lineup' => $message,
+                ]);
+            }
+
+            $peformer->musicians()->updateExistingPivot($musician->id, [
+                'status' => PerformerMembershipStatus::Pending->value,
+                'invited_by_user_id' => $requester->id,
+                'show_on_musician_profile' => false,
+                'responded_at' => null,
+            ]);
+
+            return;
+        }
+
+        $peformer->musicians()->attach($musician->id, [
+            'status' => PerformerMembershipStatus::Pending->value,
+            'show_on_musician_profile' => false,
+            'invited_by_user_id' => $requester->id,
+        ]);
+    }
+
+    public function cancelOwnRequest(Peformer $peformer, Musician $musician, User $requester): void
+    {
+        $this->assertMusicianOwner($musician, $requester);
+
+        $row = $peformer->musicians()->whereKey($musician->id)->first();
+        if ($row === null || $this->pivotMembershipStatus($row->pivot->status) !== PerformerMembershipStatus::Pending) {
+            return;
+        }
+
+        if ((int) ($row->pivot->invited_by_user_id ?? 0) !== (int) $requester->id) {
+            return;
+        }
+
+        $peformer->musicians()->detach($musician->id);
+    }
+
     private function pivotMembershipStatus(mixed $raw): ?PerformerMembershipStatus
     {
         if ($raw instanceof PerformerMembershipStatus) {

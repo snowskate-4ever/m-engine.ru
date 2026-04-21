@@ -223,6 +223,7 @@ class PublicPageSettingsModal extends Component
         }
 
         $this->dispatch('music-profiles-updated');
+        $this->dispatch('music-profiles-updated')->to(MusicProfilesPage::class);
     }
 
     public function addLayoutBlock(string $key): void
@@ -322,13 +323,15 @@ class PublicPageSettingsModal extends Component
                 $rows[] = $profileRow;
             }
         } else {
+            /** @var User $user */
+            $user = Auth::user();
             $musician = Musician::query()->where('user_id', $userId)->first();
-            if ($musician) {
+            if ($musician && $user->hasMusicProfile(UserMusicProfile::Musician)) {
                 $rows[] = $this->buildRow('musician', $musician, __('ui.public_profile.type_musician'));
             }
 
             $teacher = Teacher::query()->where('user_id', $userId)->first();
-            if ($teacher) {
+            if ($teacher && $user->hasMusicProfile(UserMusicProfile::Teacher)) {
                 $rows[] = $this->buildRow('teacher', $teacher, __('ui.public_profile.type_teacher'));
             }
 

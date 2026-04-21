@@ -26,6 +26,10 @@
                     Livewire.dispatch('messenger-rail-select-chat', { conversationId: $event.detail.id });
                 })
             "
+            @messenger-float-open.window="
+                open = true;
+                $nextTick(() => resetPosition())
+            "
             @keydown.escape.window="if (open) { open = false }"
         >
             @auth

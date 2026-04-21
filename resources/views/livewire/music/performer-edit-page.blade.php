@@ -45,7 +45,7 @@
             </flux:field>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
                 <flux:button type="button" variant="ghost" @click="layoutSettingsOpen = true">{{ __('ui.music.layout_draft') }}</flux:button>
                 @if ($record)
                     <flux:button type="button" wire:click="publishLayout" variant="filled">{{ __('ui.music.publish_layout') }}</flux:button>

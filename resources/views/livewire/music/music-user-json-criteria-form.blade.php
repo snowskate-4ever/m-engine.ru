@@ -93,7 +93,7 @@
             </flux:field>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
             </div>
         </div>
     </form>

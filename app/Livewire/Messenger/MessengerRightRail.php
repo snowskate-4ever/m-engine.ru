@@ -7,6 +7,7 @@ namespace App\Livewire\Messenger;
 use App\Services\Messenger\MessengerService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -22,6 +23,7 @@ class MessengerRightRail extends Component
         $this->refreshList($messenger);
     }
 
+    #[On('messenger-conversations-refresh')]
     public function refreshList(?MessengerService $messenger = null): void
     {
         $messenger ??= app(MessengerService::class);

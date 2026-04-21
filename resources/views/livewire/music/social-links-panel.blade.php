@@ -54,7 +54,7 @@
             <flux:checkbox wire:model="form_active" :label="__('ui.social.active')" />
 
             <div class="flex flex-wrap gap-2">
-                <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
                 <flux:button type="button" variant="ghost" wire:click="cancelForm">{{ __('ui.cancel') }}</flux:button>
             </div>
         </form>

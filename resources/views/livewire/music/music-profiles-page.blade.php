@@ -11,7 +11,8 @@
                 </label>
                 <select
                     id="music-profile-enabled-select"
-                    wire:model.live="quickSwitchTab"
+                    wire:model="quickSwitchTab"
+                    wire:change="switchProfile($event.target.value)"
                     aria-label="{{ __('ui.music.profiles_enabled_tabs_label') }}"
                     class="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-xs outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100"
                 >
@@ -27,17 +28,17 @@
 
     <div tabindex="0">
         @if ($tab === 'musician')
-            <livewire:music.musician-profile-page wire:key="profile-musician" :embedded-in-profiles-hub="true" />
+            <livewire:music.musician-profile-page wire:key="profile-musician-{{ $profileRequestVersion }}" :embedded-in-profiles-hub="true" />
         @elseif ($tab === 'teacher')
-            <livewire:music.teacher-profile-page wire:key="profile-teacher" />
+            <livewire:music.teacher-profile-page wire:key="profile-teacher-{{ $profileRequestVersion }}" />
         @elseif ($tab === 'organizer')
-            <livewire:music.music-organizer-profile-page wire:key="profile-organizer" />
+            <livewire:music.music-organizer-profile-page wire:key="profile-organizer-{{ $profileRequestVersion }}" />
         @elseif ($tab === 'manager')
-            <livewire:music.music-manager-profile-page wire:key="profile-manager" />
+            <livewire:music.music-manager-profile-page wire:key="profile-manager-{{ $profileRequestVersion }}" />
         @elseif ($tab === 'session_musician')
-            <livewire:music.music-session-musician-profile-page wire:key="profile-session-musician" />
+            <livewire:music.music-session-musician-profile-page wire:key="profile-session-musician-{{ $profileRequestVersion }}" />
         @else
-            <livewire:music.music-generic-profile-page :profile="$tab" :key="'profile-generic-'.$tab" />
+            <livewire:music.music-generic-profile-page :profile="$tab" :key="'profile-generic-'.$tab.'-'.$profileRequestVersion" />
         @endif
     </div>
 </div>

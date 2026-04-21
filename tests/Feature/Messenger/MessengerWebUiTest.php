@@ -38,23 +38,21 @@ class MessengerWebUiTest extends TestCase
             ->assertSee(__('ui.messenger.push_label'));
     }
 
-    public function test_embedded_messenger_workspace_can_create_direct_chat(): void
+    public function test_messenger_new_chat_modal_can_create_direct_chat(): void
     {
-        $u1 = User::factory()->create();
-        $u2 = User::factory()->create();
+        $u1 = User::factory()->create(['name' => 'Alpha Unique']);
+        $u2 = User::factory()->create(['name' => 'Beta Unique']);
 
-        $component = Livewire::actingAs($u1)->test(
-            \App\Livewire\Messenger\MessengerWorkspace::class,
-            ['embedMode' => true],
-        )
-            ->assertSet('embedMode', true)
+        Livewire::actingAs($u1)->test(\App\Livewire\Messenger\MessengerNewChatModal::class)
+            ->call('openModal')
+            ->assertSet('open', true)
             ->set('createType', 'direct')
-            ->set('directUserId', (string) $u2->id)
+            ->set('peerSearch', 'Beta Unique')
+            ->assertSet('directUserId', '')
+            ->call('selectPeer', $u2->id)
+            ->assertSet('directUserId', (string) $u2->id)
             ->call('createChat')
-            ->assertHasNoErrors();
-
-        $activeId = $component->get('activeConversationId');
-        $this->assertNotNull($activeId);
-        $this->assertGreaterThan(0, $activeId);
+            ->assertHasNoErrors()
+            ->assertSet('open', false);
     }
 }

@@ -30,12 +30,13 @@ class TwoFactorAuthenticationTest extends TestCase
     {
         $user = User::factory()->withoutTwoFactor()->create();
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->withSession(['auth.password_confirmed_at' => time()])
-            ->get(route('settings.two-factor.show'))
-            ->assertOk()
-            ->assertSee('Two Factor Authentication')
-            ->assertSee('Disabled');
+            ->get(route('settings.two-factor.show'));
+
+        $response->assertOk();
+        $response->assertSee(__('ui.account_settings.nav_two_factor'));
+        $response->assertSee('settings-subheading', false);
     }
 
     public function test_two_factor_settings_page_requires_password_confirmation_when_enabled(): void

@@ -3,7 +3,7 @@
     :buttons="[]"
     :content-right-inset="false"
     :top-bar-button="[
-        'window_event' => 'open-user-profiles-modal',
+        'href' => route('music.public-pages'),
         'label' => '+',
         'title' => __('ui.music.music_profile_roles_menu'),
     ]"

@@ -59,7 +59,7 @@ class AuthenticationTest extends TestCase
             'confirmPassword' => true,
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->withTwoFactorConfirmed()->create();
 
         $response = $this->post(route('login.store'), [
             'email' => $user->email,

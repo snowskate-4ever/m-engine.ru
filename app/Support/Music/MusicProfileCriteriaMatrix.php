@@ -51,7 +51,7 @@ final class MusicProfileCriteriaMatrix
     }
 
     /**
-     * Строка вкладки на /music/profiles → enum профиля.
+     * Строка вкладки на /profiles → enum профиля.
      */
     public static function profileFromTab(string $tab): ?UserMusicProfile
     {

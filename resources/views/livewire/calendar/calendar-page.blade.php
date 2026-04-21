@@ -392,7 +392,7 @@
         </div>
         <div class="mt-6 flex flex-wrap justify-end gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
             <flux:button type="button" variant="ghost" wire:click="closeKanbanCalSettings">{{ __('ui.cancel') }}</flux:button>
-            <flux:button type="button" variant="primary" wire:click="saveKanbanCalSettings">{{ __('ui.save') }}</flux:button>
+            <flux:button type="button" variant="primary" square wire:click="saveKanbanCalSettings" :title="__('ui.save')" icon="save-floppy" />
         </div>
     </flux:modal>
 
@@ -473,7 +473,7 @@
                     </flux:button>
                 @endif
                 <flux:button type="button" variant="ghost" wire:click="closeModal">{{ __('ui.cancel') }}</flux:button>
-                <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
             </div>
         </form>
     </flux:modal>

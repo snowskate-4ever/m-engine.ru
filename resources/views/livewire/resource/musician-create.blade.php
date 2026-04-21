@@ -215,17 +215,7 @@
 
         <!-- Кнопка сохранить в конце формы -->
         <div class="d-flex justify-content-end mt-4">
-            <button type="submit" 
-                    wire:loading.attr="disabled"
-                    class="btn btn-primary p-2 border rounded-lg disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5 hover:bg-zinc-800/5 hover:text-zinc-800 dark:hover:bg-white/[7%] dark:hover:text-white">
-                <span wire:loading.remove wire:target="save">
-                    <i class="fas fa-save me-1"></i> {{ __('ui.save') }}
-                </span>
-                <span wire:loading wire:target="save">
-                    <span class="spinner-border spinner-border-sm me-1"></span>
-                    {{ __('ui.loading') }}
-                </span>
-            </button>
+            <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
         </div>
     </form>
 </div>

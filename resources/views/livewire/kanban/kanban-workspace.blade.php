@@ -290,7 +290,7 @@
 
             <div class="mt-6 flex justify-end gap-2">
                 <flux:button type="button" variant="ghost" wire:click="closeColumnAccessModal">Отмена</flux:button>
-                <flux:button type="button" variant="primary" wire:click="saveColumnAccess">Сохранить</flux:button>
+                <flux:button type="button" variant="primary" square wire:click="saveColumnAccess" :title="__('ui.save')" icon="save-floppy" />
             </div>
         </flux:modal>
 
@@ -483,7 +483,7 @@
                                 <flux:button type="button" size="sm" variant="ghost" class="mt-2 w-full" wire:click="addCardGrantRow">+ Правило</flux:button>
                                 <flux:button type="button" size="sm" class="mt-2 w-full" wire:click="saveCardAccess">Применить видимость</flux:button>
                             @else
-                                <flux:button type="button" size="sm" class="mt-2" wire:click="saveCardAccess">Сохранить режим</flux:button>
+                                <flux:button type="button" size="sm" class="mt-2" variant="primary" square wire:click="saveCardAccess" title="Сохранить режим" icon="save-floppy" />
                             @endif
                         </div>
                     @endif
@@ -517,7 +517,7 @@
                         <div class="flex flex-wrap justify-end gap-2">
                             <flux:button type="button" variant="ghost" wire:click="closeCardDetailModal">Закрыть</flux:button>
                             @if ($canEditThisCard)
-                                <flux:button type="submit">Сохранить</flux:button>
+                                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
                             @endif
                         </div>
                     </div>

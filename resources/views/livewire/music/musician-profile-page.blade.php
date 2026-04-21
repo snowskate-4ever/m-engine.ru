@@ -210,7 +210,7 @@
             </flux:field>
 
             <div class="flex flex-wrap gap-3 pt-2">
-                <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
                 <flux:button type="button" variant="ghost" @click="layoutSettingsOpen = true">{{ __('ui.music.layout_draft') }}</flux:button>
                 @if ($record)
                     <flux:button type="button" wire:click="publishLayout" variant="filled">{{ __('ui.music.publish_layout') }}</flux:button>
@@ -261,7 +261,7 @@
         </div>
         @endif
 
-    @if ($record && ! $embeddedInProfilesHub)
+    @if ($record && $embeddedInProfilesHub && $enabled)
         <div id="music-musician-lineup" class="scroll-mt-24 space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:heading size="lg">{{ __('ui.music.lineup_musician_section') }}</flux:heading>
             <flux:description>{{ __('ui.music.lineup_musician_section_hint') }}</flux:description>
@@ -273,10 +273,33 @@
                 <flux:callout variant="warning">{{ $lineupError }}</flux:callout>
             @endif
 
-            @if ($pendingLineupInvites->isNotEmpty())
+            <div class="space-y-3">
+                <flux:heading size="md">{{ __('ui.music.lineup_request_section') }}</flux:heading>
+                <form wire:submit="requestLineupJoin" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <flux:field class="min-w-0 flex-1">
+                        <flux:label>{{ __('ui.music.lineup_request_label') }}</flux:label>
+                        <select
+                            wire:model="lineupRequestPerformerId"
+                            class="block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-xs focus:border-zinc-500 focus:outline-hidden focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                        >
+                            <option value="">{{ __('ui.select') }}</option>
+                            @foreach ($lineupRequestOptions as $performer)
+                                <option value="{{ $performer->id }}">{{ $performer->name }}</option>
+                            @endforeach
+                        </select>
+                        <flux:error name="lineupRequestPerformerId" />
+                    </flux:field>
+                    <flux:button type="submit" variant="primary">{{ __('ui.music.lineup_request_button') }}</flux:button>
+                </form>
+                @if ($lineupRequestOptions->isEmpty())
+                    <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('ui.music.lineup_request_no_options') }}</p>
+                @endif
+            </div>
+
+            @if ($lineupInviteInbox->isNotEmpty())
                 <flux:heading size="md">{{ __('ui.music.lineup_invites_inbox') }}</flux:heading>
                 <ul class="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
-                    @foreach ($pendingLineupInvites as $p)
+                    @foreach ($lineupInviteInbox as $p)
                         <li class="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $p->name }}</p>
@@ -294,6 +317,23 @@
                 </ul>
             @endif
 
+            @if ($lineupJoinRequests->isNotEmpty())
+                <flux:heading size="md">{{ __('ui.music.lineup_requests_outgoing') }}</flux:heading>
+                <ul class="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
+                    @foreach ($lineupJoinRequests as $p)
+                        <li class="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $p->name }}</p>
+                                <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('ui.music.lineup_status.pending') }}</p>
+                            </div>
+                            <flux:button type="button" size="sm" variant="ghost" wire:click="cancelLineupRequest({{ $p->id }})" wire:confirm="{{ __('ui.music.lineup_request_cancel_confirm') }}">
+                                {{ __('ui.music.lineup_request_cancel') }}
+                            </flux:button>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+
             @if ($acceptedLineup->isNotEmpty())
                 <flux:heading size="md">{{ __('ui.music.lineup_my_bands') }}</flux:heading>
                 <ul class="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
@@ -301,15 +341,6 @@
                         <li class="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                             <div class="min-w-0 flex-1">
                                 <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $p->name }}</p>
-                                <label class="mt-2 flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                    <input
-                                        type="checkbox"
-                                        class="rounded border-zinc-300 text-zinc-900 focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:focus:ring-zinc-400/30"
-                                        @checked($p->pivot->show_on_musician_profile)
-                                        wire:change="setLineupShowOnProfile($event.target.checked, {{ $p->id }})"
-                                    />
-                                    <span>{{ __('ui.music.lineup_show_on_profile') }}</span>
-                                </label>
                             </div>
                             <flux:button type="button" size="sm" variant="ghost" wire:click="leaveLineup({{ $p->id }})" wire:confirm="{{ __('ui.music.lineup_leave_confirm') }}">
                                 {{ __('ui.music.lineup_leave') }}
@@ -319,7 +350,30 @@
                 </ul>
             @endif
 
-            @if ($pendingLineupInvites->isEmpty() && $acceptedLineup->isEmpty())
+            @if ($acceptedLineup->isNotEmpty())
+                <flux:heading size="md">{{ __('ui.music.lineup_public_visibility') }}</flux:heading>
+                <ul class="divide-y divide-zinc-200 rounded-lg border border-zinc-200 dark:divide-zinc-700 dark:border-zinc-700">
+                    @foreach ($acceptedLineup as $p)
+                        <li class="flex flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-medium text-zinc-900 dark:text-zinc-100">{{ $p->name }}</p>
+                                <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('ui.music.lineup_public_visibility_hint') }}</p>
+                            </div>
+                            <label class="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                                <input
+                                    type="checkbox"
+                                    class="rounded border-zinc-300 text-zinc-900 focus:ring-2 focus:ring-zinc-500/30 dark:border-zinc-600 dark:bg-zinc-900 dark:focus:ring-zinc-400/30"
+                                    @checked($p->pivot->show_on_musician_profile)
+                                    wire:change="setLineupShowOnProfile($event.target.checked, {{ $p->id }})"
+                                />
+                                <span>{{ __('ui.music.lineup_show_on_profile') }}</span>
+                            </label>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+
+            @if ($lineupInviteInbox->isEmpty() && $lineupJoinRequests->isEmpty() && $acceptedLineup->isEmpty())
                 <p class="text-sm text-zinc-500 dark:text-zinc-400">{{ __('ui.music.lineup_musician_empty') }}</p>
             @endif
         </div>

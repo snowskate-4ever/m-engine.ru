@@ -6,9 +6,14 @@
     wire:poll.keep-alive.20s="refreshList"
 >
     <div class="flex shrink-0 flex-wrap items-center justify-between gap-3">
-        <flux:link href="{{ route('messenger.settings.notifications') }}" wire:navigate class="ml-[15px] text-sm">
-            {{ __('ui.messenger.notifications_title') }}
-        </flux:link>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <flux:link href="{{ route('messenger.settings.notifications') }}" wire:navigate class="ml-[15px] text-sm">
+                {{ __('ui.messenger.notifications_title') }}
+            </flux:link>
+            <flux:button type="button" variant="ghost" size="sm" class="text-sm" @click="Livewire.dispatch('messenger-open-new-chat')">
+                {{ __('ui.messenger.new_chat') }}
+            </flux:button>
+        </div>
     </div>
 
     <div
@@ -20,73 +25,6 @@
     >
         {{-- Список чатов (как левая колонка внешнего чата в CRM) --}}
         <div class="flex max-h-[45vh] w-full shrink-0 flex-col overflow-hidden rounded-lg border border-zinc-200 lg:max-h-none lg:w-1/3 lg:min-w-[240px] lg:max-w-md dark:border-zinc-700">
-            <div class="shrink-0 border-b border-zinc-200 p-3 dark:border-zinc-700">
-                <flux:heading size="sm" class="mb-3">{{ __('ui.messenger.new_chat') }}</flux:heading>
-                <form wire:submit="createChat" class="space-y-3">
-                    <div>
-                        <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('ui.messenger.type') }}</label>
-                        <select wire:model.live="createType"
-                                class="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none ring-offset-2 focus:ring-2 focus:ring-accent dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                            <option value="direct">{{ __('ui.messenger.direct') }}</option>
-                            <option value="group">{{ __('ui.messenger.group') }}</option>
-                            @if (config('ai.enabled'))
-                                <option value="ai">{{ __('ui.messenger.ai_chat') }}</option>
-                            @endif
-                        </select>
-                    </div>
-
-                    @if ($createType === 'direct')
-                        <flux:input wire:model="directUserId" type="number" min="1" :label="__('ui.messenger.peer_user_id')" />
-                    @elseif ($createType === 'group')
-                        <flux:input wire:model="groupTitle" type="text" :label="__('ui.messenger.group_title')" />
-                        <flux:textarea wire:model="groupUserIds" rows="2" :label="__('ui.messenger.member_ids')" />
-                    @elseif ($createType === 'ai')
-                        <flux:input wire:model="aiTitle" type="text" :label="__('ui.messenger.ai_chat_title')" />
-                        <div>
-                            <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('ui.messenger.ai_source') }}</label>
-                            <select wire:model.live="aiSource"
-                                    class="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                <option value="server">{{ __('ui.messenger.ai_source_server') }}</option>
-                                <option value="byok">{{ __('ui.messenger.ai_source_byok') }}</option>
-                            </select>
-                        </div>
-                        @if ($aiSource === 'server')
-                            @if (count($aiServerModels) === 0)
-                                <p class="text-sm text-amber-700 dark:text-amber-400">{{ __('ui.messenger.ai_no_server_models') }}</p>
-                            @else
-                                <div>
-                                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('ui.messenger.ai_pick_model') }}</label>
-                                    <select wire:model="aiServerModelId"
-                                            class="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                        <option value="">{{ __('ui.select') }}</option>
-                                        @foreach ($aiServerModels as $opt)
-                                            <option value="{{ $opt['id'] }}">{{ $opt['label'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
-                        @else
-                            @if (count($aiConnections) === 0)
-                                <p class="text-sm text-amber-700 dark:text-amber-400">{{ __('ui.messenger.ai_no_connections') }}</p>
-                            @else
-                                <div>
-                                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">{{ __('ui.messenger.ai_pick_connection') }}</label>
-                                    <select wire:model="aiConnectionId"
-                                            class="w-full rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
-                                        <option value="">{{ __('ui.select') }}</option>
-                                        @foreach ($aiConnections as $opt)
-                                            <option value="{{ $opt['id'] }}">{{ $opt['label'] }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
-                        @endif
-                    @endif
-
-                    <flux:button variant="primary" type="submit" size="sm">{{ __('ui.create') }}</flux:button>
-                </form>
-            </div>
-
             <div class="min-h-0 flex-1 overflow-y-auto">
                 <div class="border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
                     <flux:heading size="sm">{{ __('ui.messenger.chats') }}</flux:heading>

@@ -11,11 +11,30 @@
 
         @if ($enabled)
             <div class="flex flex-wrap gap-3 pt-2">
-                <flux:button type="button" wire:click="toggle" variant="ghost" size="sm">{{ __('ui.music.profile_disable') }}</flux:button>
+                <flux:button
+                    type="button"
+                    wire:click="toggle"
+                    variant="ghost"
+                    size="sm"
+                    icon="x-mark"
+                    wire:loading.attr="disabled"
+                    wire:target="toggle"
+                    :title="__('ui.music.profile_disable')"
+                    :aria-label="__('ui.music.profile_disable')"
+                />
             </div>
         @else
             <flux:callout variant="secondary">{{ __('ui.music.profile_organizer_criteria_disabled') }}</flux:callout>
-            <flux:button type="button" wire:click="toggle" variant="primary">{{ __('ui.music.profile_enable') }}</flux:button>
+            <flux:button
+                type="button"
+                wire:click="toggle"
+                variant="primary"
+                icon="power"
+                wire:loading.attr="disabled"
+                wire:target="toggle"
+                :title="__('ui.music.profile_enable')"
+                :aria-label="__('ui.music.profile_enable')"
+            />
         @endif
     </div>
 

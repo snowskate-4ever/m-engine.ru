@@ -148,7 +148,7 @@
             @endif
 
             <div class="flex flex-wrap gap-3 sm:col-span-2">
-                <flux:button type="submit" variant="primary">{{ __('ui.save') }}</flux:button>
+                <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
                 @if ($editingId !== null)
                     <flux:button type="button" wire:click="startCreate" variant="ghost">{{ __('ui.music.shop_inventory_cancel_edit') }}</flux:button>
                 @endif

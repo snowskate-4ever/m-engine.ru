@@ -1,23 +1,15 @@
-<div class="flex items-start max-md:flex-col">
-    <div class="me-10 w-full pb-4 md:w-[220px]">
-        <flux:navlist>
-            <flux:navlist.item :href="route('settings.profile.edit')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
-            <flux:navlist.item :href="route('settings.password.edit')" wire:navigate>{{ __('Password') }}</flux:navlist.item>
-            @if (Laravel\Fortify\Features::canManageTwoFactorAuthentication())
-                <flux:navlist.item :href="route('settings.two-factor.show')" wire:navigate>{{ __('Two-Factor Auth') }}</flux:navlist.item>
-            @endif
-            <flux:navlist.item :href="route('settings.appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
-        </flux:navlist>
-    </div>
+{{-- Карточка контента: отступы как на /music/search-requests (p-5 / md:p-6) --}}
+<div class="rounded-xl border border-zinc-200 bg-white p-5 shadow-xs dark:border-zinc-700 dark:bg-zinc-900 md:p-6">
+    @if (filled($subheading ?? null))
+        <p
+            class="mb-6 text-base leading-relaxed text-zinc-600 dark:text-zinc-400"
+            data-test="settings-subheading"
+        >
+            {{ $subheading }}
+        </p>
+    @endif
 
-    <flux:separator class="md:hidden" />
-
-    <div class="flex-1 self-stretch max-md:pt-6">
-        <flux:heading>{{ $heading ?? '' }}</flux:heading>
-        <flux:subheading>{{ $subheading ?? '' }}</flux:subheading>
-
-        <div class="mt-5 w-full max-w-lg">
-            {{ $slot }}
-        </div>
+    <div class="w-full max-w-2xl space-y-8">
+        {{ $slot }}
     </div>
 </div>
