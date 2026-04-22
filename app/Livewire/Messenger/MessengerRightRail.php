@@ -107,6 +107,15 @@ class MessengerRightRail extends Component
 
     private function directPeerOnline(array $row): ?bool
     {
+        if (array_key_exists('is_online', $row)) {
+            $value = $row['is_online'];
+            if ($value === null) {
+                return null;
+            }
+
+            return (bool) $value;
+        }
+
         if (($row['is_support_chat'] ?? false) === true) {
             return true;
         }

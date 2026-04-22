@@ -32,6 +32,9 @@
                             @if (! empty($headerMeta['direct_peer']['name']))
                                 <span class="ms-1">· {{ $headerMeta['direct_peer']['name'] }}</span>
                             @endif
+                            @if (array_key_exists('is_online', $headerMeta) && $headerMeta['is_online'] !== null)
+                                <span class="ms-1">· {{ $headerMeta['is_online'] ? __('ui.online') : __('ui.offline') }}</span>
+                            @endif
                         </div>
                     @endif
                 </div>

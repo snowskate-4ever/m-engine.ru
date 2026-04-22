@@ -24,6 +24,7 @@ use App\Services\Ai\AiServerQuotaDeniedException;
 use App\Services\Ai\AiServerQuotaService;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
@@ -763,8 +764,13 @@ final class MessengerService
         if ($conversation->direct_peer_max_id === $user->id) {
             return $conversation->direct_peer_min_id;
         }
+        // Fallback for legacy direct conversations where min/max peer columns are empty or inconsistent.
+        $fallbackPeerId = ConversationUser::query()
+            ->where('conversation_id', $conversation->id)
+            ->where('user_id', '!=', $user->id)
+            ->value('user_id');
 
-        return null;
+        return $fallbackPeerId !== null ? (int) $fallbackPeerId : null;
     }
 
     /**
@@ -789,6 +795,11 @@ final class MessengerService
             'last_message' => null,
         ];
 
+        $row['is_support_chat'] = $this->supportChat->isSupportConversation($conversation);
+        if ($row['is_support_chat']) {
+            $row['title'] = (string) __('ui.messenger.support_chat_title');
+        }
+
         if ($conversation->type === ConversationType::Direct) {
             $otherId = $this->otherDirectPeerId($conversation, $viewer);
             if ($otherId !== null) {
@@ -796,12 +807,18 @@ final class MessengerService
                 $row['direct_peer'] = $other !== null
                     ? ['id' => $other->id, 'name' => $other->name]
                     : ['id' => $otherId, 'name' => null];
+                if (! empty($row['direct_peer']['name'])) {
+                    // Keep a stable non-generic title for direct chats even with legacy DB title values.
+                    $row['title'] = (string) $row['direct_peer']['name'];
+                }
+                $row['is_online'] = $this->isUserOnline($otherId);
+            } else {
+                $row['is_online'] = false;
             }
-        }
-
-        $row['is_support_chat'] = $this->supportChat->isSupportConversation($conversation);
-        if ($row['is_support_chat']) {
-            $row['title'] = (string) __('ui.messenger.support_chat_title');
+        } elseif ($row['is_support_chat'] ?? false) {
+            $row['is_online'] = true;
+        } else {
+            $row['is_online'] = null;
         }
 
         if ($conversation->type === ConversationType::Ai) {
@@ -849,6 +866,27 @@ final class MessengerService
                 $q->whereNull('user_id')->orWhere('user_id', '!=', $viewer->id);
             })
             ->count();
+    }
+
+    private function isUserOnline(int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        $payload = Cache::get('messenger_presence:'.$userId);
+        if (! is_array($payload)) {
+            return false;
+        }
+
+        $ts = (int) ($payload['ts'] ?? 0);
+        if ($ts <= 0) {
+            return false;
+        }
+
+        $ttl = max(15, (int) config('messenger.presence_ttl_seconds', 60));
+
+        return (time() - $ts) <= $ttl;
     }
 
     /**

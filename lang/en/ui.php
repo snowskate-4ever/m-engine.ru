@@ -966,6 +966,8 @@ return [
         'no_chats' => 'No chats yet',
         'chat' => 'Chat',
         'direct_chat' => 'Direct chat',
+        'online' => 'Online',
+        'offline' => 'Offline',
         'mute_chat' => 'Mute notifications',
         'unmute_chat' => 'Unmute notifications',
         'load_older' => 'Load older messages',

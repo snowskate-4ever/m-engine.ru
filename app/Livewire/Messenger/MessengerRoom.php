@@ -84,12 +84,16 @@ class MessengerRoom extends Component
 
         $detail = $messenger->conversationToDetailArray($conversation, Auth::user());
         $this->headerMeta = $detail;
-        $this->headerTitle = $detail['title'] ?? '';
-        if ($this->headerTitle === '' || $this->headerTitle === null) {
-            $peer = $detail['direct_peer'] ?? null;
-            $this->headerTitle = is_array($peer)
-                ? (string) ($peer['name'] ?? __('ui.messenger.direct_chat'))
-                : __('ui.messenger.chat');
+        $peer = $detail['direct_peer'] ?? null;
+        if (($detail['type'] ?? '') === 'direct' && is_array($peer) && ! empty($peer['name'])) {
+            $this->headerTitle = (string) $peer['name'];
+        } else {
+            $this->headerTitle = $detail['title'] ?? '';
+            if ($this->headerTitle === '' || $this->headerTitle === null) {
+                $this->headerTitle = is_array($peer)
+                    ? (string) ($peer['name'] ?? __('ui.messenger.direct_chat'))
+                    : __('ui.messenger.chat');
+            }
         }
 
         $pivot = ConversationUser::query()
