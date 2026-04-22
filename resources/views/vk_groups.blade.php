@@ -156,7 +156,7 @@
                                     <input type="hidden" name="group_id" value="{{ $groupId }}">
                                     <input type="hidden" name="name" value="{{ $name }}">
                                     <input type="hidden" name="screen_name" value="{{ $screenName }}">
-                                    <button type="submit" class="btn-add">Добавить в отслеживаемые</button>
+                                    <button type="submit" class="btn-add" title="Добавить в отслеживаемые" aria-label="Добавить в отслеживаемые">+</button>
                                 </form>
                             @endif
                         </div>

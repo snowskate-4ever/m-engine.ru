@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Messenger;
 
 use App\Services\Messenger\MessengerService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On;
@@ -15,12 +16,30 @@ use Livewire\Component;
  */
 class MessengerRightRail extends Component
 {
-    /** @var list<array{id:int, name:string, initials:string, unread_count:int, type:string}> */
+    /** @var list<array{id:int, name:string, initials:string, unread_count:int, type:string, is_online:bool|null}> */
     public array $chats = [];
 
     public function mount(MessengerService $messenger): void
     {
         $this->refreshList($messenger);
+    }
+
+    public function selectConversation(int $conversationId): void
+    {
+        foreach ($this->chats as $index => $chat) {
+            if ((int) ($chat['id'] ?? 0) === $conversationId) {
+                $this->chats[$index]['unread_count'] = 0;
+                break;
+            }
+        }
+
+        if (request()->routeIs(['messenger.index', 'messenger.show'])) {
+            $this->redirectRoute('messenger.show', ['conversation' => $conversationId], navigate: true);
+
+            return;
+        }
+
+        $this->dispatch('messenger-float-open-chat', id: $conversationId);
     }
 
     #[On('messenger-conversations-refresh')]
@@ -59,10 +78,58 @@ class MessengerRightRail extends Component
                     'initials' => $initials,
                     'unread_count' => (int) ($row['unread_count'] ?? 0),
                     'type' => (string) ($row['type'] ?? ''),
+                    'is_support_chat' => (bool) ($row['is_support_chat'] ?? false),
+                    'is_online' => $this->directPeerOnline($row),
                 ];
             })
             ->values()
             ->all();
+
+        $chatIds = array_values(array_filter(array_map(
+            static fn (array $chat): int => (int) ($chat['id'] ?? 0),
+            $this->chats
+        )));
+        if ($chatIds !== []) {
+            $this->dispatch('messenger-chats-loaded', chatIds: $chatIds);
+        }
+    }
+
+    #[On('messenger-chat-opened')]
+    public function onChatOpened(int $conversationId): void
+    {
+        foreach ($this->chats as $index => $chat) {
+            if ((int) ($chat['id'] ?? 0) === $conversationId) {
+                $this->chats[$index]['unread_count'] = 0;
+                break;
+            }
+        }
+    }
+
+    private function directPeerOnline(array $row): ?bool
+    {
+        if (($row['is_support_chat'] ?? false) === true) {
+            return true;
+        }
+
+        if (($row['type'] ?? '') !== 'direct') {
+            return null;
+        }
+        $peerId = (int) ($row['direct_peer']['id'] ?? 0);
+        if ($peerId <= 0) {
+            return null;
+        }
+
+        $payload = Cache::get('messenger_presence:'.$peerId);
+        if (! is_array($payload)) {
+            return false;
+        }
+        $ts = (int) ($payload['ts'] ?? 0);
+        if ($ts <= 0) {
+            return false;
+        }
+        $ttl = max(15, (int) config('messenger.presence_ttl_seconds', 60));
+
+        return (time() - $ts) <= $ttl;
     }
 
     public function render()

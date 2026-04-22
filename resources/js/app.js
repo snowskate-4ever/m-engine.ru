@@ -1,4 +1,5 @@
 import './messenger-float-panel.js';
+import './messenger-realtime.js';
 import './music-landing.js';
 import axios from 'axios';
 import Echo from 'laravel-echo';

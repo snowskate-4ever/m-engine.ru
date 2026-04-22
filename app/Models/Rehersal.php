@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\LegalEntityType;
 use App\Enums\ModerationStatus;
+use App\Models\Concerns\HasLegalDocuments;
 use App\Models\Concerns\HasPublicPageLayouts;
 use App\Models\Concerns\ModeratablePublicProfile;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 class Rehersal extends Model
 {
     use HasPublicPageLayouts;
+    use HasLegalDocuments;
     use ModeratablePublicProfile;
 
     protected $table = 'rehearsals';

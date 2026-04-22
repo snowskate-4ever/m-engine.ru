@@ -1,5 +1,7 @@
 {{-- Публичная страница с поддержкой блоков layout_published (teacher, performer, studio, …) --}}
 @php
+    use App\Enums\LegalDocumentStatus;
+    use App\Enums\LegalDocumentVisibility;
     use App\Enums\LegalEntityType;
     use App\Models\ConcertVenue;
     use App\Models\Peformer;
@@ -10,10 +12,17 @@
     use App\Models\Shop;
     use App\Models\Studio;
     use App\Models\Teacher;
+    use Illuminate\Support\Facades\URL;
 
     $canLayout = method_exists($model, 'shouldShowPublicBlock');
     $show = fn (string $id): bool => ! $canLayout || $model->shouldShowPublicBlock($id);
     $hasLegal = $model instanceof Teacher || $model instanceof Studio || $model instanceof Rehersal || $model instanceof ConcertVenue || $model instanceof School || $model instanceof RecordLabel || $model instanceof ProducerCenter || $model instanceof Shop;
+    $publicLegalDocuments = collect();
+    if (method_exists($model, 'legalDocuments') && $model->relationLoaded('legalDocuments')) {
+        $publicLegalDocuments = $model->legalDocuments
+            ->filter(fn ($doc) => ($doc->status?->value ?? null) === LegalDocumentStatus::Approved->value && ($doc->visibility?->value ?? null) === LegalDocumentVisibility::Public->value)
+            ->values();
+    }
 @endphp
 <x-layouts.public-minimal :title="$model->name">
     <article class="mx-auto max-w-2xl px-6 py-12">
@@ -128,6 +137,35 @@
                         <div><span class="font-medium">{{ __('ui.music.fields.ogrn') }}:</span> {{ $model->ogrn }}</div>
                     @endif
                 </dl>
+            </section>
+        @endif
+        @if($hasLegal && $show('legal_documents') && $publicLegalDocuments->isNotEmpty())
+            <section class="mt-8 rounded-lg border border-zinc-200 p-4 text-sm dark:border-zinc-700">
+                <h2 class="text-sm font-medium text-zinc-500 dark:text-zinc-400">{{ __('ui.music.blocks.legal_documents') }}</h2>
+                <ul class="mt-3 space-y-2 text-zinc-700 dark:text-zinc-300">
+                    @foreach($publicLegalDocuments as $document)
+                        <li class="rounded-md border border-zinc-200 px-3 py-2 dark:border-zinc-700">
+                            <p class="font-medium text-zinc-800 dark:text-zinc-100">{{ $document->title }}</p>
+                            @if($document->currentVersion?->effective_from)
+                                <p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                                    {{ __('ui.legal_documents.field_effective_from') }}: {{ $document->currentVersion->effective_from->format('Y-m-d') }}
+                                </p>
+                            @endif
+                            @if(filled($document->currentVersion?->external_url))
+                                <a href="{{ $document->currentVersion->external_url }}" target="_blank" rel="noopener noreferrer nofollow" class="mt-1 inline-block underline underline-offset-2">
+                                    {{ __('ui.open') }}
+                                </a>
+                            @elseif(filled($document->currentVersion?->file_path))
+                                <a
+                                    href="{{ URL::temporarySignedRoute('public.legal-document.download', now()->addMinutes(60), ['version' => $document->currentVersion->id]) }}"
+                                    class="mt-1 inline-block underline underline-offset-2"
+                                >
+                                    {{ __('ui.download') }}
+                                </a>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
             </section>
         @endif
         @if($show('addresses') && $model->addresses->isNotEmpty())

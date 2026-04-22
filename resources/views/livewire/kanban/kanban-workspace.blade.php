@@ -1,4 +1,4 @@
-<div class="space-y-4">
+<div class="flex min-h-0 flex-1 flex-col gap-4 p-4">
     @if ($board === null)
         <flux:heading size="xl">Канбан</flux:heading>
         <flux:callout variant="warning">Доска не найдена.</flux:callout>
@@ -211,7 +211,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <flux:button type="button" wire:click="addBoardShare" :disabled="! $shareSelectedUserId" class="w-full shrink-0 sm:w-auto">Добавить</flux:button>
+                                <flux:button type="button" wire:click="addBoardShare" :disabled="! $shareSelectedUserId" variant="primary" square icon="plus" :title="__('ui.add')" class="w-full shrink-0 sm:w-auto" />
                             </div>
                         @else
                             <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -227,7 +227,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <flux:button type="button" wire:click="addBoardShare" :disabled="! $shareSelectedUserId" class="w-full shrink-0 sm:w-auto">Добавить</flux:button>
+                                <flux:button type="button" wire:click="addBoardShare" :disabled="! $shareSelectedUserId" variant="primary" square icon="plus" :title="__('ui.add')" class="w-full shrink-0 sm:w-auto" />
                             </div>
                         @endif
                     @endif
@@ -289,7 +289,7 @@
             </div>
 
             <div class="mt-6 flex justify-end gap-2">
-                <flux:button type="button" variant="ghost" wire:click="closeColumnAccessModal">Отмена</flux:button>
+                <flux:button type="button" variant="ghost" wire:click="closeColumnAccessModal" square icon="cancel-play" title="Отмена" />
                 <flux:button type="button" variant="primary" square wire:click="saveColumnAccess" :title="__('ui.save')" icon="save-floppy" />
             </div>
         </flux:modal>
@@ -322,7 +322,7 @@
                     <flux:input wire:model="newBoardName" label="Название" placeholder="Например, Продажи Q2" autofocus />
                     <div class="flex justify-end gap-2">
                         <flux:button type="button" variant="ghost" wire:click="backAddWizardChoose">Назад</flux:button>
-                        <flux:button type="submit">Создать</flux:button>
+                        <flux:button type="submit" variant="primary" square icon="plus" title="Создать" />
                     </div>
                 </form>
             @elseif ($addWizardStep === 'column')
@@ -334,7 +334,7 @@
                     <flux:input wire:model="newColumnName" label="Название колонки" placeholder="Например, Приёмка" autofocus />
                     <div class="flex justify-end gap-2">
                         <flux:button type="button" variant="ghost" wire:click="backAddWizardChoose">Назад</flux:button>
-                        <flux:button type="submit">Добавить</flux:button>
+                        <flux:button type="submit" variant="primary" square icon="plus" :title="__('ui.add')" />
                     </div>
                 </form>
             @else
@@ -372,7 +372,7 @@
                     </div>
                     <div class="flex justify-end gap-2">
                         <flux:button type="button" variant="ghost" wire:click="backAddWizardChoose">Назад</flux:button>
-                        <flux:button type="submit">Добавить</flux:button>
+                        <flux:button type="submit" variant="primary" square icon="plus" :title="__('ui.add')" />
                     </div>
                 </form>
             @endif
@@ -560,7 +560,7 @@
                                 <flux:text class="text-sm text-red-600 dark:text-red-400">{{ $message }}</flux:text>
                             @enderror
                             <div class="flex justify-end">
-                                <flux:button type="submit" size="sm">Добавить комментарий</flux:button>
+                                <flux:button type="submit" size="sm" square icon="plus" title="Добавить комментарий" />
                             </div>
                         </form>
                     @else
@@ -669,7 +669,7 @@
                     <flux:text class="text-sm text-red-600 dark:text-red-400">{{ $message }}</flux:text>
                 @enderror
                 <div class="flex justify-end gap-2">
-                    <flux:button type="button" variant="ghost" wire:click="closeCardAttachmentUploadModal">Отмена</flux:button>
+                    <flux:button type="button" variant="ghost" wire:click="closeCardAttachmentUploadModal" square icon="cancel-play" title="Отмена" />
                     <flux:button type="submit" wire:loading.attr="disabled" wire:target="storeCardAttachment,attachmentUpload">
                         Загрузить
                     </flux:button>
@@ -738,6 +738,10 @@
                             @foreach ($column->cards as $card)
                                 @php
                                     $cardImp = $card->importance ?? \App\Enums\KanbanCardImportance::Normal;
+                                    $isArchiveBoardForViewer =
+                                        $board->source_type === \App\Models\User::class
+                                        && (int) $board->source_id === (int) auth()->id()
+                                        && $board->name === 'Архив';
                                 @endphp
                                 <div
                                     data-kanban-card="{{ $card->id }}"
@@ -748,6 +752,18 @@
                                     <div class="flex justify-between gap-2 items-start">
                                         <p class="text-sm leading-snug">{{ $card->title }}</p>
                                         <div class="flex shrink-0 items-start gap-0">
+                                            @if ($kanbanAccess->canEditCard(auth()->user(), $card) && ! $isArchiveBoardForViewer)
+                                                <flux:button
+                                                    type="button"
+                                                    size="xs"
+                                                    variant="ghost"
+                                                    class="!px-1 shrink-0"
+                                                    title="Отправить в архив"
+                                                    wire:click.stop="archiveCard({{ $card->id }})"
+                                                >
+                                                    Архив
+                                                </flux:button>
+                                            @endif
                                             <flux:button
                                                 type="button"
                                                 size="xs"

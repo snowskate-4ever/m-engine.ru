@@ -10,8 +10,11 @@ use App\Models\ConcertVenue;
 use App\Models\MusicProfileMembership;
 use App\Models\Musician;
 use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
 use App\Models\Rehersal;
 use App\Models\School;
+use App\Models\Shop;
 use App\Models\Studio;
 use App\Models\User;
 use App\Notifications\Music\MatchingLifecycleNotification;
@@ -21,6 +24,10 @@ use Illuminate\Validation\ValidationException;
 
 class MusicProfileMembershipService
 {
+    public function __construct(
+        private readonly EntityLinkedAccessService $entityLinkedAccess,
+    ) {}
+
     public function invite(User $owner, Model $entity, User $member, MusicMembershipRole $role): MusicProfileMembership
     {
         $this->assertOwnerCanInvite($owner, $entity);
@@ -84,6 +91,17 @@ class MusicProfileMembershipService
         $membership->status = $decision;
         $membership->responded_at = now();
         $membership->save();
+
+        $entity = $membership->entity;
+        if ($entity instanceof Model) {
+            if ($decision === MusicMembershipStatus::Accepted) {
+                $this->entityLinkedAccess->grantForMember($entity, $member);
+            }
+            if ($decision === MusicMembershipStatus::Declined) {
+                $this->entityLinkedAccess->revokeForMember($entity, $member);
+            }
+        }
+
         $this->notifyDecision($membership, $decision);
 
         return $membership;
@@ -103,6 +121,9 @@ class MusicProfileMembershipService
         $membership->status = MusicMembershipStatus::Revoked;
         $membership->responded_at = now();
         $membership->save();
+        if ($membership->member !== null) {
+            $this->entityLinkedAccess->revokeForMember($entity, $membership->member);
+        }
 
         $membership->member?->notify(new MatchingLifecycleNotification(
             'ui.notifications.music_matching_invite_declined_title',
@@ -118,6 +139,9 @@ class MusicProfileMembershipService
             Studio::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
             Rehersal::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
             School::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
+            RecordLabel::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
+            ProducerCenter::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
+            Shop::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
             Peformer::class => (int) ($entity->owner_user_id ?? 0) === (int) $owner->id,
             Musician::class => (int) ($entity->user_id ?? 0) === (int) $owner->id,
             default => false,

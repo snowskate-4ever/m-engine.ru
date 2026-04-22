@@ -33,6 +33,7 @@ use App\MoonShine\Resources\MoonShineUser\MoonShineUserResource;
 use App\MoonShine\Resources\MoonShineUserRole\MoonShineUserRoleResource;
 use App\MoonShine\Resources\MusicEcosystem\AutomationPresetSettingResource;
 use App\MoonShine\Resources\MusicEcosystem\ConcertVenueResource;
+use App\MoonShine\Resources\MusicEcosystem\LegalDocumentResource;
 use App\MoonShine\Resources\MusicEcosystem\MatchingControlSettingResource;
 use App\MoonShine\Resources\MusicEcosystem\MatchingRunLogResource;
 use App\MoonShine\Resources\MusicEcosystem\ModerationAuditResource;
@@ -119,6 +120,7 @@ class MoonShineServiceProvider extends ServiceProvider
                 MusicSchoolResource::class,
                 MusicRecordLabelResource::class,
                 MusicProducerCenterResource::class,
+                LegalDocumentResource::class,
                 PublicProfileReportResource::class,
                 ModerationAuditResource::class,
                 AutomationPresetSettingResource::class,

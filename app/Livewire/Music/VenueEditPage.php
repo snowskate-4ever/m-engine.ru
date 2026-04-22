@@ -14,6 +14,7 @@ use App\Models\School;
 use App\Models\SearchRequest;
 use App\Models\Shop;
 use App\Models\Studio;
+use App\Services\Music\EntityOnCreateAutomationService;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -160,6 +161,10 @@ class VenueEditPage extends Component
             $modelClass = $this->modelClass();
             $this->record = $modelClass::create($payload);
             $this->recordId = (int) $this->record->getKey();
+            $owner = Auth::user();
+            if ($owner !== null) {
+                app(EntityOnCreateAutomationService::class)->run($this->record, $owner);
+            }
 
             session()->flash('success', __('ui.music.saved'));
             $this->redirect($this->editRoute($this->record), navigate: true);

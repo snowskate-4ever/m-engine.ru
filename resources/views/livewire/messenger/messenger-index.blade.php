@@ -68,7 +68,7 @@
                 @endif
             @endif
 
-            <flux:button variant="primary" type="submit">{{ __('ui.create') }}</flux:button>
+            <flux:button variant="primary" type="submit" square icon="plus" :title="__('ui.create')" />
         </form>
     </div>
 

@@ -11,6 +11,7 @@
     $publicPagesLabel = __('ui.music.public_pages_settings');
     $musicProfileRolesLabel = __('ui.music.music_profile_roles_menu');
     $logoutLabel = __('ui.auth.logout.log_out');
+    $isPlusTitleButton = is_array($titleButton ?? null) && (($titleButton['label'] ?? '+') === '+');
 @endphp
 <div
     id="app-second-level-top-bar"
@@ -28,39 +29,43 @@
 
     @if (is_array($titleButton) && filled($titleButton['href'] ?? null))
         <flux:button
-            size="sm"
             variant="primary"
             :href="$titleButton['href']"
             wire:navigate
             title="{{ $titleButton['title'] ?? '' }}"
             aria-label="{{ $titleButton['title'] ?? '' }}"
-            class="px-3"
+            :square="$isPlusTitleButton"
+            :icon="$isPlusTitleButton ? 'plus' : null"
+            class="shrink-0"
         >
-            {{ $titleButton['label'] ?? '+' }}
+            {{ $isPlusTitleButton ? '' : ($titleButton['label'] ?? '+') }}
         </flux:button>
     @elseif (is_array($titleButton) && filled($titleButton['dispatch'] ?? null))
         <flux:button
-            size="sm"
             variant="primary"
             type="button"
             wire:click="$dispatch('{{ $titleButton['dispatch'] }}')"
             title="{{ $titleButton['title'] ?? '' }}"
             aria-label="{{ $titleButton['title'] ?? '' }}"
-            class="px-3"
+            :square="$isPlusTitleButton"
+            :icon="$isPlusTitleButton ? 'plus' : null"
+            class="shrink-0"
         >
-            {{ $titleButton['label'] ?? '+' }}
+            {{ $isPlusTitleButton ? '' : ($titleButton['label'] ?? '+') }}
         </flux:button>
     @elseif (is_array($titleButton) && filled($titleButton['window_event'] ?? null))
-        {{-- Flux может не прокидывать x-on:click; нативная кнопка + window CustomEvent для Alpine @ ... .window на корне топ-бара --}}
-        <button
+        <flux:button
+            variant="primary"
             type="button"
             title="{{ $titleButton['title'] ?? '' }}"
             aria-label="{{ $titleButton['title'] ?? '' }}"
-            class="relative inline-flex h-8 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-black/10 bg-[var(--color-accent)] px-3 text-sm font-medium text-[var(--color-accent-foreground)] shadow-[inset_0px_1px_var(--color-white\/0.2)] hover:bg-[color-mix(in_oklab,var(--color-accent),transparent_10%)] disabled:cursor-default disabled:opacity-75 dark:border-0 dark:disabled:opacity-75"
+            :square="$isPlusTitleButton"
+            :icon="$isPlusTitleButton ? 'plus' : null"
+            class="shrink-0"
             onclick="window.dispatchEvent(new CustomEvent('{{ e($titleButton['window_event']) }}',{bubbles:true}))"
         >
-            {{ $titleButton['label'] ?? '+' }}
-        </button>
+            {{ $isPlusTitleButton ? '' : ($titleButton['label'] ?? '+') }}
+        </flux:button>
     @endif
 
     <div class="ms-auto flex min-w-0 items-center justify-end gap-2">

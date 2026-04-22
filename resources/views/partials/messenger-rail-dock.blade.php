@@ -12,6 +12,7 @@
             x-show="open"
             class="fixed z-30 flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-600 dark:bg-zinc-900"
             :style="`left:${left}px;top:${top}px;width:${w}px;height:${h}px`"
+            @click.stop
         >
             <div
                 class="absolute -top-1 right-3 left-3 z-40 h-3 cursor-n-resize"
@@ -63,7 +64,10 @@
                         variant="ghost"
                         class="h-7 w-7 shrink-0 p-0"
                         title="{{ __('ui.close') }}"
-                        @click="open = false"
+                        @click="
+                            open = false;
+                            activeConversationId = null;
+                        "
                     >
                         <flux:icon.x-mark class="size-4" />
                     </flux:button>

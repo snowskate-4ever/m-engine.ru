@@ -20,17 +20,28 @@
             x-data="messengerFloatPanel()"
             @toggle-messenger-float.window="toggle()"
             @messenger-float-open-chat.window="
+                const targetId = Number($event.detail.id);
+                if (open && Number(activeConversationId) === targetId) {
+                    open = false;
+                    return;
+                }
+                activeConversationId = targetId;
                 open = true;
                 $nextTick(() => {
                     resetPosition();
-                    Livewire.dispatch('messenger-rail-select-chat', { conversationId: $event.detail.id });
+                    Livewire.dispatch('messenger-rail-select-chat', { conversationId: targetId });
                 })
             "
             @messenger-float-open.window="
                 open = true;
                 $nextTick(() => resetPosition())
             "
-            @keydown.escape.window="if (open) { open = false }"
+            @keydown.escape.window="
+                if (open) {
+                    open = false;
+                    activeConversationId = null;
+                }
+            "
         >
             @auth
                 @livewire('components.app-top-bar', [

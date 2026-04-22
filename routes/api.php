@@ -28,6 +28,7 @@ use App\Http\Controllers\api\MessengerConversationSkillController;
 use App\Http\Controllers\api\MobileSyncController;
 use App\Http\Controllers\api\MusicActorContextController;
 use App\Http\Controllers\api\MusicActivityFeedController;
+use App\Http\Controllers\api\MusicLegalDocumentController;
 use App\Http\Controllers\api\MusicCalendarSyncController;
 use App\Http\Controllers\api\MusicProfileMembershipController;
 use App\Http\Controllers\api\MusicProfilesController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\api\MusicResourceCatalogController;
 use App\Http\Controllers\api\MusicSearchRequestController;
 use App\Http\Controllers\api\PlatformPaymentController;
 use App\Http\Controllers\api\PublicBlogController;
+use App\Http\Controllers\api\PublicLegalDocumentController;
 use App\Http\Controllers\api\UserAiConnectionController;
 use App\Http\Controllers\api\UserAiPreferenceController;
 use App\Http\Controllers\api\UserAiScheduledItemController;
@@ -50,6 +52,9 @@ Route::get('/public/blog-posts', [PublicBlogController::class, 'index'])
 Route::get('/public/blog-posts/detail', [PublicBlogController::class, 'show'])
     ->middleware('throttle:120,1')
     ->name('api_public_blog_posts_show');
+Route::get('/public/{entityType}/{slug}/legal-documents', [PublicLegalDocumentController::class, 'index'])
+    ->middleware('throttle:120,1')
+    ->name('api_public_legal_documents_index');
 
 Route::prefix('integration/v1')->middleware(['integration.api', 'integration.audit', 'throttle:integration'])->group(function (): void {
     Route::get('/me', IntegrationMeController::class)->name('api_integration_v1_me');
@@ -200,6 +205,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/search-requests/{searchRequest}/responses', [MusicSearchRequestController::class, 'responses'])->name('api_music_search_requests_responses');
         Route::get('/activity-feed', [MusicActivityFeedController::class, 'index'])->name('api_music_activity_feed');
         Route::post('/reviews/verified', [MusicReviewController::class, 'storeVerified'])->name('api_music_reviews_verified_store');
+        Route::get('/legal-documents/{legalDocument}', [MusicLegalDocumentController::class, 'show'])->name('api_music_legal_documents_show');
+        Route::patch('/legal-documents/{legalDocument}', [MusicLegalDocumentController::class, 'update'])->name('api_music_legal_documents_update');
+        Route::post('/legal-documents/{legalDocument}/versions', [MusicLegalDocumentController::class, 'createVersion'])->name('api_music_legal_documents_versions_store');
+        Route::post('/legal-documents/{legalDocument}/submit', [MusicLegalDocumentController::class, 'submit'])->name('api_music_legal_documents_submit');
+        Route::post('/legal-documents/{legalDocument}/archive', [MusicLegalDocumentController::class, 'archive'])->name('api_music_legal_documents_archive');
+        Route::post('/legal-documents/{legalDocument}/approve', [MusicLegalDocumentController::class, 'approve'])->name('api_music_legal_documents_approve');
+        Route::post('/legal-documents/{legalDocument}/reject', [MusicLegalDocumentController::class, 'reject'])->name('api_music_legal_documents_reject');
+        Route::get('/legal-documents/{ownerType}/{ownerId}', [MusicLegalDocumentController::class, 'index'])
+            ->whereNumber('ownerId')
+            ->name('api_music_legal_documents_index');
+        Route::post('/legal-documents/{ownerType}/{ownerId}', [MusicLegalDocumentController::class, 'store'])
+            ->whereNumber('ownerId')
+            ->name('api_music_legal_documents_store');
     });
 
     Route::post('/platform/bookings/{booking}/payments', [PlatformPaymentController::class, 'storeForBooking'])

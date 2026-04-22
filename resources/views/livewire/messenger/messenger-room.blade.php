@@ -147,7 +147,7 @@
                     <flux:textarea wire:model="skillInstruction" rows="4" :label="__('ui.messenger.skill_instruction_field')" />
                     <div class="flex flex-wrap gap-2">
                         <flux:button variant="primary" type="submit" square :title="__('ui.save')" icon="save-floppy" />
-                        <flux:button variant="ghost" type="button" wire:click="cancelSkillEdit">{{ __('ui.cancel') }}</flux:button>
+                        <flux:button variant="ghost" type="button" wire:click="cancelSkillEdit" square icon="cancel-play" :title="__('ui.cancel')" />
                     </div>
                 </form>
             @else
@@ -218,6 +218,7 @@
     @script
     <script>
         const cid = @json($conversation->id);
+
         if (window.Echo) {
             const channel = window.Echo.private('messenger.conversation.' + cid);
             channel.listen('.messenger.message.sent', () => $wire.loadMessages());

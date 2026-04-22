@@ -5,7 +5,7 @@
             <flux:description>{{ __('ui.address.section_hint') }}</flux:description>
         </div>
         @if (! $showForm)
-            <flux:button type="button" variant="primary" wire:click="openCreate">{{ __('ui.address.add') }}</flux:button>
+            <flux:button type="button" variant="primary" square icon="plus" :title="__('ui.address.add')" wire:click="openCreate" />
         @endif
     </div>
 
@@ -120,7 +120,7 @@
 
             <div class="flex flex-wrap gap-2">
                 <flux:button type="submit" variant="primary" square :title="__('ui.save')" icon="save-floppy" />
-                <flux:button type="button" variant="ghost" wire:click="cancelForm">{{ __('ui.cancel') }}</flux:button>
+                <flux:button type="button" variant="ghost" wire:click="cancelForm" square icon="cancel-play" :title="__('ui.cancel')" />
             </div>
         </form>
     @endif

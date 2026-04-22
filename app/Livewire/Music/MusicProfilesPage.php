@@ -74,6 +74,11 @@ class MusicProfilesPage extends Component
         $this->profileRequestVersion++;
     }
 
+    public function updatedQuickSwitchTab(string $value): void
+    {
+        $this->switchProfile($value);
+    }
+
     public function switchProfile(string $value): void
     {
         if (! in_array($value, $this->allowedTabs(), true)) {

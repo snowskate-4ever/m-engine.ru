@@ -6,6 +6,7 @@ namespace App\Livewire\Music;
 
 use App\Enums\PerformerKind;
 use App\Models\Peformer;
+use App\Services\Music\EntityOnCreateAutomationService;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -62,13 +63,17 @@ class PerformersIndexPage extends Component
 
         $layoutDraft = PublicProfileBlocks::wrapVersion1($layoutBlocks);
 
-        Peformer::create([
+        $record = Peformer::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?: null,
             'performer_kind' => $validated['performer_kind'],
             'owner_user_id' => Auth::id(),
             'layout_draft' => $layoutDraft,
         ]);
+        $owner = Auth::user();
+        if ($owner !== null) {
+            app(EntityOnCreateAutomationService::class)->run($record, $owner);
+        }
 
         $this->showCreateModal = false;
         $this->name = '';

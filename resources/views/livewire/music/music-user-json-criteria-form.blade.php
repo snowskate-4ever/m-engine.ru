@@ -35,9 +35,15 @@
                                 </option>
                             @endforeach
                         </select>
-                        <flux:button type="button" wire:click="addCity" variant="primary" class="shrink-0">
-                            {{ __('ui.add') }}
-                        </flux:button>
+                        <flux:button
+                            type="button"
+                            wire:click="addCity"
+                            variant="primary"
+                            square
+                            icon="plus"
+                            :title="__('ui.add')"
+                            class="shrink-0"
+                        />
                     </div>
 
                     @if (! empty($cityIds))

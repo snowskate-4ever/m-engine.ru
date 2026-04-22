@@ -4,6 +4,7 @@ namespace App\Livewire\Resource;
 
 use App\Models\Peformer;
 use App\Models\Resource;
+use App\Services\Music\EntityOnCreateAutomationService;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -52,7 +53,12 @@ class PerformerCreate extends Component
         $performer = Peformer::create([
             'name' => $this->name,
             'description' => $this->description,
+            'owner_user_id' => auth()->id(),
         ]);
+        $owner = auth()->user();
+        if ($owner !== null) {
+            app(EntityOnCreateAutomationService::class)->run($performer, $owner);
+        }
 
         // Создание ресурса
         $resource = Resource::create([

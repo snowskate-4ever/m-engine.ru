@@ -124,6 +124,7 @@ final class MoonShineLayout extends AppLayout
             MenuGroup::make(static fn () => __('moonshine.messenger.menu_group'), [
                 MenuItem::make(MessengerConversationResource::class)->icon('chat-bubble-left-right'),
                 MenuItem::make(MessengerMessageResource::class)->icon('inbox'),
+                MenuItem::make('Support чаты', '/admin/support-chats')->icon('lifebuoy'),
             ])->icon('chat-bubble-left-right'),
             MenuGroup::make(static fn () => __('moonshine.ai.menu_group'), [
                 MenuItem::make(AiProviderResource::class)->icon('server'),

@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'system_user_email' => env('APP_SYSTEM_USER_EMAIL', 'system-kanban@m-engine.local'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

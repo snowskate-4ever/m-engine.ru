@@ -8,7 +8,7 @@
             <flux:input wire:model="memberUserId" type="number" min="1" />
             <flux:error name="memberUserId" />
         </flux:field>
-        <flux:button type="button" wire:click="invite" variant="primary">{{ __('ui.create') }}</flux:button>
+        <flux:button type="button" wire:click="invite" variant="primary" square icon="plus" :title="__('ui.create')" />
     </div>
 
     @forelse ($memberships as $membership)

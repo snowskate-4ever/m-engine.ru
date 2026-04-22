@@ -11,6 +11,12 @@ use App\Models\ConcertVenue;
 use App\Models\MusicProfileMembership;
 use App\Models\Musician;
 use App\Models\Peformer;
+use App\Models\ProducerCenter;
+use App\Models\RecordLabel;
+use App\Models\Rehersal;
+use App\Models\School;
+use App\Models\Shop;
+use App\Models\Studio;
 use App\Models\User;
 use App\Services\Music\MusicProfileMembershipService;
 use Illuminate\Http\JsonResponse;
@@ -34,7 +40,7 @@ class MusicProfileMembershipController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'entity_type' => ['required', 'string', 'in:concert_venue,performer,musician'],
+            'entity_type' => ['required', 'string', 'in:concert_venue,performer,musician,studio,rehearsal,school,record_label,producer_center,shop'],
             'entity_id' => ['required', 'integer', 'min:1'],
             'member_user_id' => ['required', 'integer', 'exists:users,id'],
             'role' => ['required', 'string', 'in:venue_representative,manager'],
@@ -73,12 +79,18 @@ class MusicProfileMembershipController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    private function resolveEntity(string $type, int $id): ConcertVenue|Peformer|Musician
+    private function resolveEntity(string $type, int $id): ConcertVenue|Peformer|Musician|Studio|Rehersal|School|RecordLabel|ProducerCenter|Shop
     {
         return match ($type) {
             'concert_venue' => ConcertVenue::query()->findOrFail($id),
             'performer' => Peformer::query()->findOrFail($id),
             'musician' => Musician::query()->findOrFail($id),
+            'studio' => Studio::query()->findOrFail($id),
+            'rehearsal' => Rehersal::query()->findOrFail($id),
+            'school' => School::query()->findOrFail($id),
+            'record_label' => RecordLabel::query()->findOrFail($id),
+            'producer_center' => ProducerCenter::query()->findOrFail($id),
+            'shop' => Shop::query()->findOrFail($id),
         };
     }
 

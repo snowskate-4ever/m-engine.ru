@@ -18,6 +18,8 @@ use App\Models\Message;
 use App\Models\User;
 use App\Services\Kanban\KanbanAccessService;
 use App\Services\Kanban\KanbanActivityLogger;
+use App\Services\Music\EntityLinkedAccessService;
+use App\Services\Music\EntityOnCreateAutomationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -109,14 +111,15 @@ class KanbanWorkspace extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (! KanbanBoard::query()->forUserAccess($user)->exists()) {
+        app(EntityOnCreateAutomationService::class)->ensureAccountArchiveBoard($user);
+        if (! KanbanBoard::query()->where('user_id', $user->id)->exists()) {
             DB::transaction(function () use ($user): void {
                 $board = KanbanBoard::query()->create([
                     'user_id' => $user->id,
                     'name' => 'Моя доска',
                     'position' => 0,
                 ]);
-                $defaults = ['К выполнению', 'В работе', 'Готово'];
+                $defaults = ['Входящие', 'К выполнению', 'В работе', 'На паузе', 'Готово'];
                 foreach ($defaults as $index => $name) {
                     KanbanColumn::query()->create([
                         'kanban_board_id' => $board->id,
@@ -245,7 +248,7 @@ class KanbanWorkspace extends Component
             'name' => $name,
             'position' => $max + 1,
         ]);
-        foreach (['К выполнению', 'В работе', 'Готово'] as $index => $colName) {
+        foreach (['Входящие', 'К выполнению', 'В работе', 'На паузе', 'Готово'] as $index => $colName) {
             KanbanColumn::query()->create([
                 'kanban_board_id' => $board->id,
                 'name' => $colName,
@@ -822,6 +825,25 @@ class KanbanWorkspace extends Component
         $card->delete();
     }
 
+    public function archiveCard(int $id): void
+    {
+        $board = KanbanBoard::query()->forUserAccess(auth()->user())->find($this->boardId);
+        if ($board === null) {
+            return;
+        }
+
+        $card = KanbanCard::query()
+            ->whereKey($id)
+            ->whereHas('column', static fn ($q) => $q->where('kanban_board_id', $board->id))
+            ->with(['column.board', 'grants', 'column.grants'])
+            ->first();
+        if ($card === null) {
+            return;
+        }
+
+        app(EntityLinkedAccessService::class)->archiveCard($card, auth()->user());
+    }
+
     public function deleteColumn(int $id): void
     {
         $board = KanbanBoard::query()->forUserAccess(auth()->user())->find($this->boardId);
@@ -885,6 +907,10 @@ class KanbanWorkspace extends Component
             ->whereKey($idToDelete)
             ->first();
         if ($board === null) {
+            return;
+        }
+
+        if ($board->source_type !== null && $board->source_id !== null) {
             return;
         }
 

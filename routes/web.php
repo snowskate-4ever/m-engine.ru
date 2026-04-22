@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\MatchingRunController;
+use App\Http\Controllers\Admin\SupportChatAdminController;
+use App\Http\Controllers\Public\PublicLegalDocumentDownloadController;
 use App\Http\Controllers\KanbanCardAttachmentController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\KanbanLogsController;
@@ -99,6 +101,10 @@ Route::get('/discover/{category}', function (string $category) {
     return view('music.discover-public-scoped', ['discoverCategory' => $category]);
 })->name('discover.category');
 
+Route::get('/public/legal-documents/{version}/download', PublicLegalDocumentDownloadController::class)
+    ->middleware(['signed', 'throttle:120,1'])
+    ->name('public.legal-document.download');
+
 Route::view('discover', 'music.discover-public')->name('discover');
 
 Route::get('/music/landing', $renderMusicLanding)->name('music.landing');
@@ -115,6 +121,15 @@ Route::post('/vk-chats', [App\Http\Controllers\TestController::class, 'getVkChat
 Route::post('/vk-token', [App\Http\Controllers\TestController::class, 'saveVkToken'])->name('admin.test.vk-token');
 Route::get('/vk-oauth', [App\Http\Controllers\TestController::class, 'handleVkOAuth'])
     ->name('admin.test.vk-oauth');
+
+Route::prefix(config('moonshine.prefix', 'admin'))
+    ->middleware(config('moonshine.auth.middleware', []))
+    ->group(function (): void {
+        Route::get('/support-chats', [SupportChatAdminController::class, 'index'])->name('admin.support-chats.index');
+        Route::post('/support-chats/{conversation}/reply', [SupportChatAdminController::class, 'reply'])->name('admin.support-chats.reply');
+        Route::post('/support-chats/{conversation}/ai-draft', [SupportChatAdminController::class, 'generateDraft'])->name('admin.support-chats.ai-draft');
+        Route::post('/support-chats/{conversation}/ai-send', [SupportChatAdminController::class, 'generateAndSend'])->name('admin.support-chats.ai-send');
+    });
 
 // Сбор постов из групп VK (очереди) и лента пользователя
 Route::middleware('auth')->group(function () {

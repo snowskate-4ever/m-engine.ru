@@ -89,5 +89,20 @@
 
     @if ($record)
         <livewire:music.performer-lineup-panel :peformer-id="$record->id" :key="'lineup-'.$record->id" />
+
+        <div class="space-y-4 rounded-xl border border-red-200 bg-red-50 p-6 dark:border-red-800/70 dark:bg-red-950/20">
+            <flux:heading size="md">{{ __('ui.music.performer_delete_section_title') }}</flux:heading>
+            <p class="text-sm text-red-700 dark:text-red-300">{{ __('ui.music.performer_delete_section_hint') }}</p>
+            <div>
+                <flux:button
+                    type="button"
+                    variant="danger"
+                    wire:click="delete"
+                    wire:confirm="{{ __('ui.music.performer_delete_confirm') }}"
+                >
+                    {{ __('ui.delete') }}
+                </flux:button>
+            </div>
+        </div>
     @endif
 </div>

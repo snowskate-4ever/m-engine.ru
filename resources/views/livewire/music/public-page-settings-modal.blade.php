@@ -21,7 +21,7 @@
                 @endphp
                 <div
                     class="rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
-                    x-data="{ linksOpen: false, addressesOpen: false, layoutOpen: false }"
+                    x-data="{ linksOpen: false, addressesOpen: false, layoutOpen: false, legalDocsOpen: false }"
                 >
                     <div class="mb-2 flex items-start justify-between gap-3">
                         <div class="min-w-0">
@@ -101,7 +101,7 @@
                                 type="button"
                                 class="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-start text-sm font-medium text-zinc-800 hover:bg-zinc-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
                                 x-bind:aria-expanded="layoutOpen ? 'true' : 'false'"
-                                @click="layoutOpen = ! layoutOpen; linksOpen = false; addressesOpen = false"
+                                @click="layoutOpen = ! layoutOpen; linksOpen = false; addressesOpen = false; legalDocsOpen = false"
                             >
                                 <span>{{ __('ui.music.layout_draft') }}</span>
                                 <flux:icon.chevron-down class="size-4 shrink-0 text-zinc-500 transition-transform dark:text-zinc-400" x-bind:class="{ 'rotate-180': layoutOpen }" />
@@ -178,9 +178,15 @@
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <flux:button type="button" variant="primary" class="shrink-0" wire:click="addLayoutBlock('{{ $key }}')">
-                                                {{ __('ui.add') }}
-                                            </flux:button>
+                                            <flux:button
+                                                type="button"
+                                                variant="primary"
+                                                square
+                                                icon="plus"
+                                                :title="__('ui.add')"
+                                                class="shrink-0"
+                                                wire:click="addLayoutBlock('{{ $key }}')"
+                                            />
                                         </div>
 
                                         @if ($enabledNonCriteriaBlocks->isNotEmpty())
@@ -210,7 +216,7 @@
                                 type="button"
                                 class="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-start text-sm font-medium text-zinc-800 hover:bg-zinc-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
                                 x-bind:aria-expanded="linksOpen ? 'true' : 'false'"
-                                @click="linksOpen = ! linksOpen; addressesOpen = false; layoutOpen = false"
+                                @click="linksOpen = ! linksOpen; addressesOpen = false; layoutOpen = false; legalDocsOpen = false"
                             >
                                 <span>{{ __('ui.social.section_title') }}</span>
                                 <flux:icon.chevron-down class="size-4 shrink-0 text-zinc-500 transition-transform dark:text-zinc-400" x-bind:class="{ 'rotate-180': linksOpen }" />
@@ -227,7 +233,7 @@
                                 type="button"
                                 class="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-start text-sm font-medium text-zinc-800 hover:bg-zinc-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
                                 x-bind:aria-expanded="addressesOpen ? 'true' : 'false'"
-                                @click="addressesOpen = ! addressesOpen; linksOpen = false; layoutOpen = false"
+                                @click="addressesOpen = ! addressesOpen; linksOpen = false; layoutOpen = false; legalDocsOpen = false"
                             >
                                 <span>{{ __('ui.address.section_title') }}</span>
                                 <flux:icon.chevron-down class="size-4 shrink-0 text-zinc-500 transition-transform dark:text-zinc-400" x-bind:class="{ 'rotate-180': addressesOpen }" />
@@ -239,6 +245,25 @@
                                     :key="'public-address-'.$key"
                                 />
                             </div>
+
+                            @if (in_array($row['type'], ['teacher', 'studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'], true))
+                                <button
+                                    type="button"
+                                    class="flex w-full items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-start text-sm font-medium text-zinc-800 hover:bg-zinc-100/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-100 dark:hover:bg-zinc-800/80"
+                                    x-bind:aria-expanded="legalDocsOpen ? 'true' : 'false'"
+                                    @click="legalDocsOpen = ! legalDocsOpen; linksOpen = false; addressesOpen = false; layoutOpen = false"
+                                >
+                                    <span>{{ __('ui.legal_documents.title') }}</span>
+                                    <flux:icon.chevron-down class="size-4 shrink-0 text-zinc-500 transition-transform dark:text-zinc-400" x-bind:class="{ 'rotate-180': legalDocsOpen }" />
+                                </button>
+                                <div x-show="legalDocsOpen" x-cloak class="pt-1">
+                                    <livewire:music.legal-documents-panel
+                                        :owner-kind="$row['type']"
+                                        :owner-id="$row['id']"
+                                        :key="'public-legal-'.$key"
+                                    />
+                                </div>
+                            @endif
                         </div>
                     @endif
 

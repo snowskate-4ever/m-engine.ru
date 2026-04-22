@@ -13,8 +13,8 @@
                 class="w-100">
                 <!-- Текущий пароль -->
                 <div class="mb-3">
-                    <label for="current_password" class="form-label">{{ __('ui.current_password') }} <span class="text-danger">*</span></label>
-                    <input type="text" 
+                    <label for="current_password" class="form-label">{{ __('ui.account_settings.password_current') }} <span class="text-danger">*</span></label>
+                    <input type="password" 
                            id="current_password"
                            wire:model.lazy="current_password"
                            class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
@@ -24,8 +24,8 @@
                 </div>
                 <!-- Новый пароль -->
                 <div class="mb-3">
-                    <label for="password" class="form-label">{{ __('ui.password') }} <span class="text-danger">*</span></label>
-                    <input type="text" 
+                    <label for="password" class="form-label">{{ __('ui.account_settings.password_new') }} <span class="text-danger">*</span></label>
+                    <input type="password" 
                            id="password"
                            wire:model.lazy="password"
                            class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
@@ -42,8 +42,8 @@
                 /> -->
                 <!-- Подтверждение нового пароля -->
                 <div class="mb-3">
-                    <label for="password_confirmation" class="form-label">{{ __('ui.password_confirmation') }} <span class="text-danger">*</span></label>
-                    <input type="text" 
+                    <label for="password_confirmation" class="form-label">{{ __('ui.account_settings.password_confirm') }} <span class="text-danger">*</span></label>
+                    <input type="password" 
                            id="password_confirmation"
                            wire:model.lazy="password_confirmation"
                            class="w-100 border rounded-lg block disabled:shadow-none dark:shadow-none appearance-none text-base sm:text-sm py-2 h-10 leading-[1.375rem] ps-3 pe-3 bg-white dark:bg-white/10 dark:disabled:bg-white/[7%] text-zinc-700 disabled:text-zinc-500 placeholder-zinc-400 disabled:placeholder-zinc-400/70 dark:text-zinc-300 dark:disabled:text-zinc-400 dark:placeholder-zinc-400 dark:disabled:placeholder-zinc-500 shadow-xs border-zinc-200 border-b-zinc-300/80 disabled:border-b-zinc-200 dark:border-white/10 dark:disabled:border-white/5">
@@ -65,7 +65,7 @@
                     </div>
 
                     <x-action-message class="me-3" on="password-updated">
-                        {{ __('Saved.') }}
+                        {{ __('ui.saved') }}
                     </x-action-message>
                 </div>
             </form>

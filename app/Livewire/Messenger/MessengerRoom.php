@@ -9,6 +9,7 @@ use App\Models\Conversation;
 use App\Models\ConversationUser;
 use App\Models\UserAiChatSkill;
 use App\Services\Messenger\MessengerService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -279,6 +280,7 @@ class MessengerRoom extends Component
     public function loadMessages(?MessengerService $messenger = null): void
     {
         $messenger ??= app(MessengerService::class);
+        $this->touchPresence();
         $result = $messenger->listMessages(Auth::user(), $this->conversation, null, null, 80);
         $this->items = $result['data'];
         $this->hasMoreOlder = $result['meta']['has_more'];
@@ -288,12 +290,26 @@ class MessengerRoom extends Component
             $last = $this->items[array_key_last($this->items)];
             if (isset($last['id'])) {
                 $messenger->markRead(Auth::user(), $this->conversation, (int) $last['id']);
+                $this->dispatch('messenger-conversations-refresh');
             }
         }
 
         $this->syncAiReplyWaitState();
         $this->updatePollIntervalForAiWait();
         $this->scrollEmbeddedToBottom();
+    }
+
+    private function touchPresence(): void
+    {
+        $userId = (int) Auth::id();
+        if ($userId <= 0) {
+            return;
+        }
+        $ttl = max(15, (int) config('messenger.presence_ttl_seconds', 60));
+        Cache::put('messenger_presence:'.$userId, [
+            'conversation_id' => (int) $this->conversation->id,
+            'ts' => time(),
+        ], $ttl);
     }
 
     public function loadOlderMessages(MessengerService $messenger): void
@@ -343,6 +359,7 @@ class MessengerRoom extends Component
         }
 
         $this->loadMessages($messenger);
+        $this->dispatch('messenger-conversations-refresh');
     }
 
     /**

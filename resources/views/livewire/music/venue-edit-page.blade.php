@@ -121,5 +121,8 @@
         @if ($kind === 'concert_venue' && (int) ($record->owner_user_id ?? 0) === (int) auth()->id())
             <livewire:music.venue-representatives-panel :venue-id="$record->id" :key="'venue-representatives-'.$record->id" />
         @endif
+        @if (in_array($kind, ['studio', 'rehearsal', 'school', 'record_label', 'producer_center', 'shop'], true))
+            <livewire:music.legal-documents-panel :owner-kind="$kind" :owner-id="$record->id" :key="'legal-documents-'.$kind.'-'.$record->id" />
+        @endif
     @endif
 </div>

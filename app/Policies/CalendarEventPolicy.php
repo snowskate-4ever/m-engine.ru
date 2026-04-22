@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\CalendarEvent;
+use App\Models\MusicProfileMembership;
 use App\Models\User;
 
 class CalendarEventPolicy
@@ -18,6 +19,18 @@ class CalendarEventPolicy
     {
         if ($calendarEvent->user_id === $user->id) {
             return true;
+        }
+
+        if ($calendarEvent->source_type !== null && $calendarEvent->source_id !== null) {
+            $hasAcceptedMembership = MusicProfileMembership::query()
+                ->where('member_user_id', $user->id)
+                ->where('entity_type', $calendarEvent->source_type)
+                ->where('entity_id', $calendarEvent->source_id)
+                ->where('status', 'accepted')
+                ->exists();
+            if ($hasAcceptedMembership) {
+                return true;
+            }
         }
 
         return $calendarEvent->is_public === true;

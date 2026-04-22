@@ -33,6 +33,7 @@ final class PublicProfileBlocks
             ['id' => 'header', 'label_key' => 'ui.music.blocks.header'],
             ['id' => 'description', 'label_key' => 'ui.music.blocks.description'],
             ['id' => 'legal', 'label_key' => 'ui.music.blocks.legal'],
+            ['id' => 'legal_documents', 'label_key' => 'ui.music.blocks.legal_documents'],
             ['id' => 'cities', 'label_key' => 'ui.music.blocks.cities'],
             ['id' => 'links', 'label_key' => 'ui.music.blocks.links'],
             ['id' => 'addresses', 'label_key' => 'ui.music.blocks.addresses'],
@@ -64,6 +65,7 @@ final class PublicProfileBlocks
             ['id' => 'header', 'label_key' => 'ui.music.blocks.header'],
             ['id' => 'description', 'label_key' => 'ui.music.blocks.description'],
             ['id' => 'legal', 'label_key' => 'ui.music.blocks.legal'],
+            ['id' => 'legal_documents', 'label_key' => 'ui.music.blocks.legal_documents'],
             ['id' => 'links', 'label_key' => 'ui.music.blocks.links'],
             ['id' => 'addresses', 'label_key' => 'ui.music.blocks.addresses'],
         ];
@@ -81,6 +83,7 @@ final class PublicProfileBlocks
             ['id' => 'description', 'label_key' => 'ui.music.blocks.description'],
             ['id' => 'listings', 'label_key' => 'ui.music.blocks.listings'],
             ['id' => 'legal', 'label_key' => 'ui.music.blocks.legal'],
+            ['id' => 'legal_documents', 'label_key' => 'ui.music.blocks.legal_documents'],
             ['id' => 'links', 'label_key' => 'ui.music.blocks.links'],
             ['id' => 'addresses', 'label_key' => 'ui.music.blocks.addresses'],
         ];

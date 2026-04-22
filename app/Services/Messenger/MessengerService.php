@@ -33,6 +33,7 @@ final class MessengerService
 {
     public function __construct(
         private readonly AiServerQuotaService $aiQuota,
+        private readonly SupportChatService $supportChat,
     ) {}
 
     public function getOrCreatePreferences(User $user): MessengerUserPreference
@@ -83,6 +84,8 @@ final class MessengerService
      */
     public function listConversationsSummary(User $user): array
     {
+        $this->supportChat->ensureForUser($user);
+
         $conversations = $user->conversations()
             ->with([
                 'latestMessage.user:id,name',
@@ -97,6 +100,28 @@ final class MessengerService
         foreach ($conversations as $conversation) {
             $out[] = $this->conversationToSummaryArray($conversation, $user);
         }
+
+        usort($out, function (array $a, array $b): int {
+            $aSupport = (bool) ($a['is_support_chat'] ?? false);
+            $bSupport = (bool) ($b['is_support_chat'] ?? false);
+            if ($aSupport !== $bSupport) {
+                return $aSupport ? -1 : 1;
+            }
+
+            $aUnread = ((int) ($a['unread_count'] ?? 0)) > 0;
+            $bUnread = ((int) ($b['unread_count'] ?? 0)) > 0;
+            if ($aUnread !== $bUnread) {
+                return $aUnread ? -1 : 1;
+            }
+
+            $aTs = $this->conversationSortTimestamp($a);
+            $bTs = $this->conversationSortTimestamp($b);
+            if ($aTs !== $bTs) {
+                return $bTs <=> $aTs;
+            }
+
+            return ((int) ($b['id'] ?? 0)) <=> ((int) ($a['id'] ?? 0));
+        });
 
         return $out;
     }
@@ -774,6 +799,11 @@ final class MessengerService
             }
         }
 
+        $row['is_support_chat'] = $this->supportChat->isSupportConversation($conversation);
+        if ($row['is_support_chat']) {
+            $row['title'] = (string) __('ui.messenger.support_chat_title');
+        }
+
         if ($conversation->type === ConversationType::Ai) {
             $row['ai_server_model_id'] = $conversation->ai_server_model_id;
             $row['user_ai_connection_id'] = $conversation->user_ai_connection_id;
@@ -787,6 +817,27 @@ final class MessengerService
         }
 
         return $row;
+    }
+
+    private function conversationSortTimestamp(array $row): int
+    {
+        $lastMessageCreatedAt = $row['last_message']['created_at'] ?? null;
+        if (is_string($lastMessageCreatedAt) && $lastMessageCreatedAt !== '') {
+            try {
+                return (int) strtotime($lastMessageCreatedAt);
+            } catch (\Throwable) {
+            }
+        }
+
+        $updatedAt = $row['updated_at'] ?? null;
+        if (is_string($updatedAt) && $updatedAt !== '') {
+            try {
+                return (int) strtotime($updatedAt);
+            } catch (\Throwable) {
+            }
+        }
+
+        return 0;
     }
 
     private function unreadCount(Conversation $conversation, User $viewer, int $lastReadId): int

@@ -21,6 +21,8 @@ class MessengerWorkspace extends Component
 
     public ?int $activeConversationId = null;
 
+    public int $roomRenderVersion = 0;
+
     public array $conversations = [];
 
     public function mount(MessengerService $messenger, ?Conversation $conversation = null): void
@@ -42,9 +44,29 @@ class MessengerWorkspace extends Component
 
     public function openConversation(int $id): void
     {
-        $conversation = Conversation::query()->findOrFail($id);
-        Gate::authorize('view', $conversation);
-        $this->activeConversationId = $id;
+        // В popup-режиме опираемся на уже загруженный список чатов компонента:
+        // это исключает "тихие" 404/403 в Livewire-запросе и гарантирует переключение правой панели.
+        $inList = collect($this->conversations)->contains(
+            static fn (array $row): bool => (int) ($row['id'] ?? 0) === $id,
+        );
+        if ($inList) {
+            $this->activeConversationId = $id;
+            $this->roomRenderVersion++;
+            $this->dispatch('messenger-chat-opened', conversationId: $id);
+
+            return;
+        }
+
+        // Fallback для полноэкранного режима/прямых переходов.
+        $conversation = Conversation::query()->find($id);
+        if ($conversation === null) {
+            return;
+        }
+        if (Gate::allows('view', $conversation)) {
+            $this->activeConversationId = $id;
+            $this->roomRenderVersion++;
+            $this->dispatch('messenger-chat-opened', conversationId: $id);
+        }
     }
 
     /** Выбор чата из правой рейки (верхняя панель: Alpine открывает попап и шлёт это событие). */
@@ -64,6 +86,13 @@ class MessengerWorkspace extends Component
     {
         $messenger ??= app(MessengerService::class);
         $this->conversations = $messenger->listConversationsSummary(Auth::user());
+        $chatIds = array_values(array_filter(array_map(
+            static fn (array $row): int => (int) ($row['id'] ?? 0),
+            $this->conversations
+        )));
+        if ($chatIds !== []) {
+            $this->dispatch('messenger-chats-loaded', chatIds: $chatIds);
+        }
     }
 
     public function render()

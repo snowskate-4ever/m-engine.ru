@@ -43,16 +43,23 @@
                 $borderClass = ($chat['type'] ?? '') === 'direct'
                     ? 'border-zinc-400 dark:border-zinc-500'
                     : 'border-blue-400 dark:border-blue-500';
+                $presenceShadowClass = '';
+                if (($chat['type'] ?? '') === 'direct' || ($chat['is_support_chat'] ?? false)) {
+                    $presenceShadowClass = ($chat['is_online'] ?? false)
+                        ? 'shadow-[0_0_0_2px_rgba(34,197,94,0.35)] dark:shadow-[0_0_0_2px_rgba(34,197,94,0.5)]'
+                        : 'shadow-[0_0_0_2px_rgba(239,68,68,0.35)] dark:shadow-[0_0_0_2px_rgba(239,68,68,0.5)]';
+                }
             @endphp
             @if (request()->routeIs(['messenger.index', 'messenger.show']))
-                <a
-                    href="{{ route('messenger.show', $chat['id']) }}"
-                    wire:navigate
+                <button
+                    type="button"
+                    wire:click="selectConversation({{ (int) $chat['id'] }})"
                     wire:key="rail-chat-{{ $chat['id'] }}"
                     title="{{ $chat['name'] }}"
                     @class([
                         'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-white text-xs font-semibold text-zinc-800 shadow-sm dark:bg-zinc-800 dark:text-zinc-100',
                         $borderClass,
+                        $presenceShadowClass,
                         'ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-50 dark:ring-offset-zinc-900' => $active,
                     ])
                 >
@@ -62,16 +69,17 @@
                             {{ $chat['unread_count'] > 9 ? '9+' : $chat['unread_count'] }}
                         </span>
                     @endif
-                </a>
+                </button>
             @else
                 <button
                     type="button"
+                    wire:click="selectConversation({{ (int) $chat['id'] }})"
                     wire:key="rail-chat-{{ $chat['id'] }}"
                     title="{{ $chat['name'] }}"
-                    @click="$dispatch('messenger-float-open-chat', { id: {{ (int) $chat['id'] }} })"
                     @class([
                         'relative flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 bg-white text-xs font-semibold text-zinc-800 shadow-sm dark:bg-zinc-800 dark:text-zinc-100',
                         $borderClass,
+                        $presenceShadowClass,
                     ])
                 >
                     {{ $chat['initials'] }}
@@ -86,46 +94,3 @@
     </div>
 </div>
 
-@script
-<script>
-    (() => {
-        const componentId = $wire.$id ?? '';
-        const chatIds = Array.isArray($wire.chats)
-            ? $wire.chats
-                .map((row) => Number(row?.id ?? 0))
-                .filter((id) => Number.isInteger(id) && id > 0)
-            : [];
-
-        if (!componentId) {
-            return;
-        }
-
-        window.__messengerRailRealtime ??= {};
-
-        const prevCleanup = window.__messengerRailRealtime[componentId];
-        if (typeof prevCleanup === 'function') {
-            prevCleanup();
-        }
-
-        if (!window.Echo || !Array.isArray(chatIds) || chatIds.length === 0) {
-            window.__messengerRailRealtime[componentId] = null;
-            return;
-        }
-
-        const channelNames = chatIds.map((id) => `messenger.conversation.${id}`);
-        const refresh = () => $wire.refreshList();
-
-        channelNames.forEach((name) => {
-            window.Echo.private(name)
-                .listen('.messenger.message.sent', refresh)
-                .listen('.messenger.read.updated', refresh)
-                .listen('.messenger.conversation.updated', refresh);
-        });
-
-        window.__messengerRailRealtime[componentId] = () => {
-            channelNames.forEach((name) => window.Echo.leave(name));
-            delete window.__messengerRailRealtime[componentId];
-        };
-    })();
-</script>
-@endscript

@@ -8,6 +8,7 @@ use App\Enums\PerformerKind;
 use App\Enums\SearchRequestStatus;
 use App\Models\Peformer;
 use App\Models\SearchRequest;
+use App\Services\Music\EntityOnCreateAutomationService;
 use App\Support\Music\PublicProfileBlocks;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -134,6 +135,10 @@ class PerformerEditPage extends Component
             $payload['owner_user_id'] = Auth::id();
             $this->record = Peformer::create($payload);
             $this->recordId = $this->record->id;
+            $owner = Auth::user();
+            if ($owner !== null) {
+                app(EntityOnCreateAutomationService::class)->run($this->record, $owner);
+            }
 
             session()->flash('success', __('ui.music.saved'));
             $this->redirect(route('music.performers.edit', $this->record), navigate: true);
@@ -159,6 +164,17 @@ class PerformerEditPage extends Component
         $this->record->save();
 
         session()->flash('success', __('ui.music.layout_published'));
+    }
+
+    public function delete(): void
+    {
+        $this->record ??= Peformer::query()->whereKey($this->recordId)->firstOrFail();
+        Gate::authorize('delete', $this->record);
+
+        $this->record->delete();
+
+        session()->flash('success', __('ui.deleted'));
+        $this->redirect(route('music.performers.index'), navigate: true);
     }
 
     /**

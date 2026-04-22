@@ -4,6 +4,7 @@ namespace App\Actions\Fortify;
 
 use App\Models\User;
 use App\Services\Auth\RegistrationInviteService;
+use App\Services\Messenger\SupportChatService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -57,6 +58,10 @@ class CreateNewUser implements CreatesNewUsers
                     'invite' => __('ui.auth.register.invalid_invite'),
                 ]);
             }
+
+            DB::afterCommit(static function () use ($user): void {
+                app(SupportChatService::class)->ensureForUser($user);
+            });
 
             return $user;
         });

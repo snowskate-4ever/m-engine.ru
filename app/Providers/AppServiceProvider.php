@@ -10,6 +10,7 @@ use App\Listeners\Notifications\BroadcastDatabaseNotification;
 use App\Listeners\Notifications\MirrorDatabaseNotificationToSystemChat;
 use App\Models\ConcertVenue;
 use App\Models\Event;
+use App\Models\LegalDocument;
 use App\Models\Musician;
 use App\Models\Peformer;
 use App\Models\ProducerCenter;
@@ -21,12 +22,14 @@ use App\Models\Shop;
 use App\Models\ShopOrder;
 use App\Models\Studio;
 use App\Models\Teacher;
+use App\Models\User;
 use App\Observers\EventObserver;
 use App\Observers\MusicProfileModerationAuditObserver;
 use App\Observers\PublicMusicCatalogCacheObserver;
 use App\Observers\PublicProfileReportAuditObserver;
 use App\Observers\ShopOrderObserver;
 use App\Policies\ConcertVenuePolicy;
+use App\Policies\LegalDocumentPolicy;
 use App\Policies\MusicianPolicy;
 use App\Policies\PeformerPolicy;
 use App\Policies\ProducerCenterPolicy;
@@ -39,6 +42,8 @@ use App\Policies\StudioPolicy;
 use App\Policies\TeacherPolicy;
 use App\Services\Billing\StubBillingPaymentGateway;
 use App\Services\Billing\YooKassaPaymentGateway;
+use App\Services\Messenger\SupportChatService;
+use App\Services\Music\EntityLinkedAccessService;
 use App\Services\PlatformPayments\StubPlatformAcquiringDriver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -98,8 +103,14 @@ class AppServiceProvider extends ServiceProvider
         foreach ($publicMusicProfileModels as $modelClass) {
             $modelClass::observe(PublicMusicCatalogCacheObserver::class);
             $modelClass::observe(MusicProfileModerationAuditObserver::class);
+            $modelClass::deleting(function ($entity): void {
+                app(EntityLinkedAccessService::class)->cleanupForEntity($entity);
+            });
         }
         PublicProfileReport::observe(PublicProfileReportAuditObserver::class);
+        User::created(static function (User $user): void {
+            app(SupportChatService::class)->ensureForUser($user);
+        });
 
         Gate::policy(Musician::class, MusicianPolicy::class);
         Gate::policy(Teacher::class, TeacherPolicy::class);
@@ -112,6 +123,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ProducerCenter::class, ProducerCenterPolicy::class);
         Gate::policy(Shop::class, ShopPolicy::class);
         Gate::policy(ShopOrder::class, ShopOrderPolicy::class);
+        Gate::policy(LegalDocument::class, LegalDocumentPolicy::class);
 
         EventFacade::listen(NotificationSent::class, BroadcastDatabaseNotification::class);
         EventFacade::listen(NotificationSent::class, MirrorDatabaseNotificationToSystemChat::class);

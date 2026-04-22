@@ -26,6 +26,7 @@ class MessengerApiTest extends TestCase
 
     public function test_creates_direct_conversation_and_lists_it(): void
     {
+        config(['support_chat.auto_create_user' => false]);
         $a = User::factory()->create();
         $b = User::factory()->create();
         Sanctum::actingAs($a);
@@ -52,6 +53,7 @@ class MessengerApiTest extends TestCase
 
     public function test_direct_conversation_is_reused_for_same_pair(): void
     {
+        config(['support_chat.auto_create_user' => false]);
         $a = User::factory()->create();
         $b = User::factory()->create();
         Sanctum::actingAs($a);
@@ -448,6 +450,54 @@ class MessengerApiTest extends TestCase
             ->where('user_id', $a->id)
             ->value('last_read_message_id');
         $this->assertSame($mid, $lr);
+    }
+
+    public function test_conversations_are_sorted_with_support_first_then_unread_then_read_by_last_message_time(): void
+    {
+        $support = User::factory()->create(['email' => 'support@m-engine.ru']);
+        config(['support_chat.support_user_email' => $support->email]);
+
+        $me = User::factory()->create();
+        $peerUnread = User::factory()->create();
+        $peerRead = User::factory()->create();
+        Sanctum::actingAs($me);
+
+        $supportConversationId = (int) $this->getJson('/api/messenger/conversations')->json('data.0.id');
+
+        $unreadConversationId = (int) $this->postJson('/api/messenger/conversations', [
+            'type' => 'direct',
+            'user_id' => $peerUnread->id,
+        ])->json('data.id');
+        $readConversationId = (int) $this->postJson('/api/messenger/conversations', [
+            'type' => 'direct',
+            'user_id' => $peerRead->id,
+        ])->json('data.id');
+
+        Sanctum::actingAs($peerRead);
+        $this->postJson("/api/messenger/conversations/{$readConversationId}/messages", ['body' => 'old read'])->assertCreated();
+        Sanctum::actingAs($me);
+        $lastReadMessageId = Message::query()
+            ->where('conversation_id', $readConversationId)
+            ->latest('id')
+            ->value('id');
+        $this->postJson("/api/messenger/conversations/{$readConversationId}/read", [
+            'message_id' => $lastReadMessageId,
+        ])->assertOk();
+
+        Sanctum::actingAs($peerUnread);
+        $this->postJson("/api/messenger/conversations/{$unreadConversationId}/messages", ['body' => 'new unread'])->assertCreated();
+        Sanctum::actingAs($me);
+
+        $list = $this->getJson('/api/messenger/conversations')->assertOk()->json('data');
+        $this->assertIsArray($list);
+        $this->assertGreaterThanOrEqual(3, count($list));
+
+        $this->assertSame($supportConversationId, $list[0]['id']);
+        $this->assertSame('Поддержка', $list[0]['title']);
+        $this->assertSame($unreadConversationId, $list[1]['id']);
+        $this->assertSame($readConversationId, $list[2]['id']);
+        $this->assertGreaterThan(0, (int) $list[1]['unread_count']);
+        $this->assertSame(0, (int) $list[2]['unread_count']);
     }
 
     public function test_group_member_role_on_create(): void

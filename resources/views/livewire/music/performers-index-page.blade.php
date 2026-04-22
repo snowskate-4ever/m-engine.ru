@@ -34,8 +34,8 @@
         </form>
 
         <div class="mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-700">
-            <flux:button type="button" variant="ghost" wire:click="closeCreateModal">{{ __('ui.cancel') }}</flux:button>
-            <flux:button type="button" variant="primary" wire:click="createPerformer">{{ __('ui.create') }}</flux:button>
+            <flux:button type="button" variant="ghost" wire:click="closeCreateModal" square icon="cancel-play" :title="__('ui.cancel')" />
+            <flux:button type="button" variant="primary" wire:click="createPerformer" square icon="plus" :title="__('ui.create')" />
         </div>
     </flux:modal>
 

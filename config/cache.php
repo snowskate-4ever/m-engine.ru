@@ -19,6 +19,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Serializable Classes
+    |--------------------------------------------------------------------------
+    |
+    | Define which classes may be unserialized from cache payloads. Keeping
+    | this empty disables object unserialization and reduces attack surface.
+    |
+    */
+
+    'serializable_classes' => [],
+
+    /*
+    |--------------------------------------------------------------------------
     | Cache Stores
     |--------------------------------------------------------------------------
     |

@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
 
     Alpine.data('messengerFloatPanel', () => ({
         open: false,
+        activeConversationId: null,
         w: DEF_W,
         h: DEF_H,
         left: 0,
